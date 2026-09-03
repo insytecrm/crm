@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 40" role="img" aria-label="Housing.com">
+  <rect width="180" height="40" rx="6" fill="#E23744"/>
+  <path fill="#fff" d="M16 28V18.2l6-5.4 6 5.4V28h-3.6v-7.2h-4.8V28H16z"/>
+  <text x="36" y="26" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700">housing.com</text>
+</svg>

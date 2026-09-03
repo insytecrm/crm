@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" role="img" aria-label="99acres">
+  <rect width="160" height="40" rx="6" fill="#D8232A"/>
+  <path fill="#fff" d="M14 28V12h3.2l6.4 10.4h.1V12H27v16h-3.2l-6.5-10.5h-.1V28H14zm16.5 0V12h12.2v2.8h-8.6v3.6h7.8v2.8h-7.8V25h8.8V28H30.5z"/>
+  <text x="48" y="26" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700">99acres</text>
+</svg>

@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Models\Scopes;
+
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Scope;
+
+class LeadVisibilityScope implements Scope
+{
+    public function apply(Builder $builder, Model $model): void
+    {
+        $user = auth()->user();
+
+        if ($user === null || $user->isAdministrator()) {
+            return;
+        }
+
+        $builder->where($model->getTable().'.assigned_to_id', $user->id);
+    }
+}

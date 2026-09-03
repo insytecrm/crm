@@ -1,0 +1,19 @@
+<?php
+
+namespace App\View\Components;
+
+use Illuminate\View\Component;
+use Illuminate\View\View;
+
+class LegalLayout extends Component
+{
+    public function __construct(
+        public ?string $title = null,
+        public ?string $heading = null,
+    ) {}
+
+    public function render(): View
+    {
+        return view('layouts.legal');
+    }
+}
