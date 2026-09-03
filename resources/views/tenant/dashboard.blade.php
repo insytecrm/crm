@@ -83,4 +83,22 @@
             </x-tenant.stat-card>
         </x-tenant.can>
     </div>
+
+    {{-- Pipeline + Today's Tasks (KPI 1–3 width) | My Day (remaining = KPI 4–5) --}}
+    <div class="tenant-dashboard-panels mt-4 flex items-stretch gap-2">
+        <div class="flex min-w-0 shrink-0 flex-col gap-2" style="width: calc((100% - 2rem) * 3 / 5 + 1rem)">
+            @include('tenant.dashboard.partials.pipeline-card', [
+                'pipeline' => $pipeline,
+                'periodFilter' => $periodFilter,
+            ])
+            @include('tenant.dashboard.partials.todays-tasks-card', [
+                'tasks' => $todaysTasks,
+            ])
+        </div>
+        <div class="min-w-0 flex-1">
+            @include('tenant.dashboard.partials.my-day-card', [
+                'activities' => $myDayActivities,
+            ])
+        </div>
+    </div>
 </x-tenant-layout>

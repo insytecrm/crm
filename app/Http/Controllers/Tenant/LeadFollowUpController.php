@@ -12,6 +12,7 @@ use App\Http\Requests\Tenant\CompleteScheduledActivityRequest;
 use App\Http\Requests\Tenant\ScheduleFollowUpRequest;
 use App\Models\Lead;
 use App\Support\LeadDrawerRedirect;
+use App\Support\ReminderBefore;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -24,8 +25,9 @@ class LeadFollowUpController extends Controller
         LogLeadActivity $logLeadActivity,
     ): RedirectResponse {
         $notes = $request->validated('notes');
+        $reminder = ReminderBefore::fromRequest($request);
 
-        $event = DB::transaction(function () use ($request, $lead, $recordLeadScheduledEvent, $notes) {
+        $event = DB::transaction(function () use ($request, $lead, $recordLeadScheduledEvent, $notes, $reminder) {
             $priority = $request->enum('priority', ScheduledActivityPriority::class);
 
             $lead->update([
@@ -39,6 +41,7 @@ class LeadFollowUpController extends Controller
                 $lead->next_follow_up_at,
                 $notes,
                 $priority,
+                reminder: $reminder,
             );
         });
 

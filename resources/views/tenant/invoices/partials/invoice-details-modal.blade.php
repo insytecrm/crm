@@ -6,9 +6,20 @@
                     <h2 class="text-lg font-bold text-black">{{ __('Invoice Details') }}</h2>
                     <p class="mt-1 text-sm text-slate-500">{{ $invoice->invoice_number ?? \App\Models\Booking::invoiceNumberFor($invoice->id) }} · {{ $invoice->property->project_name }}</p>
                 </div>
+            <div class="flex shrink-0 flex-wrap justify-end gap-1.5">
+                @if ($invoice->hasPaidPayout())
+                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                        {{ __('Paid') }} · {{ $invoice->payout_paid_at->format('M j, Y') }}
+                    </span>
+                @else
+                    <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                        {{ __('Pending Payment') }}
+                    </span>
+                @endif
                 <span class="inline-flex shrink-0 items-center rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700">
                     {{ $invoice->invoice_date?->format('M j, Y') }}
                 </span>
+            </div>
             </div>
 
             <dl class="mt-6 grid gap-4 sm:grid-cols-2">
@@ -67,6 +78,12 @@
             </dl>
 
             <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                @if ($invoice->canMarkPayoutPaid())
+                    <form method="POST" action="{{ route('tenant.invoices.mark-paid', $invoice) }}">
+                        @csrf
+                        <x-ui.button type="submit" variant="default">{{ __('Mark Paid') }}</x-ui.button>
+                    </form>
+                @endif
                 <x-ui.button type="button" variant="outline" :href="route('tenant.invoices.pdf', $invoice)">
                     {{ __('Download PDF') }}
                 </x-ui.button>

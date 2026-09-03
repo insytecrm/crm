@@ -42,6 +42,11 @@
                         :searchable="false"
                     />
                 </div>
+                <div class="sm:col-span-2">
+                    @include('tenant.partials.reminder-fields', [
+                        'idPrefix' => 'task_reminder',
+                    ])
+                </div>
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <x-ui.button type="button" variant="outline" @click="$dispatch('close-modal', 'create-task')">{{ __('Cancel') }}</x-ui.button>

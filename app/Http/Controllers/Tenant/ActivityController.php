@@ -16,13 +16,15 @@ class ActivityController extends Controller
     {
         $filter = ActivityFilter::fromRequest($request->string('filter')->toString());
         $kind = ActivityKind::fromRequest($request->string('kind')->toString());
+        $search = $request->string('search')->trim()->toString();
 
-        $activities = $scheduledActivities->items($filter, $kind);
+        $activities = $scheduledActivities->items($filter, $kind, $search);
         $tableKey = $kind === ActivityKind::SiteVisit ? 'activities_site_visits' : 'activities';
 
         return view('tenant.activities.index', array_merge([
             'filter' => $filter,
             'kind' => $kind,
+            'search' => $search,
             'statistics' => $scheduledActivities->statistics($filter),
             'activities' => $activities,
             'showPropertyColumn' => $kind === ActivityKind::SiteVisit,

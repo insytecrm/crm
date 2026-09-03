@@ -14,17 +14,24 @@ use App\Http\Requests\Tenant\UpdateLeadTaskStatusRequest;
 use App\Models\Lead;
 use App\Models\LeadTask;
 use App\Support\LeadDrawerRedirect;
+use App\Support\ReminderBefore;
 use Illuminate\Http\RedirectResponse;
 
 class LeadTaskController extends Controller
 {
     public function store(StoreLeadTaskRequest $request, Lead $lead, LogLeadActivity $logLeadActivity): RedirectResponse
     {
+        $reminder = ReminderBefore::fromRequest($request);
+        $dueAt = $request->date('due_at');
+
         $task = $lead->tasks()->create([
-            ...$request->validated(),
+            'title' => $request->validated('title'),
+            'description' => $request->validated('description'),
+            'due_at' => $request->validated('due_at'),
             'status' => TaskStatus::Pending,
             'created_by_id' => auth()->id(),
             'assigned_to_id' => $request->validated('assigned_to_id') ?? auth()->id(),
+            ...ReminderBefore::attributesFor($reminder, $dueAt),
         ]);
 
         $logLeadActivity->handle(
@@ -47,11 +54,12 @@ class LeadTaskController extends Controller
         abort_unless($task->lead_id === $lead->id, 404);
 
         $status = TaskStatus::from($request->validated('status'));
+        $notes = $request->validated('notes');
 
         abort_if($status === TaskStatus::Complete, 404);
         abort_unless($task->status->canTransitionTo($status), 404);
 
-        $updateTaskStatus->handle($task, $status);
+        $updateTaskStatus->handle($task, $status, $notes);
 
         $message = match ($status) {
             TaskStatus::InProgress => __('Task started.'),
@@ -59,11 +67,21 @@ class LeadTaskController extends Controller
             default => __('Task updated.'),
         };
 
+        $description = $status === TaskStatus::Cancelled && filled($notes)
+            ? __('Task cancelled: :title — :notes', ['title' => $task->title, 'notes' => $notes])
+            : __('Task :status: :title', ['status' => strtolower($status->label()), 'title' => $task->title]);
+
+        $metadata = ['task_id' => $task->id];
+
+        if ($status === TaskStatus::Cancelled && filled($notes)) {
+            $metadata['cancellation_notes'] = $notes;
+        }
+
         $logLeadActivity->handle(
             $lead,
             LeadActivityType::TaskCreated,
-            __('Task :status: :title', ['status' => strtolower($status->label()), 'title' => $task->title]),
-            metadata: ['task_id' => $task->id],
+            $description,
+            metadata: $metadata,
         );
 
         return LeadDrawerRedirect::to($lead, $message);

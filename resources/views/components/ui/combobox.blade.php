@@ -2,10 +2,7 @@
 
 <div
     x-data="uiCombobox(@js($config))"
-    @click.outside="open = false"
-    @keydown.escape.window="open = false"
-    x-on:resize.window="open && positionDropdown()"
-    x-on:scroll.window.passive="open && positionDropdown()"
+    x-on:keydown.escape.window="open && (open = false, removeListeners())"
     {{ $attributes->merge(['class' => 'relative w-full']) }}
 >
     <input
@@ -47,7 +44,7 @@
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
         x-cloak
-        class="z-[100] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5"
+        class="z-[9999] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5"
         style="display: none;"
     >
         <div x-show="searchable" class="border-b border-slate-100 p-2">

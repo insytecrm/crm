@@ -1,6 +1,6 @@
 <?php
 
-test('tenant sidebar shows bookings revenue with payouts and invoices submenu and integrations links', function () {
+test('tenant sidebar shows bookings revenue invoices submenu and integrations links', function () {
     createTestTenant();
     actingAsTenantUser();
 
@@ -8,12 +8,11 @@ test('tenant sidebar shows bookings revenue with payouts and invoices submenu an
         ->assertOk()
         ->assertSee('Bookings')
         ->assertSee('Revenue')
-        ->assertSee('Payouts')
         ->assertSee('Invoices')
+        ->assertDontSee('Payouts')
         ->assertSee('Integrations')
         ->assertSee(route('tenant.bookings.index', ['tenant' => 'acme'], false))
         ->assertSee(route('tenant.revenue.index', ['tenant' => 'acme'], false))
-        ->assertSee(route('tenant.payouts.index', ['tenant' => 'acme'], false))
         ->assertSee(route('tenant.invoices.index', ['tenant' => 'acme'], false))
         ->assertSee(route('tenant.integrations.index', ['tenant' => 'acme'], false));
 });
@@ -50,6 +49,8 @@ test('tenant users can view invoices home', function () {
         ->assertOk()
         ->assertSee('Invoices')
         ->assertSee('All Invoices')
+        ->assertSee('Create Invoice')
+        ->assertSee('Filters')
         ->assertSee('Actions')
         ->assertSee('No invoices yet.');
 });

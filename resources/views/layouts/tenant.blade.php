@@ -125,11 +125,7 @@
             {{ __('Revenue') }}
 
             <x-slot:submenu>
-                <x-sidebar.sublink :href="route('tenant.payouts.index')" :active="request()->routeIs('tenant.payouts.*')">
-                    {{ __('Payouts') }}
-                </x-sidebar.sublink>
-
-                <x-sidebar.sublink :href="route('tenant.invoices.index')" :active="request()->routeIs('tenant.invoices.*')">
+                <x-sidebar.sublink :href="route('tenant.invoices.index')" :active="request()->routeIs('tenant.invoices.*', 'tenant.payouts.*')">
                     {{ __('Invoices') }}
                 </x-sidebar.sublink>
             </x-slot:submenu>
@@ -172,6 +168,10 @@
     </x-slot:footer>
 
     {{ $slot }}
+
+    @push('modals')
+        @include('tenant.partials.reminder-host')
+    @endpush
 
     @push('drawers')
         @include('tenant.leads.partials.drawer-host')

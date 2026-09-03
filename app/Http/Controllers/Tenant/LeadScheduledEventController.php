@@ -22,6 +22,7 @@ use App\Http\Requests\Tenant\CompleteSiteVisitScheduledEventRequest;
 use App\Http\Requests\Tenant\RescheduleScheduledActivityRequest;
 use App\Models\LeadScheduledEvent;
 use App\Support\LeadDrawerRedirect;
+use App\Support\ReminderBefore;
 use Illuminate\Http\RedirectResponse;
 
 class LeadScheduledEventController extends Controller
@@ -41,12 +42,16 @@ class LeadScheduledEventController extends Controller
         $priority = $request->filled('priority')
             ? $request->enum('priority', ScheduledActivityPriority::class)
             : null;
+        $reminder = ReminderBefore::fromRequest($request);
+        $reminderProvided = $request->has('add_reminder');
 
         $event = $recordLeadScheduledEvent->reschedule(
             $scheduledEvent,
             $scheduledAt,
             $notes,
             $priority,
+            $reminder,
+            $reminderProvided,
         );
 
         $lead = $event->lead;

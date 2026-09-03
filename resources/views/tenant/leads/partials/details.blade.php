@@ -160,11 +160,16 @@
                     <div class="p-4 sm:p-6">
                         <div class="rounded-xl border border-slate-100 bg-white p-4 shadow-sm shadow-slate-200/50 sm:p-5">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">{{ __('Tasks') }}</h3>
-                    <form method="POST" action="{{ route('tenant.leads.tasks.store', $lead) }}" class="mb-4 flex flex-col gap-2 sm:flex-row">
+                    <form method="POST" action="{{ route('tenant.leads.tasks.store', $lead) }}" class="mb-4 space-y-3">
                         @csrf
-                        <input type="text" name="title" required placeholder="{{ __('Task title') }}" class="flex-1 rounded-lg border-slate-200 text-sm focus:border-navy focus:ring-navy">
-                        <x-ui.datetime-picker name="due_at" class="sm:max-w-xs sm:flex-none" />
-                        <x-ui.button type="submit" variant="default" size="sm">{{ __('Add Task') }}</x-ui.button>
+                        <div class="flex flex-col gap-2 sm:flex-row">
+                            <input type="text" name="title" required placeholder="{{ __('Task title') }}" class="flex-1 rounded-lg border-slate-200 text-sm focus:border-navy focus:ring-navy">
+                            <x-ui.datetime-picker name="due_at" class="sm:max-w-xs sm:flex-none" />
+                            <x-ui.button type="submit" variant="default" size="sm">{{ __('Add Task') }}</x-ui.button>
+                        </div>
+                        @include('tenant.partials.reminder-fields', [
+                            'idPrefix' => 'lead_task_reminder_'.$lead->id,
+                        ])
                     </form>
                     <div class="space-y-3">
                         @forelse ($lead->tasks as $task)

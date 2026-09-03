@@ -13,4 +13,11 @@
         :href="route('tenant.invoices.pdf', $invoice)"
         :title="__('Download PDF')"
     />
+
+    @if ($invoice->canMarkPayoutPaid())
+        <form method="POST" action="{{ route('tenant.invoices.mark-paid', $invoice) }}" class="inline-flex">
+            @csrf
+            <x-ui.action-icon icon="complete" type="submit" :title="__('Mark Paid')" />
+        </form>
+    @endif
 </x-ui.action-icon-group>

@@ -17,6 +17,7 @@ use App\Models\LeadTask;
 use App\Models\User;
 use App\Queries\TaskListing;
 use App\Support\DataTable\DataTableViewData;
+use App\Support\ReminderBefore;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -26,12 +27,14 @@ class TaskController extends Controller
     public function index(Request $request, TaskListing $taskListing): View
     {
         $filter = TaskFilter::fromRequest($request->string('filter')->toString());
+        $search = $request->string('search')->trim()->toString();
 
-        $tasks = $taskListing->items($filter);
+        $tasks = $taskListing->items($filter, $search);
 
         return view('tenant.tasks.index', array_merge([
             'filter' => $filter,
             'filters' => TaskFilter::cases(),
+            'search' => $search,
             'statistics' => $taskListing->statistics(),
             'tasks' => $tasks,
             'leads' => Lead::query()->orderBy('name')->get(['id', 'name']),
@@ -42,6 +45,8 @@ class TaskController extends Controller
     public function store(StoreTaskRequest $request, LogLeadActivity $logLeadActivity): RedirectResponse
     {
         $lead = Lead::query()->findOrFail($request->validated('lead_id'));
+        $reminder = ReminderBefore::fromRequest($request);
+        $dueAt = $request->date('due_at');
 
         $task = $lead->tasks()->create([
             'title' => $request->validated('title'),
@@ -50,6 +55,7 @@ class TaskController extends Controller
             'status' => TaskStatus::Pending,
             'assigned_to_id' => $request->validated('assigned_to_id') ?? auth()->id(),
             'created_by_id' => auth()->id(),
+            ...ReminderBefore::attributesFor($reminder, $dueAt),
         ]);
 
         $logLeadActivity->handle(
@@ -77,7 +83,7 @@ class TaskController extends Controller
         return $this->transition(
             $task,
             $status,
-            TaskFilter::fromRequest($request->validated('filter')),
+            $request->validated('notes'),
             $updateTaskStatus,
             $logLeadActivity,
         );
@@ -97,23 +103,19 @@ class TaskController extends Controller
 
         $this->logTaskCompleted($task, $notes, $logLeadActivity);
 
-        $filter = TaskFilter::fromRequest($request->string('filter')->toString());
-
-        return redirect()
-            ->route('tenant.tasks.index', ['filter' => $filter->value])
-            ->with('status', __('Task marked complete.'));
+        return back()->with('status', __('Task marked complete.'));
     }
 
     private function transition(
         LeadTask $task,
         TaskStatus $status,
-        TaskFilter $filter,
+        ?string $notes,
         UpdateTaskStatus $updateTaskStatus,
         LogLeadActivity $logLeadActivity,
     ): RedirectResponse {
         abort_unless($task->status->canTransitionTo($status), 404);
 
-        $updateTaskStatus->handle($task, $status);
+        $updateTaskStatus->handle($task, $status, $notes);
 
         $message = match ($status) {
             TaskStatus::InProgress => __('Task started.'),
@@ -121,20 +123,34 @@ class TaskController extends Controller
             default => __('Task updated.'),
         };
 
-        $logLeadActivity->handle(
-            $task->lead,
-            LeadActivityType::TaskCreated,
-            __('Task :status: :title', ['status' => strtolower($status->label()), 'title' => $task->title]),
-            metadata: ['task_id' => $task->id],
-        );
+        if ($task->lead) {
+            $description = $status === TaskStatus::Cancelled && filled($notes)
+                ? __('Task cancelled: :title — :notes', ['title' => $task->title, 'notes' => $notes])
+                : __('Task :status: :title', ['status' => strtolower($status->label()), 'title' => $task->title]);
 
-        return redirect()
-            ->route('tenant.tasks.index', ['filter' => $filter->value])
-            ->with('status', $message);
+            $metadata = ['task_id' => $task->id];
+
+            if ($status === TaskStatus::Cancelled && filled($notes)) {
+                $metadata['cancellation_notes'] = $notes;
+            }
+
+            $logLeadActivity->handle(
+                $task->lead,
+                LeadActivityType::TaskCreated,
+                $description,
+                metadata: $metadata,
+            );
+        }
+
+        return back()->with('status', $message);
     }
 
     private function logTaskCompleted(LeadTask $task, ?string $notes, LogLeadActivity $logLeadActivity): void
     {
+        if (! $task->lead) {
+            return;
+        }
+
         $description = filled($notes)
             ? __('Task completed: :title — :notes', ['title' => $task->title, 'notes' => $notes])
             : __('Task completed: :title', ['title' => $task->title]);

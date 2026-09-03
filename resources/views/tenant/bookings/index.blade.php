@@ -12,13 +12,28 @@
                 x-init="$nextTick(() => $dispatch('open-modal', @js($openModal)))"
             @endif
         >
-            <div class="mb-3 flex justify-end gap-2">
-                <x-tenant.manageable-table.toolbar-button :data-table-key="$dataTableKey" />
+            <x-tenant.list-toolbar>
+                <x-slot:search>
+                    <form method="GET" action="{{ route('tenant.bookings.index') }}" class="w-full">
+                        <x-auth.icon-input
+                            type="search"
+                            name="search"
+                            value="{{ $search }}"
+                            placeholder="{{ __('Search by lead, property, or unit...') }}"
+                        >
+                            <x-slot:icon>
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                            </x-slot:icon>
+                        </x-auth.icon-input>
+                    </form>
+                </x-slot:search>
+
                 <x-ui.button type="button" variant="default" @click="$dispatch('open-modal', 'create-booking')">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     {{ __('Create Booking') }}
                 </x-ui.button>
-            </div>
+                <x-tenant.manageable-table.toolbar-button :data-table-key="$dataTableKey" />
+            </x-tenant.list-toolbar>
 
             <x-auth-session-status class="mb-3 rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700" :status="session('status')" />
 

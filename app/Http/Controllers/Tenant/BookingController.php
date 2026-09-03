@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Actions\LogLeadActivity;
+use App\Actions\LogLeadBookingMilestone;
 use App\Enums\LeadActivityType;
 use App\Enums\LeadClosingReason;
 use App\Enums\LeadStatus;
@@ -22,14 +23,25 @@ class BookingController extends Controller
 {
     public function index(Request $request): View
     {
+        $search = $request->string('search')->trim()->toString();
+
         $bookings = Booking::query()
             ->with(['property', 'lead', 'createdBy'])
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query->where('unit_number', 'like', "%{$search}%")
+                        ->orWhere('configuration_name', 'like', "%{$search}%")
+                        ->orWhereHas('lead', fn ($leadQuery) => $leadQuery->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('property', fn ($propertyQuery) => $propertyQuery->where('project_name', 'like', "%{$search}%"));
+                });
+            })
             ->latest('booking_date')
             ->latest('id')
             ->get();
 
         return view('tenant.bookings.index', array_merge([
             'bookings' => $bookings,
+            'search' => $search,
             'leads' => Lead::query()
                 ->whereDoesntHave('bookings')
                 ->orderBy('name')
@@ -107,7 +119,7 @@ class BookingController extends Controller
             ->with('status', __('Booking created.'));
     }
 
-    public function markAgreement(Booking $booking, MarkBookingAgreementRequest $request): RedirectResponse
+    public function markAgreement(Booking $booking, MarkBookingAgreementRequest $request, LogLeadBookingMilestone $logLeadBookingMilestone): RedirectResponse
     {
         abort_unless($booking->canMarkAgreement(), 404);
 
@@ -118,12 +130,14 @@ class BookingController extends Controller
             'payout_amount' => $request->validated('payout_amount'),
         ]);
 
+        $logLeadBookingMilestone->agreement($booking);
+
         return redirect()
             ->route('tenant.bookings.index')
             ->with('status', __('Agreement marked for booking.'));
     }
 
-    public function storeInvoice(Booking $booking, StoreBookingInvoiceRequest $request): RedirectResponse
+    public function storeInvoice(Booking $booking, StoreBookingInvoiceRequest $request, LogLeadBookingMilestone $logLeadBookingMilestone): RedirectResponse
     {
         abort_unless($booking->canCreateInvoice(), 404);
 
@@ -132,6 +146,8 @@ class BookingController extends Controller
             'invoice_number' => Booking::invoiceNumberFor($booking->id),
             'invoiced_at' => now(),
         ]);
+
+        $logLeadBookingMilestone->invoice($booking);
 
         return redirect()
             ->route('tenant.bookings.index')

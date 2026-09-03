@@ -11,12 +11,16 @@ import './lead-hover-cards';
 import './datetime-pickers-loader';
 import { registerLeadTablePreferencesStore } from './lead-table-preferences';
 import { registerTablePreferencesStore, registerManageableDataTable } from './manageable-data-table';
+import { registerPipelineChart } from './pipeline-chart';
+import { registerReminderHost } from './reminder-host';
 
 window.Alpine = Alpine;
 
 document.addEventListener('alpine:init', () => {
     registerLeadTablePreferencesStore(Alpine, window.leadTablePreferencesConfig ?? {});
     registerManageableDataTable(Alpine);
+    registerPipelineChart(Alpine);
+    registerReminderHost(Alpine);
 
     if (window.manageableDataTableConfigs) {
         Object.entries(window.manageableDataTableConfigs).forEach(([tableKey, config]) => {
@@ -598,6 +602,25 @@ document.addEventListener('alpine:init', () => {
         placeholder: config.placeholder ?? 'Select an option',
         searchable: config.searchable ?? true,
         submitOnSelect: config.submitOnSelect ?? false,
+        shouldPortalDropdown: config.portal ?? true,
+        outsideClickHandler: null,
+        repositionHandler: null,
+
+        init() {
+            this.$nextTick(() => {
+                if (this.shouldPortalDropdown && this.$refs.dropdown) {
+                    document.body.appendChild(this.$refs.dropdown);
+                }
+            });
+        },
+
+        destroy() {
+            this.removeListeners();
+
+            if (this.shouldPortalDropdown && this.$refs.dropdown?.parentNode === document.body) {
+                this.$refs.dropdown.remove();
+            }
+        },
 
         get selectedLabel() {
             const match = this.options.find((option) => String(option.value) === String(this.selected));
@@ -628,11 +651,63 @@ document.addEventListener('alpine:init', () => {
             }
 
             const rect = trigger.getBoundingClientRect();
+            const viewportPadding = 12;
+            const gap = 4;
+            const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+            const spaceAbove = rect.top - viewportPadding;
+            const openAbove = spaceBelow < 200 && spaceAbove > spaceBelow;
+            const maxLeft = Math.max(viewportPadding, window.innerWidth - rect.width - viewportPadding);
+            const left = Math.min(rect.left, maxLeft);
 
             dropdown.style.position = 'fixed';
-            dropdown.style.top = `${rect.bottom + 4}px`;
-            dropdown.style.left = `${rect.left}px`;
+            dropdown.style.left = `${left}px`;
             dropdown.style.width = `${rect.width}px`;
+            dropdown.style.zIndex = '9999';
+            dropdown.style.transform = 'none';
+
+            if (openAbove) {
+                dropdown.style.top = `${rect.top - gap}px`;
+                dropdown.style.transform = 'translateY(-100%)';
+            } else {
+                dropdown.style.top = `${rect.bottom + gap}px`;
+            }
+        },
+
+        addListeners() {
+            this.outsideClickHandler = (event) => {
+                const trigger = this.$refs.trigger;
+                const dropdown = this.$refs.dropdown;
+
+                if (trigger?.contains(event.target) || dropdown?.contains(event.target)) {
+                    return;
+                }
+
+                this.open = false;
+                this.removeListeners();
+            };
+
+            this.repositionHandler = () => {
+                if (this.open) {
+                    this.positionDropdown();
+                }
+            };
+
+            document.addEventListener('click', this.outsideClickHandler, true);
+            window.addEventListener('resize', this.repositionHandler);
+            window.addEventListener('scroll', this.repositionHandler, true);
+        },
+
+        removeListeners() {
+            if (this.outsideClickHandler) {
+                document.removeEventListener('click', this.outsideClickHandler, true);
+                this.outsideClickHandler = null;
+            }
+
+            if (this.repositionHandler) {
+                window.removeEventListener('resize', this.repositionHandler);
+                window.removeEventListener('scroll', this.repositionHandler, true);
+                this.repositionHandler = null;
+            }
         },
 
         toggle() {
@@ -641,10 +716,13 @@ document.addEventListener('alpine:init', () => {
             if (this.open) {
                 this.$nextTick(() => {
                     this.positionDropdown();
+                    this.addListeners();
                     if (this.searchable) {
                         this.$refs.searchInput?.focus();
                     }
                 });
+            } else {
+                this.removeListeners();
             }
         },
 
@@ -652,6 +730,7 @@ document.addEventListener('alpine:init', () => {
             this.selected = option.value;
             this.open = false;
             this.search = '';
+            this.removeListeners();
             this.$dispatch('selected', option.value);
 
             if (this.submitOnSelect) {

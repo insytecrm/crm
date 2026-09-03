@@ -17,6 +17,9 @@ enum LeadActivityType: string
     case TaskCreated = 'task_created';
     case TaskCompleted = 'task_completed';
     case BookingCreated = 'booking_created';
+    case AgreementMarked = 'agreement_marked';
+    case InvoiceCreated = 'invoice_created';
+    case PayoutReceived = 'payout_received';
     case LeadMerged = 'lead_merged';
 
     public function label(): string
@@ -35,6 +38,9 @@ enum LeadActivityType: string
             self::TaskCreated => __('Task Created'),
             self::TaskCompleted => __('Task Completed'),
             self::BookingCreated => __('Booking Created'),
+            self::AgreementMarked => __('Agreement Marked'),
+            self::InvoiceCreated => __('Invoice Created'),
+            self::PayoutReceived => __('Payout Received'),
             self::LeadMerged => __('Lead Merged'),
         };
     }

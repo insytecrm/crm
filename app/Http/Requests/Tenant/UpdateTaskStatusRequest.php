@@ -21,6 +21,12 @@ class UpdateTaskStatusRequest extends FormRequest
         return [
             'status' => ['required', Rule::enum(TaskStatus::class)],
             'filter' => ['nullable', 'string'],
+            'notes' => [
+                Rule::requiredIf(fn (): bool => $this->input('status') === TaskStatus::Cancelled->value),
+                'nullable',
+                'string',
+                'max:2000',
+            ],
         ];
     }
 }

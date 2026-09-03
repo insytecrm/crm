@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\LeadActivityType;
 use App\Models\Booking;
+use App\Models\LeadActivity;
 use App\Models\Property;
 
 test('invoices list shows view and download pdf action buttons', function () {
@@ -18,9 +20,17 @@ test('invoices list shows view and download pdf action buttons', function () {
 
     $this->get('/acme/invoices')
         ->assertOk()
+        ->assertSee('Invoice Number')
+        ->assertSee('Lead Name')
+        ->assertSee($invoice->lead->name)
         ->assertSee('Actions')
         ->assertSee('View Invoice')
         ->assertSee('Download PDF')
+        ->assertSee('Mark Paid')
+        ->assertSee('Create Invoice')
+        ->assertSee('Search by invoice, lead, property, or unit...')
+        ->assertSee('Filters')
+        ->assertSee('Payment Status')
         ->assertSee('invoice-'.$invoice->id, false)
         ->assertSee(route('tenant.invoices.pdf', ['tenant' => 'acme', 'booking' => $invoice->id], false));
 });
@@ -110,4 +120,121 @@ test('invoice pdf download is unavailable before invoice is created', function (
     ]);
 
     $this->get('/acme/invoices/'.$booking->id.'/pdf')->assertNotFound();
+});
+
+test('invoices page can create an invoice from an agreed booking', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $property = Property::factory()->create(['project_name' => 'Ready To Invoice Heights']);
+    $booking = Booking::factory()->create([
+        'property_id' => $property->id,
+        'agreement_date' => '2026-09-10',
+        'agreement_value' => 8000000,
+        'payout_amount' => 200000,
+        'invoiced_at' => null,
+        'unit_number' => '1102',
+    ]);
+
+    $this->get('/acme/invoices')
+        ->assertOk()
+        ->assertSee('Ready To Invoice Heights')
+        ->assertSee('1102')
+        ->assertDontSee(Booking::invoiceNumberFor($booking->id));
+
+    $this->from('/acme/invoices')
+        ->post('/acme/invoices', [
+            'booking_id' => $booking->id,
+            'invoice_date' => '2026-09-22',
+        ])
+        ->assertRedirect(route('tenant.invoices.index', ['tenant' => 'acme'], false))
+        ->assertSessionHas('status');
+
+    $booking->refresh();
+
+    expect($booking->hasInvoice())->toBeTrue()
+        ->and($booking->invoice_date?->toDateString())->toBe('2026-09-22')
+        ->and($booking->invoice_number)->toBe(Booking::invoiceNumberFor($booking->id))
+        ->and(LeadActivity::query()->where('lead_id', $booking->lead_id)->where('type', LeadActivityType::InvoiceCreated)->exists())->toBeTrue();
+});
+
+test('creating an invoice from invoices rejects bookings without an agreement', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $booking = Booking::factory()->create([
+        'agreement_date' => null,
+        'invoiced_at' => null,
+    ]);
+
+    $this->from('/acme/invoices')
+        ->post('/acme/invoices', [
+            'booking_id' => $booking->id,
+            'invoice_date' => '2026-09-22',
+        ])
+        ->assertRedirect('/acme/invoices')
+        ->assertSessionHasErrors('booking_id');
+
+    expect($booking->fresh()->hasInvoice())->toBeFalse();
+});
+
+test('tenant users can mark an invoice as paid', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $invoice = Booking::factory()->create([
+        'agreement_date' => '2026-09-10',
+        'payout_amount' => 150000,
+        'payout_paid_at' => null,
+        'invoice_date' => '2026-09-20',
+        'invoiced_at' => now(),
+    ]);
+
+    $this->post('/acme/invoices/'.$invoice->id.'/mark-paid')
+        ->assertRedirect(route('tenant.invoices.index', ['tenant' => 'acme'], false))
+        ->assertSessionHas('status');
+
+    expect($invoice->fresh()->payout_paid_at)->not->toBeNull()
+        ->and(LeadActivity::query()->where('lead_id', $invoice->lead_id)->where('type', LeadActivityType::PayoutReceived)->exists())->toBeTrue();
+});
+
+test('mark paid is unavailable before invoice is created', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $booking = Booking::factory()->create([
+        'agreement_date' => '2026-09-10',
+        'payout_amount' => 150000,
+        'payout_paid_at' => null,
+        'invoiced_at' => null,
+    ]);
+
+    $this->post('/acme/invoices/'.$booking->id.'/mark-paid')->assertNotFound();
+});
+
+test('invoice payment filter shows only pending invoices', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $pending = Booking::factory()->create([
+        'agreement_date' => '2026-09-10',
+        'invoice_date' => '2026-09-20',
+        'invoice_number' => 'INV-PENDING',
+        'invoiced_at' => now(),
+        'payout_paid_at' => null,
+    ]);
+
+    Booking::factory()->create([
+        'agreement_date' => '2026-09-11',
+        'invoice_date' => '2026-09-21',
+        'invoice_number' => 'INV-PAID',
+        'invoiced_at' => now(),
+        'payout_paid_at' => now(),
+    ]);
+
+    $this->get('/acme/invoices?payment=pending')
+        ->assertOk()
+        ->assertSee('INV-PENDING')
+        ->assertSee($pending->lead->name)
+        ->assertDontSee('INV-PAID');
 });

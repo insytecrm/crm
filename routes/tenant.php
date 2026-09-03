@@ -8,6 +8,7 @@ use App\Http\Controllers\Tenant\BookingController;
 use App\Http\Controllers\Tenant\BulkTableDeleteController;
 use App\Http\Controllers\Tenant\CloseLeadController;
 use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\DashboardPipelineController;
 use App\Http\Controllers\Tenant\DuplicateLeadController;
 use App\Http\Controllers\Tenant\FollowUpController;
 use App\Http\Controllers\Tenant\IntegrationController;
@@ -29,6 +30,7 @@ use App\Http\Controllers\Tenant\LeadTablePreferencesController;
 use App\Http\Controllers\Tenant\MarkLeadLostController;
 use App\Http\Controllers\Tenant\PayoutController;
 use App\Http\Controllers\Tenant\PropertyController;
+use App\Http\Controllers\Tenant\ReminderController;
 use App\Http\Controllers\Tenant\RevenueController;
 use App\Http\Controllers\Tenant\SalesTeamController;
 use App\Http\Controllers\Tenant\SalesTeamMemberController;
@@ -59,6 +61,7 @@ Route::middleware([
 
     Route::middleware('auth')->group(function () {
         Route::get('dashboard', DashboardController::class)->name('tenant.dashboard');
+        Route::get('dashboard/pipeline', DashboardPipelineController::class)->name('tenant.dashboard.pipeline');
 
         Route::get('leads/duplicates', [DuplicateLeadController::class, 'index'])->name('tenant.leads.duplicates.index');
         Route::post('leads/duplicates/merge', [DuplicateLeadController::class, 'merge'])->middleware('permission:leads.update')->name('tenant.leads.duplicates.merge');
@@ -110,8 +113,10 @@ Route::middleware([
         Route::get('payouts', [PayoutController::class, 'index'])->name('tenant.payouts.index');
         Route::post('payouts/{booking}/mark-paid', [PayoutController::class, 'markPaid'])->name('tenant.payouts.mark-paid');
         Route::get('invoices', [InvoiceController::class, 'index'])->name('tenant.invoices.index');
+        Route::post('invoices', [InvoiceController::class, 'store'])->name('tenant.invoices.store');
         Route::get('invoices/{booking}/pdf', [InvoiceController::class, 'downloadPdf'])->name('tenant.invoices.pdf');
         Route::patch('invoices/{booking}', [InvoiceController::class, 'update'])->name('tenant.invoices.update');
+        Route::post('invoices/{booking}/mark-paid', [InvoiceController::class, 'markPaid'])->name('tenant.invoices.mark-paid');
         Route::get('integrations', IntegrationController::class)->name('tenant.integrations.index');
 
         Route::get('teams', [SalesTeamController::class, 'index'])->name('tenant.teams.index');
@@ -137,6 +142,9 @@ Route::middleware([
         Route::post('tasks', [TaskController::class, 'store'])->name('tenant.tasks.store');
         Route::patch('tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tenant.tasks.status.update');
         Route::post('tasks/{task}/complete', [TaskController::class, 'complete'])->name('tenant.tasks.complete');
+
+        Route::get('reminders/due', [ReminderController::class, 'due'])->name('tenant.reminders.due');
+        Route::post('reminders/dismiss', [ReminderController::class, 'dismiss'])->name('tenant.reminders.dismiss');
 
         Route::get('follow-ups', [FollowUpController::class, 'index'])->name('tenant.follow-ups.index');
         Route::get('site-visits', [SiteVisitController::class, 'index'])->name('tenant.site-visits.index');

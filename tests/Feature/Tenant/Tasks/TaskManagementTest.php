@@ -18,6 +18,7 @@ test('tenant users can view tasks home from sidebar', function () {
         ->assertOk()
         ->assertSee('Tasks')
         ->assertSee('Create Task')
+        ->assertSee('Search by task, lead, or assignee...')
         ->assertSee('Today')
         ->assertSee('Upcoming')
         ->assertSee('Completed')
@@ -27,25 +28,22 @@ test('tenant users can view tasks home from sidebar', function () {
         ->assertSee('Due Date');
 });
 
-test('tasks home shows status timeline labels for listed tasks', function () {
+test('tasks home renders when a task lead has been soft deleted', function () {
     createTestTenant();
     actingAsTenantUser();
 
-    $lead = Lead::factory()->create(['name' => 'Timeline Lead']);
-
+    $lead = Lead::factory()->create(['name' => 'Deleted Lead']);
     LeadTask::factory()->create([
         'lead_id' => $lead->id,
-        'title' => 'Timeline Task',
+        'title' => 'Task With Deleted Lead',
         'due_at' => now()->addHours(2),
+        'status' => TaskStatus::Pending,
     ]);
+    $lead->delete();
 
     $this->get('/acme/tasks?filter=today')
         ->assertOk()
-        ->assertSee('Timeline')
-        ->assertSee('Pending')
-        ->assertSee('In Progress')
-        ->assertSee('Complete')
-        ->assertSee('Cancelled');
+        ->assertSee('Task With Deleted Lead');
 });
 
 test('tasks home shows today tasks and completed today tasks', function () {
@@ -104,12 +102,12 @@ test('tenant users can create a task from tasks home', function () {
         ->and($task->status)->toBe(TaskStatus::Pending);
 });
 
-test('tenant users can mark a task complete from tasks home', function () {
+test('tenant users can mark a started task complete from tasks home', function () {
     createTestTenant();
     actingAsTenantUser();
 
     $lead = Lead::factory()->create(['name' => 'Complete Task Lead']);
-    $task = LeadTask::factory()->create([
+    $task = LeadTask::factory()->inProgress()->create([
         'lead_id' => $lead->id,
         'title' => 'Finish proposal',
         'due_at' => now()->addHours(2),
@@ -127,12 +125,33 @@ test('tenant users can mark a task complete from tasks home', function () {
         ->and($task->completed_at)->not->toBeNull();
 });
 
-test('tasks home shows mark complete popup with notes field', function () {
+test('pending tasks cannot be marked complete until started', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $lead = Lead::factory()->create(['name' => 'Pending Complete Lead']);
+    $task = LeadTask::factory()->create([
+        'lead_id' => $lead->id,
+        'title' => 'Needs Start First',
+        'due_at' => now()->addHours(2),
+        'status' => TaskStatus::Pending,
+    ]);
+
+    $this->from('/acme/tasks?filter=today')
+        ->post('/acme/tasks/'.$task->id.'/complete', [
+            'filter' => 'today',
+        ])
+        ->assertNotFound();
+
+    expect($task->fresh()->status)->toBe(TaskStatus::Pending);
+});
+
+test('tasks home shows mark complete popup only for in progress tasks', function () {
     createTestTenant();
     actingAsTenantUser();
 
     $lead = Lead::factory()->create(['name' => 'Popup Task Lead']);
-    LeadTask::factory()->create([
+    LeadTask::factory()->inProgress()->create([
         'lead_id' => $lead->id,
         'title' => 'Popup Task',
         'due_at' => now()->addHours(2),
@@ -145,12 +164,12 @@ test('tasks home shows mark complete popup with notes field', function () {
         ->assertSee('Mark Complete', false);
 });
 
-test('marking a task complete stores optional completion notes', function () {
+test('marking a started task complete stores optional completion notes', function () {
     createTestTenant();
     actingAsTenantUser();
 
     $lead = Lead::factory()->create(['name' => 'Notes Task Lead']);
-    $task = LeadTask::factory()->create([
+    $task = LeadTask::factory()->inProgress()->create([
         'lead_id' => $lead->id,
         'title' => 'Notes Task',
         'due_at' => now()->addHours(2),
@@ -176,7 +195,7 @@ test('marking a task complete stores optional completion notes', function () {
         ->and($activity->metadata['completion_notes'] ?? null)->toBe('Client confirmed budget');
 });
 
-test('tenant users can start and cancel a task from tasks home', function () {
+test('tenant users can start and cancel a task with a reason from tasks home', function () {
     createTestTenant();
     actingAsTenantUser();
 
@@ -200,10 +219,64 @@ test('tenant users can start and cancel a task from tasks home', function () {
         ->patch('/acme/tasks/'.$task->id.'/status', [
             'status' => TaskStatus::Cancelled->value,
             'filter' => 'today',
+            'notes' => 'Lead asked to pause',
         ])
         ->assertRedirect('/acme/tasks?filter=today');
 
-    expect($task->fresh()->status)->toBe(TaskStatus::Cancelled);
+    $task->refresh();
+
+    expect($task->status)->toBe(TaskStatus::Cancelled)
+        ->and($task->cancellation_notes)->toBe('Lead asked to pause');
+});
+
+test('cancelling a task without a reason is rejected', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $lead = Lead::factory()->create(['name' => 'Cancel Reason Lead']);
+    $task = LeadTask::factory()->create([
+        'lead_id' => $lead->id,
+        'title' => 'Needs Reason',
+        'due_at' => now()->addHours(2),
+    ]);
+
+    $this->from('/acme/tasks?filter=today')
+        ->patch('/acme/tasks/'.$task->id.'/status', [
+            'status' => TaskStatus::Cancelled->value,
+            'filter' => 'today',
+        ])
+        ->assertSessionHasErrors('notes');
+
+    expect($task->fresh()->status)->toBe(TaskStatus::Pending);
+});
+
+test('dashboard task actions stay on the dashboard', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $lead = Lead::factory()->create(['name' => 'Dashboard Task Lead']);
+    $task = LeadTask::factory()->create([
+        'lead_id' => $lead->id,
+        'title' => 'Dashboard Start Task',
+        'due_at' => now()->addHours(2),
+    ]);
+
+    $this->from('/acme/dashboard')
+        ->patch('/acme/tasks/'.$task->id.'/status', [
+            'status' => TaskStatus::InProgress->value,
+            'filter' => 'today',
+        ])
+        ->assertRedirect('/acme/dashboard');
+
+    expect($task->fresh()->status)->toBe(TaskStatus::InProgress);
+
+    $this->from('/acme/dashboard')
+        ->post('/acme/tasks/'.$task->id.'/complete', [
+            'filter' => 'today',
+        ])
+        ->assertRedirect('/acme/dashboard');
+
+    expect($task->fresh()->status)->toBe(TaskStatus::Complete);
 });
 
 test('completed filter shows only completed tasks', function () {

@@ -3,7 +3,14 @@
         <div class="flex items-start justify-between gap-4">
             <div>
                 <h2 class="text-lg font-bold text-black {{ $task->isClosed() ? 'line-through text-slate-400' : '' }}">{{ $task->title }}</h2>
-                <p class="mt-1 text-sm text-slate-500">{{ __('Linked to') }} <x-tenant.lead-link :lead="$task->lead" /></p>
+                <p class="mt-1 text-sm text-slate-500">
+                    {{ __('Linked to') }}
+                    @if ($task->lead)
+                        <x-tenant.lead-link :lead="$task->lead" />
+                    @else
+                        <span class="text-slate-400">—</span>
+                    @endif
+                </p>
             </div>
             <x-tenant.task-status-badge :task="$task" class="shrink-0" />
         </div>
@@ -47,6 +54,12 @@
                         <dd class="mt-1 whitespace-pre-wrap text-sm text-slate-700">{{ $task->completion_notes }}</dd>
                     </div>
                 @endif
+            @endif
+            @if ($task->isCancelled() && $task->cancellation_notes)
+                <div class="sm:col-span-2">
+                    <dt class="text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Cancellation Reason') }}</dt>
+                    <dd class="mt-1 whitespace-pre-wrap text-sm text-slate-700">{{ $task->cancellation_notes }}</dd>
+                </div>
             @endif
             @if ($task->description)
                 <div class="sm:col-span-2">

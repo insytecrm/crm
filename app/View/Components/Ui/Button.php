@@ -8,7 +8,7 @@ use Illuminate\View\View;
 class Button extends Component
 {
     /**
-     * @param  'default'|'destructive'|'success'|'outline'|'secondary'|'ghost'|'link'  $variant
+     * @param  'default'|'destructive'|'success'|'outline'|'secondary'|'soft'|'ghost'|'link'  $variant
      * @param  'default'|'sm'|'lg'|'icon'  $size
      */
     public function __construct(
@@ -31,6 +31,7 @@ class Button extends Component
             'success' => 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 hover:shadow',
             'outline' => 'border border-slate-200 bg-white text-black shadow-sm hover:bg-slate-50',
             'secondary' => 'bg-slate-100 text-black hover:bg-slate-200',
+            'soft' => 'border border-navy/20 bg-navy/10 text-navy shadow-sm hover:bg-navy/15',
             'ghost' => 'text-black hover:bg-slate-100',
             'link' => 'h-auto rounded-none p-0 font-medium text-black underline-offset-4 hover:underline',
         ];

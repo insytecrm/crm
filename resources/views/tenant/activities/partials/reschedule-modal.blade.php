@@ -6,6 +6,7 @@
     'scheduledAt' => null,
     'notes' => null,
     'priority' => null,
+    'reminderBeforeSeconds' => null,
 ])
 
 @php
@@ -76,6 +77,20 @@
                             placeholder="{{ __('Add notes (optional)') }}"
                         >{{ $notes }}</textarea>
                     </div>
+                    @php
+                        $reminderSeconds = (int) ($reminderBeforeSeconds ?? 0);
+                        $reminderEnabled = $reminderSeconds > 0;
+                        $reminderHours = intdiv($reminderSeconds, 3600);
+                        $reminderMinutes = intdiv($reminderSeconds % 3600, 60);
+                        $reminderSecs = $reminderSeconds % 60;
+                    @endphp
+                    @include('tenant.partials.reminder-fields', [
+                        'idPrefix' => 'reschedule_reminder_'.$eventId,
+                        'enabled' => $reminderEnabled,
+                        'hours' => $reminderHours,
+                        'minutes' => $reminderEnabled ? $reminderMinutes : 15,
+                        'seconds' => $reminderSecs,
+                    ])
                 </div>
             </x-ui.modal.section>
         </x-ui.modal.body>

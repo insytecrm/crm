@@ -31,14 +31,28 @@ class TaskListing
     /**
      * @return Collection<int, LeadTask>
      */
-    public function items(TaskFilter $filter): Collection
+    public function items(TaskFilter $filter, string $search = ''): Collection
     {
         $tasks = $this->baseQuery()->get();
 
         return $tasks
             ->filter(fn (LeadTask $task): bool => $this->matchesFilter($task, $filter))
+            ->filter(fn (LeadTask $task): bool => $this->matchesSearch($task, $search))
             ->sortBy(fn (LeadTask $task): int => $this->sortTimestamp($task, $filter))
             ->values();
+    }
+
+    private function matchesSearch(LeadTask $task, string $search): bool
+    {
+        if ($search === '') {
+            return true;
+        }
+
+        $needle = mb_strtolower($search);
+
+        return str_contains(mb_strtolower($task->title), $needle)
+            || str_contains(mb_strtolower((string) $task->lead?->name), $needle)
+            || str_contains(mb_strtolower((string) $task->assignedTo?->name), $needle);
     }
 
     /**

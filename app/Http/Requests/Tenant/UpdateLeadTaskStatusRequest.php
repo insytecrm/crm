@@ -20,6 +20,12 @@ class UpdateLeadTaskStatusRequest extends FormRequest
     {
         return [
             'status' => ['required', Rule::enum(TaskStatus::class)],
+            'notes' => [
+                Rule::requiredIf(fn (): bool => $this->input('status') === TaskStatus::Cancelled->value),
+                'nullable',
+                'string',
+                'max:2000',
+            ],
         ];
     }
 }

@@ -19,6 +19,7 @@ test('tenant users can view activities home', function () {
     $this->get('/acme/activities')
         ->assertOk()
         ->assertSee('Activities')
+        ->assertSee('Search by name, phone, or email...')
         ->assertDontSee('Log Activity')
         ->assertDontSee('Filters', false)
         ->assertSee('Total Activities')

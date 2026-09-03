@@ -19,13 +19,15 @@ class InvoicesTableDefinition extends AbstractDataTableDefinition
     public function defaultColumns(): array
     {
         return [
-            'property' => true,
             'invoice_number' => true,
-            'unit' => true,
             'lead' => true,
+            'property' => true,
+            'unit' => true,
+            'agreement_value' => true,
             'invoice_amount' => true,
-            'invoice_date' => true,
             'agreement_date' => true,
+            'invoice_date' => true,
+            'payment_status' => true,
             'actions' => true,
         ];
     }
@@ -35,7 +37,7 @@ class InvoicesTableDefinition extends AbstractDataTableDefinition
      */
     public function requiredColumns(): array
     {
-        return ['property'];
+        return ['invoice_number'];
     }
 
     /**
@@ -44,13 +46,15 @@ class InvoicesTableDefinition extends AbstractDataTableDefinition
     public function columnLabels(): array
     {
         return [
+            'invoice_number' => __('Invoice Number'),
+            'lead' => __('Lead Name'),
             'property' => __('Property'),
-            'invoice_number' => __('Invoice #'),
-            'unit' => __('Unit'),
-            'lead' => __('Lead'),
+            'unit' => __('Unit Number'),
+            'agreement_value' => __('Agreement Value'),
             'invoice_amount' => __('Invoice Amount'),
-            'invoice_date' => __('Invoice Date'),
             'agreement_date' => __('Agreement Date'),
+            'invoice_date' => __('Invoice Date'),
+            'payment_status' => __('Payment Status'),
             'actions' => __('Actions'),
         ];
     }

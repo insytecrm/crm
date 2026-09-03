@@ -22,6 +22,7 @@ test('bookings index opens create booking modal with form fields', function () {
     $this->get('/acme/bookings')
         ->assertOk()
         ->assertSee('Create Booking')
+        ->assertSee('Search by lead, property, or unit...')
         ->assertSee('Related Lead')
         ->assertSee('Booking Prospect')
         ->assertSee('Select a lead')
@@ -30,6 +31,32 @@ test('bookings index opens create booking modal with form fields', function () {
         ->assertSee('Agreement Value')
         ->assertSee('Booking Date')
         ->assertSee('Skyline Towers');
+});
+
+test('bookings index search filters by lead name', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $matchingLead = Lead::factory()->create(['name' => 'Alpha Buyer']);
+    $otherLead = Lead::factory()->create(['name' => 'Beta Buyer']);
+    $property = Property::factory()->create(['project_name' => 'Search Towers']);
+
+    Booking::factory()->create([
+        'lead_id' => $matchingLead->id,
+        'property_id' => $property->id,
+        'unit_number' => '101',
+    ]);
+    Booking::factory()->create([
+        'lead_id' => $otherLead->id,
+        'property_id' => $property->id,
+        'unit_number' => '202',
+    ]);
+
+    $this->get('/acme/bookings?search=Alpha')
+        ->assertOk()
+        ->assertSee('Alpha Buyer')
+        ->assertSee('101')
+        ->assertDontSee('Beta Buyer');
 });
 
 test('bookings create route redirects to index and opens modal', function () {
@@ -188,7 +215,8 @@ test('tenant users can mark agreement on a booking with payout details', functio
     expect($booking->agreement_date?->toDateString())->toBe('2026-09-15')
         ->and($booking->agreement_value)->toBe(9500000)
         ->and((float) $booking->payout_percent)->toBe(2.5)
-        ->and($booking->payout_amount)->toBe(237500);
+        ->and($booking->payout_amount)->toBe(237500)
+        ->and(LeadActivity::query()->where('lead_id', $booking->lead_id)->where('type', LeadActivityType::AgreementMarked)->exists())->toBeTrue();
 });
 
 test('mark agreement modal shows prefilled agreement value and payout fields', function () {
@@ -255,7 +283,8 @@ test('tenant users can create invoice after agreement is marked', function () {
     $booking->refresh();
 
     expect($booking->invoice_date?->toDateString())->toBe('2026-09-20')
-        ->and($booking->invoiced_at)->not->toBeNull();
+        ->and($booking->invoiced_at)->not->toBeNull()
+        ->and(LeadActivity::query()->where('lead_id', $booking->lead_id)->where('type', LeadActivityType::InvoiceCreated)->exists())->toBeTrue();
 });
 
 test('invoice cannot be created before agreement is marked', function () {
@@ -298,8 +327,18 @@ test('invoices page lists invoiced bookings', function () {
 
     $this->get('/acme/invoices')
         ->assertOk()
+        ->assertSee('Invoice Number')
+        ->assertSee('Lead Name')
+        ->assertSee('Property')
+        ->assertSee('Unit Number')
+        ->assertSee('Agreement Value')
+        ->assertSee('Invoice Amount')
+        ->assertSee('Agreement Date')
+        ->assertSee('Invoice Date')
+        ->assertSee($booking->lead->name)
         ->assertSee('Invoice Towers')
         ->assertSee('1201')
+        ->assertSee('Sep 10, 2026')
         ->assertSee('Sep 20, 2026');
 });
 

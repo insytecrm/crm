@@ -1,9 +1,11 @@
 <?php
 
+use App\Enums\LeadClosingReason;
 use App\Enums\LeadScheduledEventStatus;
 use App\Enums\LeadScheduledEventType;
 use App\Enums\LeadStatus;
 use App\Enums\SiteVisitType;
+use App\Models\Booking;
 use App\Models\Lead;
 use App\Models\Property;
 use App\Support\LeadHistorySummary;
@@ -76,7 +78,11 @@ test('lead history summary builds insight stats and projects visited', function 
         ->and($summary['insight'])->toContain('2 follow-ups have been completed')
         ->and($summary['insight'])->toContain('Alpha Towers')
         ->and($summary['insight'])->toContain('Fresh Visit')
-        ->and($summary['insight'])->toContain('Revisit');
+        ->and($summary['insight'])->toContain('Revisit')
+        ->and(collect($summary['journey'])->pluck('key'))->toContain('created', 'follow_up', 'site_visit', 'booking', 'payout')
+        ->and(collect($summary['journey'])->firstWhere('key', 'follow_up')['state'])->toBe('completed')
+        ->and(collect($summary['journey'])->firstWhere('key', 'site_visit')['state'])->toBe('completed')
+        ->and(collect($summary['journey'])->firstWhere('key', 'booking')['state'])->toBe('upcoming');
 
     $alpha = collect($summary['projects'])->firstWhere('label', 'Alpha Towers · Alpha Developers');
     $beta = collect($summary['projects'])->firstWhere('label', 'Beta Homes · Beta Developers');
@@ -120,6 +126,9 @@ test('lead drawer history tab shows ai insight and project visit counts', functi
         ->get('/acme/leads/'.$lead->id)
         ->assertOk()
         ->assertSee('History')
+        ->assertSee('Lead journey')
+        ->assertSee('Lead created')
+        ->assertSee('Payout received')
         ->assertSee('AI Insight')
         ->assertSee('Drawer History Lead')
         ->assertSee('Follow-ups completed')
@@ -128,4 +137,56 @@ test('lead drawer history tab shows ai insight and project visit counts', functi
         ->assertSee('History Heights · History Developers')
         ->assertSee('Fresh Visit')
         ->assertSee('Revisit');
+});
+
+test('lead history journey marks booking through payout as completed', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $lead = Lead::factory()->create([
+        'name' => 'Converted Journey Lead',
+        'status' => LeadStatus::Converted,
+        'closing_reason' => LeadClosingReason::Converted,
+    ]);
+    $property = Property::factory()->create(['project_name' => 'Summit Park']);
+    Booking::factory()->create([
+        'lead_id' => $lead->id,
+        'property_id' => $property->id,
+        'unit_number' => '1201',
+        'booking_date' => '2026-08-01',
+        'agreement_date' => '2026-08-10',
+        'invoice_date' => '2026-08-15',
+        'invoice_number' => 'INV-00042',
+        'invoiced_at' => now(),
+        'payout_paid_at' => now(),
+    ]);
+
+    $summary = app(LeadHistorySummary::class)->for($lead->load('latestBooking.property', 'scheduledEvents.property'));
+    $steps = collect($summary['journey'])->keyBy('key');
+
+    expect($steps['booking']['state'])->toBe('completed')
+        ->and($steps['booking']['detail'])->toContain('Summit Park')
+        ->and($steps['agreement']['state'])->toBe('completed')
+        ->and($steps['invoice']['state'])->toBe('completed')
+        ->and($steps['payout']['state'])->toBe('completed')
+        ->and($summary['insight'])->toContain('Payout has been received');
+});
+
+test('lost lead history journey includes lost and omits unpaid commercial steps', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $lead = Lead::factory()->create([
+        'status' => LeadStatus::Lost,
+        'closing_reason' => LeadClosingReason::NotInterested,
+        'closed_at' => now(),
+    ]);
+
+    $summary = app(LeadHistorySummary::class)->for($lead->load('latestBooking', 'scheduledEvents.property', 'activities'));
+    $keys = collect($summary['journey'])->pluck('key');
+
+    expect($keys)->toContain('created', 'lost')
+        ->and($keys)->not->toContain('booking', 'payout')
+        ->and(collect($summary['journey'])->firstWhere('key', 'lost')['state'])->toBe('completed')
+        ->and(collect($summary['journey'])->firstWhere('key', 'contacted')['state'])->toBe('skipped');
 });

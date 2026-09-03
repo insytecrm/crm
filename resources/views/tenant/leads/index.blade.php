@@ -82,86 +82,6 @@
             $listFilterQuery = $listFilters->toQueryArray();
         @endphp
 
-        {{-- Search and actions --}}
-        <div class="mb-4 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-            <div class="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-            <form
-                method="GET"
-                action="{{ route($listing->routeName(), $listing->routeName() === 'tenant.leads.index' ? $listing->redirectParameters('', $listFilterQuery) : []) }}"
-                class="w-full sm:max-w-md"
-            >
-                @if ($listing !== \App\Enums\LeadListingFilter::All)
-                    <input type="hidden" name="filter" value="{{ $listing->value }}">
-                @endif
-                @foreach ($listFilterQuery as $key => $value)
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endforeach
-                <x-auth.icon-input
-                    type="search"
-                    name="search"
-                    value="{{ $search }}"
-                    placeholder="{{ __('Search by name, phone, or email...') }}"
-                >
-                    <x-slot:icon>
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
-                    </x-slot:icon>
-                </x-auth.icon-input>
-            </form>
-
-            <div class="flex flex-wrap items-center gap-2">
-                <x-ui.button type="button" variant="default" @click="$dispatch('open-modal', 'add-lead')">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                    {{ __('Add Lead') }}
-                </x-ui.button>
-                <button
-                    type="button"
-                    @click="filtersOpen = !filtersOpen"
-                    class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-black shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
-                    :class="filtersOpen && 'border-navy bg-slate-50'"
-                    :aria-expanded="filtersOpen"
-                >
-                    <svg class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
-                    </svg>
-                    {{ __('Filters') }}
-                    @if ($listFilters->isActive())
-                        <span class="inline-flex min-w-5 items-center justify-center rounded-full bg-navy px-1.5 py-0.5 text-[10px] font-bold text-white">
-                            {{ $listFilters->activeCount() }}
-                        </span>
-                    @endif
-                    <svg
-                        class="h-4 w-4 text-slate-400 transition-transform duration-200"
-                        :class="filtersOpen && 'rotate-180'"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="2"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                    >
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                    </svg>
-                </button>
-                <x-ui.button type="button" variant="outline" @click="$dispatch('open-modal', 'import-leads')">
-                    {{ __('Import') }}
-                </x-ui.button>
-                <x-ui.button type="button" variant="outline" @click="$dispatch('open-modal', 'edit-columns')">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.5-9h15m-15 6h15" />
-                    </svg>
-                    {{ __('Edit Columns') }}
-                </x-ui.button>
-            </div>
-            </div>
-
-            @include('tenant.leads.partials.list-filters-panel', [
-                'listing' => $listing,
-                'listFilters' => $listFilters,
-                'search' => $search,
-                'users' => $users,
-                'sources' => $sources,
-            ])
-        </div>
-
         {{-- Statistics --}}
         <div class="mb-4 flex gap-2">
             <x-tenant.stat-card
@@ -234,6 +154,86 @@
                 </x-slot:icon>
             </x-tenant.stat-card>
         </div>
+
+        {{-- Search and actions --}}
+        <x-tenant.list-toolbar>
+            <x-slot:search>
+                <form
+                    method="GET"
+                    action="{{ route($listing->routeName(), $listing->routeName() === 'tenant.leads.index' ? $listing->redirectParameters('', $listFilterQuery) : []) }}"
+                    class="w-full"
+                >
+                    @if ($listing !== \App\Enums\LeadListingFilter::All)
+                        <input type="hidden" name="filter" value="{{ $listing->value }}">
+                    @endif
+                    @foreach ($listFilterQuery as $key => $value)
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endforeach
+                    <x-auth.icon-input
+                        type="search"
+                        name="search"
+                        value="{{ $search }}"
+                        placeholder="{{ __('Search by name, phone, or email...') }}"
+                    >
+                        <x-slot:icon>
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                        </x-slot:icon>
+                    </x-auth.icon-input>
+                </form>
+            </x-slot:search>
+
+            <x-ui.button type="button" variant="default" @click="$dispatch('open-modal', 'add-lead')">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                {{ __('Add Lead') }}
+            </x-ui.button>
+            <x-ui.button
+                type="button"
+                variant="soft"
+                @click="filtersOpen = !filtersOpen"
+                x-bind:class="filtersOpen && 'ring-2 ring-navy/20'"
+                x-bind:aria-expanded="filtersOpen"
+            >
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+                </svg>
+                {{ __('Filters') }}
+                @if ($listFilters->isActive())
+                    <span class="inline-flex min-w-5 items-center justify-center rounded-full bg-navy px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        {{ $listFilters->activeCount() }}
+                    </span>
+                @endif
+                <svg
+                    class="h-4 w-4 transition-transform duration-200"
+                    :class="filtersOpen && 'rotate-180'"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                </svg>
+            </x-ui.button>
+            <x-ui.button type="button" variant="soft" @click="$dispatch('open-modal', 'import-leads')">
+                {{ __('Import') }}
+            </x-ui.button>
+            <x-ui.button type="button" variant="soft" @click="$dispatch('open-modal', 'edit-columns')">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.5-9h15m-15 6h15" />
+                </svg>
+                {{ __('Edit Columns') }}
+            </x-ui.button>
+
+            <x-slot:panel>
+                @include('tenant.leads.partials.list-filters-panel', [
+                    'listing' => $listing,
+                    'listFilters' => $listFilters,
+                    'search' => $search,
+                    'users' => $users,
+                    'sources' => $sources,
+                ])
+            </x-slot:panel>
+        </x-tenant.list-toolbar>
 
         {{-- Leads table --}}
         <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">

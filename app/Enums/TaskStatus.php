@@ -43,7 +43,7 @@ enum TaskStatus: string
     public function allowedTransitions(): array
     {
         return match ($this) {
-            self::Pending => [self::InProgress, self::Complete, self::Cancelled],
+            self::Pending => [self::InProgress, self::Cancelled],
             self::InProgress => [self::Complete, self::Cancelled],
             self::Complete, self::Cancelled => [],
         };

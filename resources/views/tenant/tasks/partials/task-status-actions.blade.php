@@ -27,17 +27,21 @@
                     'label' => $task->title,
                     'hidden' => $hiddenFields,
                 ])
+            @elseif ($nextStatus === TaskStatus::Cancelled)
+                @include('tenant.tasks.partials.cancel-task-popover', [
+                    'action' => $statusRoute,
+                    'label' => $task->title,
+                    'hidden' => $hiddenFields,
+                ])
             @else
                 @php
                     $label = match ($nextStatus) {
                         TaskStatus::InProgress => __('Start'),
-                        TaskStatus::Cancelled => __('Cancel'),
                         default => $nextStatus->label(),
                     };
 
                     $icon = match ($nextStatus) {
                         TaskStatus::InProgress => 'play',
-                        TaskStatus::Cancelled => 'cancel',
                         default => 'view',
                     };
                 @endphp

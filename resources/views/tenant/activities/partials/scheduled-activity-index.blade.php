@@ -27,23 +27,25 @@
             'search' => $search,
         ])
 
-        <div class="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-4">
-            <form method="GET" action="{{ route($indexRoute) }}" class="w-full sm:max-w-md">
-                <input type="hidden" name="stage" value="{{ $stage->value }}">
-                <x-auth.icon-input
-                    type="search"
-                    name="search"
-                    value="{{ $search }}"
-                    placeholder="{{ __('Search by name, phone, or email...') }}"
-                >
-                    <x-slot:icon>
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
-                    </x-slot:icon>
-                </x-auth.icon-input>
-            </form>
+        <x-tenant.list-toolbar>
+            <x-slot:search>
+                <form method="GET" action="{{ route($indexRoute) }}" class="w-full">
+                    <input type="hidden" name="stage" value="{{ $stage->value }}">
+                    <x-auth.icon-input
+                        type="search"
+                        name="search"
+                        value="{{ $search }}"
+                        placeholder="{{ __('Search by name, phone, or email...') }}"
+                    >
+                        <x-slot:icon>
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                        </x-slot:icon>
+                    </x-auth.icon-input>
+                </form>
+            </x-slot:search>
 
             <x-tenant.manageable-table.toolbar-button :data-table-key="$dataTableKey" />
-        </div>
+        </x-tenant.list-toolbar>
 
         <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
             <div class="border-b border-slate-100 px-4 py-3 sm:px-5">

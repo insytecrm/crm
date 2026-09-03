@@ -149,7 +149,7 @@ class ScheduledActivities
      *     label: string,
      * }>
      */
-    public function items(ActivityFilter $filter, ?ActivityKind $kind = null): Collection
+    public function items(ActivityFilter $filter, ?ActivityKind $kind = null, string $search = ''): Collection
     {
         $items = match ($filter) {
             ActivityFilter::Completed => $this->completedItems(),
@@ -168,7 +168,25 @@ class ScheduledActivities
 
         return $items
             ->filter(fn (array $item): bool => $item['lead'] !== null)
+            ->filter(fn (array $item): bool => $this->matchesSearch($item, $search))
             ->values();
+    }
+
+    /**
+     * @param  array{lead: Lead}  $item
+     */
+    private function matchesSearch(array $item, string $search): bool
+    {
+        if ($search === '') {
+            return true;
+        }
+
+        $needle = mb_strtolower($search);
+        $lead = $item['lead'];
+
+        return str_contains(mb_strtolower((string) $lead->name), $needle)
+            || str_contains(mb_strtolower((string) $lead->phone), $needle)
+            || str_contains(mb_strtolower((string) $lead->email), $needle);
     }
 
     /**
@@ -267,6 +285,7 @@ class ScheduledActivities
             'notes' => $event->notes,
             'label' => $event->ordinalLabel(),
             'priority' => $event->priority,
+            'reminder_before_seconds' => $event->reminder_before_seconds,
             'completion_method' => $event->type === LeadScheduledEventType::SiteVisit
                 ? $event->attendedLabel()
                 : $event->completion_method?->label(),

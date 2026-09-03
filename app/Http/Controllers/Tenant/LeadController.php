@@ -140,6 +140,7 @@ class LeadController extends Controller
             'documents.uploadedBy',
             'completedSiteVisitEvents.property',
             'scheduledEvents.property',
+            'latestBooking.property',
         ])->loadCount('bookings');
     }
 }

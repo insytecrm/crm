@@ -31,6 +31,15 @@ test('outline button uses border styling', function () {
         ->toContain('bg-white');
 });
 
+test('soft button uses faint primary styling', function () {
+    $component = new Button(variant: 'soft');
+
+    expect($component->classes()['classes'])
+        ->toContain('bg-navy/10')
+        ->toContain('text-navy')
+        ->toContain('border-navy/20');
+});
+
 test('link button renders as anchor tag', function () {
     $component = new Button(variant: 'link', href: '/example');
 

@@ -14,9 +14,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'title',
     'description',
     'due_at',
+    'remind_at',
+    'reminder_before_seconds',
+    'reminder_dismissed_at',
     'status',
     'completed_at',
     'completion_notes',
+    'cancellation_notes',
     'assigned_to_id',
     'created_by_id',
 ])]
@@ -32,6 +36,9 @@ class LeadTask extends Model
     {
         return [
             'due_at' => 'datetime',
+            'remind_at' => 'datetime',
+            'reminder_before_seconds' => 'integer',
+            'reminder_dismissed_at' => 'datetime',
             'completed_at' => 'datetime',
             'status' => TaskStatus::class,
         ];
