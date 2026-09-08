@@ -12,7 +12,7 @@ type CrmDateTimePickerProps = {
   onValueChange: (value: string) => void
 }
 
-const pickerMenuZIndex = 200
+const pickerMenuZIndex = 10000
 
 const sharedSelectProps = {
   spacing: "compact" as const,

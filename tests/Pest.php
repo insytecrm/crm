@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\CreateTenant;
+use App\Actions\SeedDefaultPlans;
 use App\Enums\LeadScheduledEventStatus;
 use App\Enums\LeadScheduledEventType;
 use App\Enums\TenantStatus;
@@ -9,6 +10,7 @@ use App\Models\LeadScheduledEvent;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /*
@@ -25,6 +27,12 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
+
+uses()->beforeEach(function (): void {
+    if (Schema::hasTable('plans')) {
+        app(SeedDefaultPlans::class)->handle();
+    }
+})->in('Feature');
 
 /*
 |--------------------------------------------------------------------------

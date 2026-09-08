@@ -30,7 +30,17 @@
                     </div>
                     <div class="sm:col-span-2">
                         <x-ui.modal.field-label for="source" :value="__('Source')" />
-                        <x-auth.icon-input id="source" name="source" placeholder="{{ __('Website, Referral...') }}" />
+                        <select
+                            id="source"
+                            name="source"
+                            class="mt-1 block h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-black shadow-sm transition-colors focus:border-navy focus:ring-navy"
+                        >
+                            <option value="">{{ __('Select source') }}</option>
+                            @foreach (\App\Enums\LeadSource::manualSelectableCases() as $source)
+                                <option value="{{ $source->value }}" @selected(old('source') === $source->value)>{{ $source->label() }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error class="mt-1" :messages="$errors->get('source')" />
                     </div>
                 </div>
             </x-ui.modal.section>

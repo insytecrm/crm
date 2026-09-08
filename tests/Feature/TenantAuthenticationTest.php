@@ -1,7 +1,10 @@
 <?php
 
 use App\Actions\CreateTenant;
+use App\Actions\ResumePartnerSubscription;
+use App\Enums\SubscriptionStatus;
 use App\Enums\TenantStatus;
+use App\Models\PartnerSubscription;
 use App\Models\Tenant;
 use App\Models\User;
 
@@ -43,7 +46,7 @@ test('the tenant dashboard renders the sidebar navigation', function () {
     $this->get('/acme/dashboard')
         ->assertSee('Dashboard')
         ->assertSee('Leads')
-        ->assertSee('Acme Inc')
+        ->assertDontSee('>Acme Inc</', false)
         ->assertSee('uiPopover', false)
         ->assertSee('rounded-2xl', false)
         ->assertSee('rounded-full', false)
@@ -121,6 +124,40 @@ test('suspended companies cannot be accessed', function () {
     ]);
 
     $this->get('/acme/login')->assertForbidden();
+});
+
+test('companies with a paused subscription cannot be accessed until resumed', function () {
+    app(CreateTenant::class)->handle([
+        'slug' => 'acme',
+        'name' => 'Acme Inc',
+        'status' => TenantStatus::Active->value,
+        'admin_name' => 'Acme Admin',
+        'admin_email' => 'admin@acme.test',
+        'admin_password' => 'password',
+    ]);
+
+    $tenant = Tenant::query()->findOrFail('acme');
+    $subscription = PartnerSubscription::factory()->paused()->create([
+        'tenant_id' => $tenant->id,
+        'next_billing_at' => now()->addDays(12),
+    ]);
+    $nextBillingAt = $subscription->next_billing_at?->toISOString();
+
+    $this->get('/acme/login')->assertForbidden();
+
+    app(ResumePartnerSubscription::class)->handle($subscription);
+
+    expect($subscription->fresh()->status)->toBe(SubscriptionStatus::Active)
+        ->and($subscription->fresh()->next_billing_at?->toISOString())->toBe($nextBillingAt);
+
+    $this->get('/acme/login')->assertOk();
+
+    $this->post('/acme/login', [
+        'email' => 'admin@acme.test',
+        'password' => 'password',
+    ]);
+
+    $this->get('/acme/dashboard')->assertOk();
 });
 
 test('platform super admins cannot use a tenant login', function () {

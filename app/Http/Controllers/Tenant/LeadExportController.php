@@ -52,7 +52,7 @@ class LeadExportController extends Controller
                         $lead->name,
                         $lead->phone,
                         $lead->email,
-                        $lead->source,
+                        $lead->sourceDisplay(),
                         $lead->budget?->label(),
                         $lead->location,
                         $lead->property_type?->label(),

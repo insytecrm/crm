@@ -7,7 +7,7 @@
     'description' => null,
 ])
 
-<label {{ $attributes->merge(['class' => 'flex items-start justify-between gap-4']) }}>
+<label {{ $attributes->merge(['class' => 'flex '.($description ? 'items-start' : 'items-center').' justify-between gap-4']) }}>
     <span class="min-w-0">
         @if ($label)
             <span class="block text-sm font-medium text-black">{{ $label }}</span>

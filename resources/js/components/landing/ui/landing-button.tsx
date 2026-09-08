@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react"
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, MouseEventHandler } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -26,7 +26,11 @@ export function LandingButton({
 
   if (href) {
     return (
-      <a href={href} className={classes} onClick={onClick}>
+      <a
+        href={href}
+        className={classes}
+        onClick={onClick as MouseEventHandler<HTMLAnchorElement> | undefined}
+      >
         {children}
       </a>
     )

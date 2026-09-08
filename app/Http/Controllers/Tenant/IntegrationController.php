@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\SettingsTab;
 use App\Http\Controllers\Controller;
-use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class IntegrationController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(): RedirectResponse
     {
-        return view('tenant.integrations.index');
+        return redirect()->route('tenant.settings.index', [
+            'tab' => SettingsTab::Integrations->value,
+        ]);
     }
 }

@@ -3,10 +3,8 @@
 namespace App\Http\Requests\Tenant;
 
 use App\Enums\ScheduledActivityPriority;
-use App\Support\ReminderBefore;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 
 class ScheduleFollowUpRequest extends FormRequest
 {
@@ -24,25 +22,11 @@ class ScheduleFollowUpRequest extends FormRequest
             'next_follow_up_at' => ['required', 'date'],
             'priority' => ['required', Rule::enum(ScheduledActivityPriority::class)],
             'notes' => ['nullable', 'string', 'max:1000'],
-            ...ReminderBefore::validationRules(),
         ];
-    }
-
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator): void {
-            ReminderBefore::afterValidation(
-                $validator,
-                $this->date('next_follow_up_at'),
-                'next_follow_up_at',
-            );
-        });
     }
 
     protected function prepareForValidation(): void
     {
-        ReminderBefore::prepare($this);
-
         if ($this->filled('next_follow_up_at')) {
             $this->merge([
                 'next_follow_up_at' => str_replace('T', ' ', $this->string('next_follow_up_at')->toString()),

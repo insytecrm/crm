@@ -25,6 +25,7 @@
         ['key' => 'amenities', 'label' => __('Amenities')],
         ['key' => 'configurations', 'label' => __('Configurations')],
         ['key' => 'attachments', 'label' => __('Attachments')],
+        ['key' => 'microsite', 'label' => __('Microsite')],
     ];
 @endphp
 
@@ -65,9 +66,27 @@
             @endforeach
         </div>
 
-        <div class="mt-4 h-72 overflow-y-auto rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:p-4">
+        <div class="mt-4 h-80 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:p-4">
             {{-- Basic Info --}}
             <div x-show="section === 'basic'" x-cloak>
+                <div class="mb-3">
+                    <form
+                        method="POST"
+                        action="{{ route('tenant.properties.website-visibility.update', $property) }}"
+                        @change="$el.submit()"
+                    >
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="show_on_website" value="0">
+                        <x-ui.switch
+                            name="show_on_website"
+                            value="1"
+                            :label="__('Show on website')"
+                            :checked="$property->showsOnWebsite()"
+                            class="items-center rounded-xl border border-slate-100 bg-white px-3 py-2.5"
+                        />
+                    </form>
+                </div>
                 <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     @include('tenant.properties.partials.property-detail-field', ['label' => __('Developer Name'), 'value' => $property->developer_name])
                     @include('tenant.properties.partials.property-detail-field', ['label' => __('Project Name'), 'value' => $property->project_name])
@@ -77,6 +96,14 @@
                     @include('tenant.properties.partials.property-detail-field', ['label' => __('Project Status'), 'value' => $property->project_status?->label()])
                     @include('tenant.properties.partials.property-detail-field', ['label' => __('Possession Date'), 'value' => $property->possession_date])
                 </dl>
+            </div>
+
+            {{-- Microsite --}}
+            <div x-show="section === 'microsite'" x-cloak style="display: none;">
+                @include('tenant.properties.partials.microsite-controls', [
+                    'property' => $property,
+                    'live' => true,
+                ])
             </div>
 
             {{-- Project Scale --}}

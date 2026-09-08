@@ -3,7 +3,7 @@ export function getCsrfToken(): string {
 }
 
 export function getLandingEndpoints(): { demoUrl: string; trialUrl: string } {
-  const root = document.getElementById("landing-root")
+  const root = document.getElementById("landing-root") ?? document.getElementById("welcome-root")
 
   return {
     demoUrl: root?.dataset.demoUrl ?? "/landing/demo",

@@ -1,29 +1,78 @@
 <x-sidebar.shell
     :title="$title ?? null"
-    :context-label="__('Platform')"
-    context-badge="Admin"
     :logout-action="route('logout')"
     :profile-href="route('profile.edit')"
 >
     <x-slot:navigation>
-        <x-sidebar.link :href="route('tenants.index')" :active="request()->routeIs('tenants.*')">
+        <x-sidebar.link :href="route('platform.dashboard')" :active="request()->routeIs('platform.dashboard')">
             <x-slot:icon>
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-                </svg>
+                <x-sidebar.nav-icon name="dashboard" />
             </x-slot:icon>
-            {{ __('Companies') }}
+            {{ __('Dashboard') }}
         </x-sidebar.link>
 
-        <x-sidebar.link :href="route('profile.edit')" :active="request()->routeIs('profile.*')">
+        <x-sidebar.link :href="route('tenants.index')" :active="request()->routeIs('tenants.*')">
             <x-slot:icon>
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.375 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                </svg>
+                <x-sidebar.nav-icon name="partners" />
             </x-slot:icon>
-            {{ __('Profile') }}
+            {{ __('Channel Partners') }}
+        </x-sidebar.link>
+
+        <x-sidebar.separator />
+
+        <x-sidebar.link :href="route('platform.plans')" :active="request()->routeIs('platform.plans', 'platform.plans.*')">
+            <x-slot:icon>
+                <x-sidebar.nav-icon name="plans" />
+            </x-slot:icon>
+            {{ __('Plans') }}
+        </x-sidebar.link>
+
+        <x-sidebar.link :href="route('platform.revenue')" :active="request()->routeIs('platform.revenue', 'platform.revenue.*')">
+            <x-slot:icon>
+                <x-sidebar.nav-icon name="revenue" />
+            </x-slot:icon>
+            {{ __('Revenue & Billing') }}
+        </x-sidebar.link>
+
+        <x-sidebar.link :href="route('platform.quotations')" :active="request()->routeIs('platform.quotations', 'platform.quotations.*')">
+            <x-slot:icon>
+                <x-sidebar.nav-icon name="quotations" />
+            </x-slot:icon>
+            {{ __('Quotations') }}
+        </x-sidebar.link>
+
+        <x-sidebar.separator />
+
+        <x-sidebar.link :href="route('platform.integrations')" :active="request()->routeIs('platform.integrations')">
+            <x-slot:icon>
+                <x-sidebar.nav-icon name="integrations" />
+            </x-slot:icon>
+            {{ __('Integrations') }}
+        </x-sidebar.link>
+
+        <x-sidebar.link :href="route('platform.analytics')" :active="request()->routeIs('platform.analytics')">
+            <x-slot:icon>
+                <x-sidebar.nav-icon name="analytics" />
+            </x-slot:icon>
+            {{ __('Analytics') }}
+        </x-sidebar.link>
+
+        <x-sidebar.link :href="route('platform.utilities')" :active="request()->routeIs('platform.utilities')">
+            <x-slot:icon>
+                <x-sidebar.nav-icon name="utilities" />
+            </x-slot:icon>
+            {{ __('Utilities') }}
         </x-sidebar.link>
     </x-slot:navigation>
+
+    <x-slot:footer>
+        <x-sidebar.link :href="route('platform.settings')" :active="request()->routeIs('platform.settings', 'profile.*')">
+            <x-slot:icon>
+                <x-sidebar.nav-icon name="settings" />
+            </x-slot:icon>
+            {{ __('Settings') }}
+        </x-sidebar.link>
+    </x-slot:footer>
 
     {{ $slot }}
 </x-sidebar.shell>

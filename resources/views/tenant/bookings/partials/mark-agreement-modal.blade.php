@@ -22,7 +22,7 @@
         <h2 class="text-lg font-bold text-black">{{ __('Mark Agreement') }}</h2>
         <p class="mt-1 text-sm text-slate-500">{{ __('Record the agreement details for :property, Unit :unit.', ['property' => $booking->property->project_name, 'unit' => $booking->unit_number]) }}</p>
 
-        <form method="POST" action="{{ route('tenant.bookings.agreement.store', $booking) }}" class="mt-4 space-y-4">
+        <form method="POST" action="{{ route('tenant.bookings.agreement.store', ['booking' => $booking]) }}" class="mt-4 space-y-4">
             @csrf
             <input type="hidden" name="_open_modal" value="mark-agreement-{{ $booking->id }}">
 

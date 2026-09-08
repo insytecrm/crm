@@ -25,37 +25,39 @@
 @endphp
 
 @if ($lead->status->isClosed())
-    <x-tenant.status-badge :status="$lead->status" />
+    <x-tenant.status-badge :status="$lead->status" :lead="$lead" />
 @else
-    <form
-        method="POST"
-        action="{{ route('tenant.leads.status.update', $lead) }}"
-        class="inline min-w-[8.5rem]"
-        @click.stop
-        x-data="leadFieldSelect(@js([
-            'field' => 'status',
-            'value' => $currentStatus,
-            'classes' => $statusClassMap,
-            'widthClass' => 'min-w-[8.5rem]',
-        ]))"
-        x-on:selected="submitValue($event.detail)"
-    >
-        @csrf
-        @method('PATCH')
-        @if ($redirectToListing)
-            <input type="hidden" name="redirect_to_listing" value="1">
-        @endif
+    <x-tenant.lead-status-hover :lead="$lead">
+        <form
+            method="POST"
+            action="{{ route('tenant.leads.status.update', $lead) }}"
+            class="inline min-w-[8.5rem]"
+            @click.stop
+            x-data="leadFieldSelect(@js([
+                'field' => 'status',
+                'value' => $currentStatus,
+                'classes' => $statusClassMap,
+                'widthClass' => 'min-w-[8.5rem]',
+            ]))"
+            x-on:selected="submitValue($event.detail)"
+        >
+            @csrf
+            @method('PATCH')
+            @if ($redirectToListing)
+                <input type="hidden" name="redirect_to_listing" value="1">
+            @endif
 
-        <x-ui.select
-            :id="'lead-status-'.$lead->id"
-            name="status"
-            :options="$selectableStatuses->map(fn (LeadStatus $status) => ['value' => $status->value, 'label' => $status->label()])->all()"
-            :value="$currentStatus"
-            :trigger-class="$triggerClasses"
-            :aria-label="__('Lead status for :name', ['name' => $lead->name])"
-            :min-menu-width="160"
-            :portal="false"
-            class="w-auto min-w-[8.5rem]"
-        />
-    </form>
-@endunless
+            <x-ui.select
+                :id="'lead-status-'.$lead->id"
+                name="status"
+                :options="$selectableStatuses->map(fn (LeadStatus $status) => ['value' => $status->value, 'label' => $status->label()])->all()"
+                :value="$currentStatus"
+                :trigger-class="$triggerClasses"
+                :aria-label="__('Lead status for :name', ['name' => $lead->name])"
+                :min-menu-width="160"
+                :portal="false"
+                class="w-auto min-w-[8.5rem]"
+            />
+        </form>
+    </x-tenant.lead-status-hover>
+@endif

@@ -5,24 +5,31 @@
 @php
     use App\Enums\TaskFilter;
 
-    $todayFilter = TaskFilter::Today;
+    $tasksFilter = TaskFilter::All;
 @endphp
 
 {{-- Height aligns bottom with My Day: My Day (header ~3.25rem + 29.5rem list) - pipeline 20rem - gap 0.5rem --}}
 <section
-    class="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm"
+    class="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm shadow-slate-200/40"
     style="height: calc(29.5rem + 3.25rem - 20rem - 0.5rem)"
 >
-    <div class="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 sm:px-4">
-        <div class="min-w-0">
-            <h2 class="text-sm font-semibold leading-none text-black">{{ __('Today\'s Tasks') }}</h2>
-            <p class="mt-0.5 text-[11px] leading-none text-slate-500">
-                {{ trans_choice(':count task|:count tasks', $tasks->count(), ['count' => $tasks->count()]) }}
-            </p>
+    <div class="flex shrink-0 items-center justify-between gap-3 bg-navy-dark px-3 py-2.5 sm:px-4">
+        <div class="flex min-w-0 items-center gap-2.5">
+            <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white">
+                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+            </div>
+            <div class="min-w-0">
+                <h2 class="text-sm font-bold leading-none text-white">{{ __('Today\'s Tasks') }}</h2>
+                <p class="mt-0.5 text-[11px] leading-none text-white/75">
+                    {{ trans_choice(':count task|:count tasks', $tasks->count(), ['count' => $tasks->count()]) }}
+                </p>
+            </div>
         </div>
         <a
-            href="{{ route('tenant.tasks.index', ['filter' => $todayFilter->value]) }}"
-            class="text-[11px] font-semibold text-navy hover:underline"
+            href="{{ route('tenant.tasks.index', ['filter' => $tasksFilter->value]) }}"
+            class="text-[11px] font-semibold text-white/90 hover:text-white hover:underline"
         >
             {{ __('View all') }}
         </a>
@@ -83,7 +90,7 @@
                     <div class="shrink-0">
                         @include('tenant.tasks.partials.task-status-actions', [
                             'task' => $task,
-                            'filter' => $todayFilter,
+                            'filter' => $tasksFilter,
                         ])
                     </div>
                 </div>
@@ -100,7 +107,7 @@
     @foreach ($tasks as $task)
         @include('tenant.tasks.partials.task-details-modal', [
             'task' => $task,
-            'filter' => $todayFilter,
+            'filter' => $tasksFilter,
         ])
     @endforeach
 @endpush

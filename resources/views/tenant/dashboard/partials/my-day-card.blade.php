@@ -17,22 +17,29 @@
             return this.kind === 'all' || this.kind === activityKind;
         },
     }"
-    class="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm"
+    class="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm shadow-slate-200/40"
 >
-    <div class="flex shrink-0 items-center gap-2 border-b border-slate-100 px-3 py-2 sm:gap-3 sm:px-4">
-        <div class="min-w-0 shrink-0">
-            <h2 class="text-sm font-semibold leading-none text-black">{{ __('My Day') }}</h2>
-            <p class="mt-0.5 text-[11px] leading-none text-slate-500">
-                <span x-show="kind === 'all'">
-                    {{ trans_choice(':count activity|:count activities', $activities->count(), ['count' => $activities->count()]) }}
-                </span>
-                <span x-show="kind === 'follow_up'" x-cloak>
-                    {{ trans_choice(':count follow-up|:count follow-ups', $followUpCount, ['count' => $followUpCount]) }}
-                </span>
-                <span x-show="kind === 'site_visit'" x-cloak>
-                    {{ trans_choice(':count site visit|:count site visits', $siteVisitCount, ['count' => $siteVisitCount]) }}
-                </span>
-            </p>
+    <div class="flex shrink-0 items-center gap-2 bg-navy-dark px-3 py-2.5 sm:gap-3 sm:px-4">
+        <div class="flex min-w-0 items-center gap-2.5">
+            <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white">
+                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                </svg>
+            </div>
+            <div class="min-w-0 shrink-0">
+                <h2 class="text-sm font-bold leading-none text-white">{{ __('My Day') }}</h2>
+                <p class="mt-0.5 text-[11px] leading-none text-white/75">
+                    <span x-show="kind === 'all'">
+                        {{ trans_choice(':count activity|:count activities', $activities->count(), ['count' => $activities->count()]) }}
+                    </span>
+                    <span x-show="kind === 'follow_up'" x-cloak>
+                        {{ trans_choice(':count follow-up|:count follow-ups', $followUpCount, ['count' => $followUpCount]) }}
+                    </span>
+                    <span x-show="kind === 'site_visit'" x-cloak>
+                        {{ trans_choice(':count site visit|:count site visits', $siteVisitCount, ['count' => $siteVisitCount]) }}
+                    </span>
+                </p>
+            </div>
         </div>
 
         <div class="flex min-w-0 flex-1 items-center justify-center gap-1.5">
@@ -41,12 +48,12 @@
                 @click="setKind('follow_up')"
                 :aria-pressed="kind === 'follow_up'"
                 :class="kind === 'follow_up'
-                    ? 'border-sky-300 bg-sky-50 ring-1 ring-sky-200/80'
-                    : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50/80'"
-                class="inline-flex h-8 max-w-full items-center gap-1.5 rounded-lg border px-2 shadow-sm shadow-slate-200/40 transition"
+                    ? 'border-white/40 bg-white/20 ring-1 ring-white/30'
+                    : 'border-white/15 bg-white/5 hover:bg-white/10'"
+                class="inline-flex h-8 max-w-full items-center gap-1.5 rounded-lg border px-2 transition"
             >
-                <span class="truncate text-[10px] font-medium text-slate-500">{{ __('Follow-ups') }}</span>
-                <span class="text-sm font-bold tabular-nums leading-none text-sky-600">{{ $followUpCount }}</span>
+                <span class="truncate text-[10px] font-medium text-white/80">{{ __('Follow-ups') }}</span>
+                <span class="text-sm font-bold tabular-nums leading-none text-white">{{ $followUpCount }}</span>
             </button>
 
             <button
@@ -54,18 +61,18 @@
                 @click="setKind('site_visit')"
                 :aria-pressed="kind === 'site_visit'"
                 :class="kind === 'site_visit'
-                    ? 'border-amber-300 bg-amber-50 ring-1 ring-amber-200/80'
-                    : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50/80'"
-                class="inline-flex h-8 max-w-full items-center gap-1.5 rounded-lg border px-2 shadow-sm shadow-slate-200/40 transition"
+                    ? 'border-white/40 bg-white/20 ring-1 ring-white/30'
+                    : 'border-white/15 bg-white/5 hover:bg-white/10'"
+                class="inline-flex h-8 max-w-full items-center gap-1.5 rounded-lg border px-2 transition"
             >
-                <span class="truncate text-[10px] font-medium text-slate-500">{{ __('Site Visits') }}</span>
-                <span class="text-sm font-bold tabular-nums leading-none text-amber-600">{{ $siteVisitCount }}</span>
+                <span class="truncate text-[10px] font-medium text-white/80">{{ __('Site Visits') }}</span>
+                <span class="text-sm font-bold tabular-nums leading-none text-white">{{ $siteVisitCount }}</span>
             </button>
         </div>
 
         <a
             href="{{ route('tenant.activities.index', ['filter' => 'today']) }}"
-            class="shrink-0 text-[11px] font-semibold text-navy hover:underline"
+            class="shrink-0 text-[11px] font-semibold text-white/90 hover:text-white hover:underline"
         >
             {{ __('View all') }}
         </a>
@@ -143,6 +150,8 @@
     </div>
 </section>
 
-@include('tenant.activities.partials.activity-modals', [
-    'activities' => $activities,
-])
+@push('modals')
+    @include('tenant.activities.partials.activity-modals', [
+        'activities' => $activities,
+    ])
+@endpush

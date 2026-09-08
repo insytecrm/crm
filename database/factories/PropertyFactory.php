@@ -7,6 +7,7 @@ use App\Enums\PropertyType;
 use App\Models\Property;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Property>
@@ -66,6 +67,32 @@ class PropertyFactory extends Factory
                 ],
             ],
             'created_by_id' => $userId,
+            'is_active' => true,
+            'show_on_website' => false,
+            'microsite_enabled' => false,
+            'microsite_slug' => null,
         ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'is_active' => false,
+        ]);
+    }
+
+    public function featured(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'show_on_website' => true,
+        ]);
+    }
+
+    public function withMicrosite(?string $slug = null): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'microsite_enabled' => true,
+            'microsite_slug' => $slug ?? Str::slug($attributes['project_name'] ?? 'project'),
+        ]);
     }
 }

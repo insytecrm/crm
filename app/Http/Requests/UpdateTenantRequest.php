@@ -28,6 +28,9 @@ class UpdateTenantRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255'],
             'status' => ['required', Rule::enum(TenantStatus::class)],
+            'owner_name' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:40'],
+            'location' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

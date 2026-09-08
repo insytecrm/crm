@@ -6,6 +6,8 @@ enum TenantPermission: string
 {
     case DashboardView = 'dashboard.view';
 
+    case AiUse = 'ai.use';
+
     case LeadsView = 'leads.view';
     case LeadsCreate = 'leads.create';
     case LeadsUpdate = 'leads.update';
@@ -29,8 +31,13 @@ enum TenantPermission: string
     case PayoutsManage = 'payouts.manage';
     case InvoicesManage = 'invoices.manage';
 
+    case ReportsView = 'reports.view';
+
     case IntegrationsView = 'integrations.view';
     case IntegrationsManage = 'integrations.manage';
+
+    case AutomationsView = 'automations.view';
+    case AutomationsManage = 'automations.manage';
 
     case TeamChatUse = 'team_chat.use';
 
@@ -45,6 +52,7 @@ enum TenantPermission: string
     {
         return match ($this) {
             self::DashboardView => __('View Dashboard'),
+            self::AiUse => __('Use InSyte AI OS'),
             self::LeadsView => __('View Leads'),
             self::LeadsCreate => __('Create Leads'),
             self::LeadsUpdate => __('Edit Leads'),
@@ -62,8 +70,11 @@ enum TenantPermission: string
             self::RevenueView => __('View Revenue'),
             self::PayoutsManage => __('Manage Payouts'),
             self::InvoicesManage => __('Manage Invoices'),
+            self::ReportsView => __('View Reports'),
             self::IntegrationsView => __('View Integrations'),
             self::IntegrationsManage => __('Manage Integrations'),
+            self::AutomationsView => __('View Automations'),
+            self::AutomationsManage => __('Manage Automations'),
             self::TeamChatUse => __('Use Team Inbox'),
             self::TeamsView => __('View Teams'),
             self::TeamsManage => __('Manage Teams'),
@@ -77,6 +88,7 @@ enum TenantPermission: string
     {
         return match ($this) {
             self::DashboardView => __('Access the main dashboard overview.'),
+            self::AiUse => __('Ask InSyte AI OS to search leads, schedule activities, and complete tasks.'),
             self::LeadsView => __('Browse lead lists and open lead details.'),
             self::LeadsCreate => __('Add new leads from the CRM.'),
             self::LeadsUpdate => __('Edit lead details, status, and notes.'),
@@ -94,8 +106,11 @@ enum TenantPermission: string
             self::RevenueView => __('View revenue statistics and summaries.'),
             self::PayoutsManage => __('View payouts and mark them as paid.'),
             self::InvoicesManage => __('View, edit, and download invoices.'),
+            self::ReportsView => __('View analytics and reports across leads, activities, and bookings.'),
             self::IntegrationsView => __('View integration settings.'),
             self::IntegrationsManage => __('Connect and configure integrations.'),
+            self::AutomationsView => __('View automation workflows.'),
+            self::AutomationsManage => __('Create and configure automation workflows.'),
             self::TeamChatUse => __('Send and read messages in the team inbox.'),
             self::TeamsView => __('Browse sales teams and open team details.'),
             self::TeamsManage => __('Create, edit, archive teams and manage members.'),
@@ -109,13 +124,16 @@ enum TenantPermission: string
     {
         return match ($this) {
             self::DashboardView => __('Dashboard'),
+            self::AiUse => __('InSyte AI OS'),
             self::LeadsView, self::LeadsCreate, self::LeadsUpdate, self::LeadsDelete, self::LeadsExport, self::LeadsImport => __('Leads'),
             self::ActivitiesView, self::ActivitiesManage => __('Activities'),
             self::TasksView, self::TasksManage => __('Tasks'),
             self::PropertiesView, self::PropertiesManage => __('Properties'),
             self::BookingsView, self::BookingsManage => __('Bookings'),
             self::RevenueView, self::PayoutsManage, self::InvoicesManage => __('Revenue'),
+            self::ReportsView => __('Reports'),
             self::IntegrationsView, self::IntegrationsManage => __('Integrations'),
+            self::AutomationsView, self::AutomationsManage => __('Automations'),
             self::TeamChatUse => __('Team Inbox'),
             self::TeamsView, self::TeamsManage => __('Teams'),
             self::SettingsCompany, self::SettingsUsers, self::SettingsRoles => __('Settings'),

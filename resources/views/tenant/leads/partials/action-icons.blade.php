@@ -35,21 +35,13 @@
     @endif
     @if ($lead->whatsAppUrl())
         <span @if ($alpine) x-show="actions.whatsapp" x-cloak @endif class="inline">
-            <form
-                method="POST"
-                action="{{ route('tenant.leads.activities.store', $lead) }}"
-                class="inline"
-            >
-                @csrf
-                <input type="hidden" name="type" value="whatsapp_message">
-                <input type="hidden" name="redirect_url" value="{{ $lead->whatsAppUrl() }}">
-                <x-ui.action-icon
-                    icon="whatsapp"
-                    type="submit"
-                    :size="$iconSize"
-                    :title="__('WhatsApp')"
-                />
-            </form>
+            <x-ui.action-icon
+                icon="whatsapp"
+                type="button"
+                :size="$iconSize"
+                :title="__('WhatsApp')"
+                @click="$dispatch('open-modal', 'send-whatsapp'); $dispatch('prepare-whatsapp', {{ $lead->id }})"
+            />
         </span>
     @endif
     <span @if ($alpine) x-show="actions.follow_up" x-cloak @endif class="inline">

@@ -12,6 +12,73 @@
                 x-init="$nextTick(() => $dispatch('open-modal', @js($openModal)))"
             @endif
         >
+            <div class="mb-4 flex gap-2">
+                <x-tenant.stat-card
+                    comfortable
+                    :label="__('Total Bookings')"
+                    :value="number_format($statistics['total'])"
+                    accent="navy"
+                >
+                    <x-slot:icon>
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m-13.125 3h18.375A2.625 2.625 0 0 0 21 18.375V5.625A2.625 2.625 0 0 0 18.375 3H5.625A2.625 2.625 0 0 0 3 5.625v12.75A2.625 2.625 0 0 0 5.625 21Z" />
+                        </svg>
+                    </x-slot:icon>
+                </x-tenant.stat-card>
+
+                <x-tenant.stat-card
+                    comfortable
+                    :label="__('Agreement Done')"
+                    :value="number_format($statistics['agreement_done'])"
+                    accent="emerald"
+                >
+                    <x-slot:icon>
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </x-slot:icon>
+                </x-tenant.stat-card>
+
+                <x-tenant.stat-card
+                    comfortable
+                    :label="__('Invoice Created')"
+                    :value="number_format($statistics['invoice_created'])"
+                    accent="sky"
+                >
+                    <x-slot:icon>
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                        </svg>
+                    </x-slot:icon>
+                </x-tenant.stat-card>
+
+                <x-tenant.stat-card
+                    comfortable
+                    :label="__('Booking Value')"
+                    :value="'₹'.number_format($statistics['booking_value'])"
+                    accent="amber"
+                >
+                    <x-slot:icon>
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 8.25H9m6 3H9m3 6-3-3h1.5a3 3 0 1 0 0-6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </x-slot:icon>
+                </x-tenant.stat-card>
+
+                <x-tenant.stat-card
+                    comfortable
+                    :label="__('Bookings This Month')"
+                    :value="number_format($statistics['bookings_this_month'])"
+                    accent="cyan"
+                >
+                    <x-slot:icon>
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                        </svg>
+                    </x-slot:icon>
+                </x-tenant.stat-card>
+            </div>
+
             <x-tenant.list-toolbar>
                 <x-slot:search>
                     <form method="GET" action="{{ route('tenant.bookings.index') }}" class="w-full">

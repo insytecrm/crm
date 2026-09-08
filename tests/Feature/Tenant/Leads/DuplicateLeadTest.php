@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\LeadActivityType;
+use App\Enums\LeadSource;
 use App\Enums\TenantPermission;
 use App\Models\Lead;
 use App\Models\LeadActivity;
@@ -90,7 +91,7 @@ test('tenant users can merge duplicate leads into a primary lead', function () {
         'name' => 'Duplicate Lead',
         'phone' => '9666666666',
         'email' => 'duplicate@example.com',
-        'source' => 'Referral',
+        'source' => LeadSource::Referral->value,
         'lead_score' => 80,
     ]);
 
@@ -110,7 +111,7 @@ test('tenant users can merge duplicate leads into a primary lead', function () {
     $primary->refresh();
 
     expect($primary->email)->toBe('duplicate@example.com')
-        ->and($primary->source)->toBe('Referral')
+        ->and($primary->source)->toBe(LeadSource::Referral->value)
         ->and($primary->lead_score)->toBe(80)
         ->and(Lead::query()->find($duplicate->id))->toBeNull()
         ->and(LeadActivity::query()->where('lead_id', $primary->id)->count())->toBe(2)

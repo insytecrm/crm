@@ -222,7 +222,9 @@ test('site visits completed stage shows completed visits', function () {
     $this->get('/acme/site-visits?stage=completed')
         ->assertOk()
         ->assertSee('Completed Site Visit Lead')
-        ->assertSee('Complete Site Visits');
+        ->assertSee('Complete Site Visits')
+        ->assertSee('Attended', false)
+        ->assertDontSee('>Method</th>', false);
 });
 
 test('site visits list shows numbered labels for subsequent visits', function () {

@@ -3,7 +3,7 @@
         <h2 class="text-lg font-bold text-black">{{ __('Create Invoice') }}</h2>
         <p class="mt-1 text-sm text-slate-500">{{ __('Create an invoice for :property, Unit :unit.', ['property' => $booking->property->project_name, 'unit' => $booking->unit_number]) }}</p>
 
-        <form method="POST" action="{{ route('tenant.bookings.invoice.store', $booking) }}" class="mt-4 space-y-4">
+        <form method="POST" action="{{ route('tenant.bookings.invoice.store', ['booking' => $booking]) }}" class="mt-4 space-y-4">
             @csrf
             <input type="hidden" name="_open_modal" value="create-invoice-{{ $booking->id }}">
 

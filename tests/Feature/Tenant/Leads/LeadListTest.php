@@ -3,6 +3,7 @@
 use App\Enums\LeadBudget;
 use App\Enums\LeadLostReason;
 use App\Enums\LeadScheduledEventStatus;
+use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\PropertyType;
 use App\Enums\SiteVisitType;
@@ -65,7 +66,7 @@ test('tenant users can create a lead', function () {
         'name' => 'New Prospect',
         'phone' => '+91 9876543210',
         'email' => 'prospect@example.com',
-        'source' => 'Website',
+        'source' => LeadSource::Referral->value,
         'budget' => LeadBudget::FiftyLakhToSeventyLakh->value,
         'location' => 'Mumbai',
         'property_type' => PropertyType::Apartment->value,
@@ -133,14 +134,14 @@ test('tenant users can filter leads list by column filters', function () {
     Lead::factory()->create([
         'name' => 'Mumbai Lead',
         'status' => LeadStatus::New,
-        'source' => 'Website',
+        'source' => LeadSource::WalkIn->value,
         'budget' => LeadBudget::FiftyLakhToSeventyLakh,
         'location' => 'Mumbai',
     ]);
     Lead::factory()->create([
         'name' => 'Pune Lead',
         'status' => LeadStatus::Contacted,
-        'source' => 'Referral',
+        'source' => LeadSource::Referral->value,
         'budget' => LeadBudget::BelowFiftyLakh,
         'location' => 'Pune',
     ]);

@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\LeadBudget;
 use App\Enums\LeadScheduledEventStatus;
 use App\Enums\LeadScheduledEventType;
+use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\PropertyType;
 use App\Models\Lead;
@@ -30,7 +31,14 @@ class LeadFactory extends Factory
             'name' => fake()->name(),
             'phone' => fake()->numerify('+91 ##########'),
             'email' => fake()->safeEmail(),
-            'source' => fake()->randomElement(['Website', 'Referral', 'Walk-in', 'Social Media', 'Portal']),
+            'source' => fake()->randomElement([
+                LeadSource::Referral->value,
+                LeadSource::WalkIn->value,
+                LeadSource::Facebook->value,
+                LeadSource::GoogleSheets->value,
+                LeadSource::Api->value,
+            ]),
+            'sub_source' => fake()->optional()->words(2, true),
             'budget' => fake()->randomElement(LeadBudget::cases()),
             'location' => fake()->city(),
             'property_type' => fake()->randomElement(PropertyType::cases()),

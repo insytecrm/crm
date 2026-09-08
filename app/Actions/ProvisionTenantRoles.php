@@ -60,6 +60,7 @@ class ProvisionTenantRoles
             Permission::query()
                 ->whereIn('key', [
                     TenantPermission::DashboardView->value,
+                    TenantPermission::AiUse->value,
                     TenantPermission::LeadsView->value,
                     TenantPermission::LeadsCreate->value,
                     TenantPermission::LeadsUpdate->value,

@@ -7,36 +7,54 @@
         :data-table-custom-values="$dataTableCustomValues"
     >
         {{-- Summary cards --}}
-        <div class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch lg:grid-cols-4">
+        <div class="mb-4 flex gap-2">
             <x-tenant.stat-card
-                :label="__('Today')"
-                :value="$statistics['today']"
+                comfortable
+                :label="__('Total Tasks')"
+                :value="$statistics['total']"
                 accent="navy"
-                :href="route('tenant.tasks.index', ['filter' => 'today'])"
-                :active="$filter === \App\Enums\TaskFilter::Today"
+                :href="route('tenant.tasks.index', ['filter' => 'all'])"
+                :active="$filter === \App\Enums\TaskFilter::All"
             >
                 <x-slot:icon>
-                    <svg class="size-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm0 5.25h.007v.008H3.75v-.008Zm0 5.25h.007v.008H3.75v-.008Z" />
                     </svg>
                 </x-slot:icon>
             </x-tenant.stat-card>
 
             <x-tenant.stat-card
-                :label="__('Upcoming')"
-                :value="$statistics['upcoming']"
-                accent="sky"
-                :href="route('tenant.tasks.index', ['filter' => 'upcoming'])"
-                :active="$filter === \App\Enums\TaskFilter::Upcoming"
+                comfortable
+                :label="__('Pending')"
+                :value="$statistics['pending']"
+                accent="amber"
+                :href="route('tenant.tasks.index', ['filter' => 'pending'])"
+                :active="$filter === \App\Enums\TaskFilter::Pending"
             >
                 <x-slot:icon>
-                    <svg class="size-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                     </svg>
                 </x-slot:icon>
             </x-tenant.stat-card>
 
             <x-tenant.stat-card
+                comfortable
+                :label="__('In Progress')"
+                :value="$statistics['in_progress']"
+                accent="sky"
+                :href="route('tenant.tasks.index', ['filter' => 'in_progress'])"
+                :active="$filter === \App\Enums\TaskFilter::InProgress"
+            >
+                <x-slot:icon>
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                    </svg>
+                </x-slot:icon>
+            </x-tenant.stat-card>
+
+            <x-tenant.stat-card
+                comfortable
                 :label="__('Completed')"
                 :value="$statistics['completed']"
                 accent="emerald"
@@ -44,22 +62,23 @@
                 :active="$filter === \App\Enums\TaskFilter::Completed"
             >
                 <x-slot:icon>
-                    <svg class="size-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                     </svg>
                 </x-slot:icon>
             </x-tenant.stat-card>
 
             <x-tenant.stat-card
-                :label="__('All')"
-                :value="$statistics['all']"
-                accent="amber"
-                :href="route('tenant.tasks.index', ['filter' => 'all'])"
-                :active="$filter === \App\Enums\TaskFilter::All"
+                comfortable
+                :label="__('Cancelled')"
+                :value="$statistics['cancelled']"
+                accent="rose"
+                :href="route('tenant.tasks.index', ['filter' => 'cancelled'])"
+                :active="$filter === \App\Enums\TaskFilter::Cancelled"
             >
                 <x-slot:icon>
-                    <svg class="size-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm0 5.25h.007v.008H3.75v-.008Zm0 5.25h.007v.008H3.75v-.008Z" />
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
                     </svg>
                 </x-slot:icon>
             </x-tenant.stat-card>

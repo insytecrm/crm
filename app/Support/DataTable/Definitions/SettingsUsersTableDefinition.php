@@ -21,6 +21,7 @@ class SettingsUsersTableDefinition extends AbstractDataTableDefinition
         return [
             'name' => true,
             'email' => true,
+            'phone' => true,
             'role' => true,
             'status' => true,
             'actions' => true,
@@ -43,6 +44,7 @@ class SettingsUsersTableDefinition extends AbstractDataTableDefinition
         return [
             'name' => __('Name'),
             'email' => __('Email'),
+            'phone' => __('Phone'),
             'role' => __('Role'),
             'status' => __('Status'),
             'actions' => __('Actions'),

@@ -73,7 +73,7 @@
                             @endunless
                             <th x-show="isColumnVisible('priority')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Priority') }}</th>
                             <th x-show="isColumnVisible('scheduled')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Scheduled') }}</th>
-                            <th x-show="isColumnVisible('completion_method')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Method') }}</th>
+                            <th x-show="isColumnVisible('completion_method')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ $dataTableColumnLabels['completion_method'] ?? __('Method') }}</th>
                             <th x-show="isColumnVisible('completion_outcome')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Outcome') }}</th>
                             <th x-show="isColumnVisible('next_step')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Next step') }}</th>
                             <th x-show="isColumnVisible('stage')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Stage') }}</th>

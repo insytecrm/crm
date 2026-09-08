@@ -136,5 +136,6 @@
 
         @stack('modals')
         @stack('drawers')
+        @stack('scripts')
     </body>
 </html>

@@ -2,7 +2,6 @@
 
 namespace App\Queries;
 
-use App\Enums\TaskFilter;
 use App\Models\LeadTask;
 use Illuminate\Support\Collection;
 
@@ -20,8 +19,7 @@ class DashboardTodaysTasks
     public function forTenant(): Collection
     {
         return $this->taskListing
-            ->items(TaskFilter::Today)
-            ->filter(fn (LeadTask $task): bool => ! $task->isClosed())
+            ->openDueToday()
             ->sortBy(fn (LeadTask $task): array => [
                 $task->isOverdue() ? 0 : 1,
                 ($task->due_at ?? $task->created_at)?->getTimestamp() ?? 0,

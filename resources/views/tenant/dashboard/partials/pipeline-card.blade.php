@@ -38,24 +38,31 @@
         'periodOptions' => $periodOptions,
         'customValue' => DashboardPeriod::Custom->value,
     ]))"
-    class="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm"
+    class="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm shadow-slate-200/40"
     style="height: 20rem"
 >
-    <div class="relative flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 sm:px-4">
-        <div class="min-w-0">
-            <h2 class="text-sm font-semibold leading-none text-black">{{ __('Sales Pipeline') }}</h2>
-            <p class="mt-0.5 text-[11px] leading-none text-slate-500">{{ __('Leads by status') }}</p>
+    <div class="relative flex shrink-0 items-center justify-between gap-3 bg-navy-dark px-3 py-2.5 sm:px-4">
+        <div class="flex min-w-0 items-center gap-2.5">
+            <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white">
+                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                </svg>
+            </div>
+            <div class="min-w-0">
+                <h2 class="text-sm font-bold leading-none text-white">{{ __('Sales Pipeline') }}</h2>
+                <p class="mt-0.5 text-[11px] leading-none text-white/75">{{ __('Leads by status') }}</p>
+            </div>
         </div>
 
         <div class="relative shrink-0">
             <button
                 type="button"
                 @click="open = !open; customOpen = false"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-white/15"
                 :aria-expanded="open"
             >
                 <span x-text="periodLabel"></span>
-                <svg class="size-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <svg class="size-3.5 text-white/70" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                 </svg>
             </button>

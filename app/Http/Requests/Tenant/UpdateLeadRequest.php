@@ -3,7 +3,9 @@
 namespace App\Http\Requests\Tenant;
 
 use App\Enums\LeadBudget;
+use App\Enums\LeadSource;
 use App\Enums\PropertyType;
+use App\Models\Lead;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,6 +18,10 @@ class UpdateLeadRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        if ($this->input('source') === '') {
+            $this->merge(['source' => null]);
+        }
+
         $budget = LeadBudget::tryFromMixed($this->input('budget'));
 
         if ($budget instanceof LeadBudget) {
@@ -38,11 +44,23 @@ class UpdateLeadRequest extends FormRequest
      */
     public function rules(): array
     {
+        $allowedSources = array_map(
+            static fn (LeadSource $source): string => $source->value,
+            LeadSource::cases(),
+        );
+
+        /** @var Lead|null $lead */
+        $lead = $this->route('lead');
+
+        if ($lead instanceof Lead && filled($lead->source) && ! in_array($lead->source, $allowedSources, true)) {
+            $allowedSources[] = $lead->source;
+        }
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
-            'source' => ['nullable', 'string', 'max:255'],
+            'source' => ['nullable', Rule::in($allowedSources)],
             'budget' => ['nullable', Rule::enum(LeadBudget::class)],
             'location' => ['nullable', 'string', 'max:255'],
             'property_type' => ['nullable', Rule::enum(PropertyType::class)],

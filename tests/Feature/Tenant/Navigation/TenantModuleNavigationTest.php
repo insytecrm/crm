@@ -1,6 +1,6 @@
 <?php
 
-test('tenant sidebar shows bookings revenue invoices submenu and integrations links', function () {
+test('tenant sidebar shows bookings revenue invoices reports analytics submenu links', function () {
     createTestTenant();
     actingAsTenantUser();
 
@@ -10,11 +10,23 @@ test('tenant sidebar shows bookings revenue invoices submenu and integrations li
         ->assertSee('Revenue')
         ->assertSee('Invoices')
         ->assertDontSee('Payouts')
-        ->assertSee('Integrations')
+        ->assertSee('Reports')
+        ->assertSee('Analytics')
+        ->assertDontSee(route('tenant.integrations.index', ['tenant' => 'acme'], false))
         ->assertSee(route('tenant.bookings.index', ['tenant' => 'acme'], false))
         ->assertSee(route('tenant.revenue.index', ['tenant' => 'acme'], false))
         ->assertSee(route('tenant.invoices.index', ['tenant' => 'acme'], false))
-        ->assertSee(route('tenant.integrations.index', ['tenant' => 'acme'], false));
+        ->assertSee(route('tenant.reports.index', ['tenant' => 'acme'], false))
+        ->assertSee(route('tenant.reports.analytics', ['tenant' => 'acme'], false));
+});
+
+test('tenant sidebar divides menus with separators', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $response = $this->get('/acme/dashboard')->assertOk();
+
+    expect(substr_count($response->getContent(), 'role="separator"'))->toBe(3);
 });
 
 test('tenant users can view bookings home', function () {
@@ -36,9 +48,34 @@ test('tenant users can view revenue home', function () {
     $this->get('/acme/revenue')
         ->assertOk()
         ->assertSee('Revenue')
-        ->assertSee('Total Revenue')
-        ->assertSee('Revenue This Month')
+        ->assertSee('Total Sales')
+        ->assertSee('Sales This Month')
         ->assertSee('Pending Commission');
+});
+
+test('tenant users can view reports home', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $this->get('/acme/reports')
+        ->assertOk()
+        ->assertSee('Reports')
+        ->assertSee('Total Leads')
+        ->assertSee('Activity Trend')
+        ->assertSee('Leads by Status');
+});
+
+test('tenant users can view analytics submenu', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $this->get('/acme/reports/analytics')
+        ->assertOk()
+        ->assertSee('Leads per Day')
+        ->assertSee('Conversion Rate')
+        ->assertSee('Follow-up Rate')
+        ->assertDontSee('Coming soon')
+        ->assertDontSee('Total Leads');
 });
 
 test('tenant users can view invoices home', function () {
@@ -55,11 +92,14 @@ test('tenant users can view invoices home', function () {
         ->assertSee('No invoices yet.');
 });
 
-test('tenant users can view integrations home', function () {
+test('tenant users can view integrations settings tab', function () {
     createTestTenant();
     actingAsTenantUser();
 
     $this->get('/acme/integrations')
+        ->assertRedirect('/acme/settings?tab=integrations');
+
+    $this->get('/acme/settings?tab=integrations')
         ->assertOk()
         ->assertSee('Integrations')
         ->assertSee('WhatsApp')

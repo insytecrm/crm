@@ -9,10 +9,13 @@
         @vite(['resources/css/app.css'])
     </head>
     <body class="bg-white font-sans text-black antialiased">
-        <header class="border-b border-slate-100 bg-white">
+        <header class="border-b border-black/5 bg-white">
             <div class="mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6">
                 <a href="/" class="text-lg font-semibold text-black">InSyte</a>
-                <a href="/" class="text-sm font-medium text-brand-accent hover:underline">Back to home</a>
+                <div class="flex items-center gap-4 text-sm font-medium">
+                    <a href="/contact" class="text-black/60 hover:text-black">Contact</a>
+                    <a href="/" class="text-brand-accent hover:underline">Back to home</a>
+                </div>
             </div>
         </header>
         <main class="mx-auto max-w-4xl px-4 py-12 sm:px-6">
@@ -21,7 +24,7 @@
                 {{ $slot }}
             </div>
         </main>
-        <footer class="border-t border-slate-100 py-8 text-center text-sm text-slate-500">
+        <footer class="border-t border-black/5 py-8 text-center text-sm text-slate-500">
             © {{ date('Y') }} InSyte. All rights reserved.
         </footer>
     </body>

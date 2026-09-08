@@ -17,7 +17,6 @@ use App\Models\LeadTask;
 use App\Models\User;
 use App\Queries\TaskListing;
 use App\Support\DataTable\DataTableViewData;
-use App\Support\ReminderBefore;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -45,8 +44,6 @@ class TaskController extends Controller
     public function store(StoreTaskRequest $request, LogLeadActivity $logLeadActivity): RedirectResponse
     {
         $lead = Lead::query()->findOrFail($request->validated('lead_id'));
-        $reminder = ReminderBefore::fromRequest($request);
-        $dueAt = $request->date('due_at');
 
         $task = $lead->tasks()->create([
             'title' => $request->validated('title'),
@@ -55,7 +52,6 @@ class TaskController extends Controller
             'status' => TaskStatus::Pending,
             'assigned_to_id' => $request->validated('assigned_to_id') ?? auth()->id(),
             'created_by_id' => auth()->id(),
-            ...ReminderBefore::attributesFor($reminder, $dueAt),
         ]);
 
         $logLeadActivity->handle(
@@ -66,7 +62,7 @@ class TaskController extends Controller
         );
 
         return redirect()
-            ->route('tenant.tasks.index', ['filter' => TaskFilter::Today->value])
+            ->route('tenant.tasks.index', ['filter' => TaskFilter::All->value])
             ->with('status', __('Task created.'));
     }
 

@@ -24,6 +24,12 @@
             <x-input-error class="mt-2" :messages="$errors->get('email')" />
         </div>
 
+        <div>
+            <x-input-label for="profile_phone" :value="__('Phone Number')" />
+            <x-text-input id="profile_phone" name="phone" type="tel" class="mt-1 block w-full" :value="old('phone', $user->phone)" autocomplete="tel" />
+            <x-input-error class="mt-2" :messages="$errors->get('phone')" />
+        </div>
+
         <div class="flex items-center gap-3 pt-2">
             <x-ui.button type="submit" variant="default">{{ __('Save Profile') }}</x-ui.button>
         </div>

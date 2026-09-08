@@ -41,7 +41,7 @@ class CompleteFollowUpScheduledEventRequest extends FormRequest
                 Rule::requiredIf(fn (): bool => $this->nextStepIs(ScheduledActivityNextStep::ScheduleSiteVisit)),
                 'nullable',
                 'integer',
-                'exists:properties,id',
+                Rule::exists('properties', 'id')->where(fn ($query) => $query->where('is_active', true)),
             ],
             'next_visit_type' => [
                 Rule::requiredIf(fn (): bool => $this->nextStepIs(ScheduledActivityNextStep::ScheduleSiteVisit)),

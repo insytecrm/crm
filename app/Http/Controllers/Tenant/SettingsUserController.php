@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\AssertPlanLimit;
+use App\Enums\PlanLimitKey;
 use App\Enums\SettingsTab;
 use App\Enums\TenantPermission;
 use App\Http\Controllers\Controller;
@@ -15,9 +17,12 @@ class SettingsUserController extends Controller
 {
     public function store(StoreSettingsUserRequest $request): RedirectResponse
     {
+        app(AssertPlanLimit::class)->handle(PlanLimitKey::Users);
+
         User::query()->create([
             'name' => $request->validated('name'),
             'email' => $request->validated('email'),
+            'phone' => $request->validated('phone'),
             'password' => $request->validated('password'),
             'role_id' => $request->validated('role_id'),
             'email_verified_at' => now(),
@@ -34,6 +39,7 @@ class SettingsUserController extends Controller
         $user->fill([
             'name' => $request->validated('name'),
             'email' => $request->validated('email'),
+            'phone' => $request->validated('phone'),
             'role_id' => $request->validated('role_id'),
         ]);
 
@@ -89,6 +95,10 @@ class SettingsUserController extends Controller
             if ($adminCount === 0) {
                 return back()->with('status', __('At least one active administrator is required.'));
             }
+        }
+
+        if ($request->isActive() && $user->is_active === false) {
+            app(AssertPlanLimit::class)->handle(PlanLimitKey::Users);
         }
 
         $user->update([

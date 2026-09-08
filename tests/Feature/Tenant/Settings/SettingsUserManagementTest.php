@@ -46,6 +46,7 @@ test('administrator can create a user from settings', function () {
         ->post('/acme/settings/users', [
             'name' => 'New Team Member',
             'email' => 'member@acme.test',
+            'phone' => '+91 98765 43210',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'role_id' => $role->id,
@@ -53,7 +54,10 @@ test('administrator can create a user from settings', function () {
         ->assertRedirect('/acme/settings?tab=users')
         ->assertSessionHas('status');
 
-    expect(User::query()->where('email', 'member@acme.test')->exists())->toBeTrue();
+    $created = User::query()->where('email', 'member@acme.test')->first();
+
+    expect($created)->not->toBeNull()
+        ->and($created->phone)->toBe('+91 98765 43210');
 });
 
 test('administrator can update and delete a user from settings', function () {
@@ -64,6 +68,7 @@ test('administrator can update and delete a user from settings', function () {
     $user = User::query()->create([
         'name' => 'Temp User',
         'email' => 'temp@acme.test',
+        'phone' => '+91 90000 00000',
         'password' => 'password',
         'role_id' => $role->id,
         'email_verified_at' => now(),
@@ -73,11 +78,13 @@ test('administrator can update and delete a user from settings', function () {
         ->patch('/acme/settings/users/'.$user->id, [
             'name' => 'Updated Temp User',
             'email' => 'temp@acme.test',
+            'phone' => '+91 91111 11111',
             'role_id' => $role->id,
         ])
         ->assertRedirect('/acme/settings?tab=users');
 
-    expect($user->fresh()->name)->toBe('Updated Temp User');
+    expect($user->fresh()->name)->toBe('Updated Temp User')
+        ->and($user->fresh()->phone)->toBe('+91 91111 11111');
 
     $this->from('/acme/settings?tab=users')
         ->delete('/acme/settings/users/'.$user->id)

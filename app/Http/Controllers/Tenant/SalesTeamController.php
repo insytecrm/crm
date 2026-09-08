@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Actions\AssertPlanLimit;
+use App\Enums\LeadRoutingDistribution;
+use App\Enums\LeadSource;
+use App\Enums\PlanLimitKey;
 use App\Enums\TenantPermission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreSalesTeamRequest;
 use App\Http\Requests\Tenant\UpdateSalesTeamRequest;
 use App\Http\Requests\Tenant\UpdateSalesTeamStatusRequest;
+use App\Models\LeadRoutingRule;
 use App\Models\SalesTeam;
 use App\Models\User;
 use App\Support\DataTable\DataTableViewData;
+use App\Support\LeadRoutingSubSourceOptions;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,12 +45,35 @@ class SalesTeamController extends Controller
 
         $canManage = $request->user()?->hasPermission(TenantPermission::TeamsManage) ?? false;
 
+        $routingTeams = $canManage
+            ? SalesTeam::query()
+                ->active()
+                ->with(['members' => fn ($query) => $query
+                    ->where('users.is_active', true)
+                    ->with('role')
+                    ->orderBy('name')])
+                ->orderBy('name')
+                ->get()
+            : collect();
+
+        $routingRules = LeadRoutingRule::query()
+            ->with(['team', 'members'])
+            ->latest('id')
+            ->get();
+
         return view('tenant.teams.index', array_merge([
             'teams' => $teams,
             'search' => $search,
             'canManage' => $canManage,
             'managers' => $canManage ? $this->managerOptions() : collect(),
             'openCreateTeam' => old('_create_team') === '1',
+            'openCreateRouting' => old('_create_routing') === '1',
+            'openEditRoutingId' => old('_edit_routing_id'),
+            'routingTeams' => $routingTeams,
+            'routingRules' => $routingRules,
+            'routingSources' => LeadSource::cases(),
+            'routingDistributions' => LeadRoutingDistribution::cases(),
+            'routingSubSources' => $canManage ? app(LeadRoutingSubSourceOptions::class)->all() : [],
         ], DataTableViewData::for($request->user(), 'teams', $teams)));
     }
 
@@ -67,6 +96,8 @@ class SalesTeamController extends Controller
 
     public function store(StoreSalesTeamRequest $request): RedirectResponse
     {
+        app(AssertPlanLimit::class)->handle(PlanLimitKey::Teams);
+
         $team = SalesTeam::query()->create([
             'name' => $request->validated('name'),
             'description' => $request->validated('description'),

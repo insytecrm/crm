@@ -68,7 +68,7 @@
             >
                 <option value="">{{ __('All') }}</option>
                 @foreach ($sources as $source)
-                    <option value="{{ $source }}" @selected($listFilters->source === $source)>{{ $source }}</option>
+                    <option value="{{ $source->value }}" @selected($listFilters->source === $source->value)>{{ $source->label() }}</option>
                 @endforeach
             </select>
         </div>

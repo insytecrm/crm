@@ -83,6 +83,35 @@ test('dashboard pipeline custom range filters by from and to dates', function ()
         });
 });
 
+test('dashboard pipeline custom range includes the full from and to calendar days', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    Lead::factory()->create([
+        'status' => LeadStatus::New,
+        'created_at' => Carbon::parse('2026-02-01 00:00:00'),
+    ]);
+    Lead::factory()->create([
+        'status' => LeadStatus::Contacted,
+        'created_at' => Carbon::parse('2026-02-28 23:59:59'),
+    ]);
+    Lead::factory()->create([
+        'status' => LeadStatus::Qualified,
+        'created_at' => Carbon::parse('2026-03-01 00:00:00'),
+    ]);
+
+    $this->get('/acme/dashboard?period='.DashboardPeriod::Custom->value.'&from=2026-02-01&to=2026-02-28')
+        ->assertOk()
+        ->assertViewHas('pipeline', function (array $pipeline): bool {
+            expect($pipeline['total'])->toBe(2)
+                ->and(collect($pipeline['stages'])->firstWhere('status', LeadStatus::New->value)['count'])->toBe(1)
+                ->and(collect($pipeline['stages'])->firstWhere('status', LeadStatus::Contacted->value)['count'])->toBe(1)
+                ->and(collect($pipeline['stages'])->firstWhere('status', LeadStatus::Qualified->value)['count'])->toBe(0);
+
+            return true;
+        });
+});
+
 test('dashboard pipeline stage links open leads filtered by status and period dates', function () {
     createTestTenant();
     actingAsTenantUser();

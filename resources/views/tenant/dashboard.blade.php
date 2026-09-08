@@ -70,7 +70,7 @@
         <x-tenant.can :permission="TenantPermission::RevenueView">
             <x-tenant.stat-card
                 comfortable
-                :label="__('Revenue')"
+                :label="__('Sales')"
                 :value="'₹' . number_format($kpis['revenue'])"
                 accent="emerald"
                 :href="route('tenant.revenue.index')"

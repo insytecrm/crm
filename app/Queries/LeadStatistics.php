@@ -20,21 +20,33 @@ class LeadStatistics
      */
     public function forTenant(): array
     {
+        $now = now();
+        $new = LeadStatus::New->value;
+        $converted = LeadStatus::Converted->value;
+        $lost = LeadStatus::Lost->value;
+
+        $row = Lead::query()
+            ->toBase()
+            ->selectRaw(
+                'count(*) as total,
+                 coalesce(sum(case when status = ? then 1 else 0 end), 0) as new_count,
+                 coalesce(sum(case when next_follow_up_at is not null and next_follow_up_at <= ? and status not in (?, ?) then 1 else 0 end), 0) as follow_up_due,
+                 coalesce(sum(case when upcoming_site_visit_at is not null and upcoming_site_visit_at > ? then 1 else 0 end), 0) as site_visits_scheduled,
+                 coalesce(sum(case when assigned_to_id is null then 1 else 0 end), 0) as unassigned,
+                 coalesce(sum(case when status = ? then 1 else 0 end), 0) as converted,
+                 coalesce(sum(case when status = ? then 1 else 0 end), 0) as lost',
+                [$new, $now, $converted, $lost, $now, $converted, $lost],
+            )
+            ->first();
+
         return [
-            'total' => Lead::query()->count(),
-            'new' => Lead::query()->where('status', LeadStatus::New)->count(),
-            'follow_up_due' => Lead::query()
-                ->whereNotNull('next_follow_up_at')
-                ->where('next_follow_up_at', '<=', now())
-                ->whereNotIn('status', [LeadStatus::Converted, LeadStatus::Lost])
-                ->count(),
-            'site_visits_scheduled' => Lead::query()
-                ->whereNotNull('upcoming_site_visit_at')
-                ->where('upcoming_site_visit_at', '>', now())
-                ->count(),
-            'unassigned' => Lead::query()->whereNull('assigned_to_id')->count(),
-            'converted' => Lead::query()->where('status', LeadStatus::Converted)->count(),
-            'lost' => Lead::query()->where('status', LeadStatus::Lost)->count(),
+            'total' => (int) ($row->total ?? 0),
+            'new' => (int) ($row->new_count ?? 0),
+            'follow_up_due' => (int) ($row->follow_up_due ?? 0),
+            'site_visits_scheduled' => (int) ($row->site_visits_scheduled ?? 0),
+            'unassigned' => (int) ($row->unassigned ?? 0),
+            'converted' => (int) ($row->converted ?? 0),
+            'lost' => (int) ($row->lost ?? 0),
         ];
     }
 }

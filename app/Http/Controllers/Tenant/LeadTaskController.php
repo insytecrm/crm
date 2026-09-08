@@ -14,16 +14,12 @@ use App\Http\Requests\Tenant\UpdateLeadTaskStatusRequest;
 use App\Models\Lead;
 use App\Models\LeadTask;
 use App\Support\LeadDrawerRedirect;
-use App\Support\ReminderBefore;
 use Illuminate\Http\RedirectResponse;
 
 class LeadTaskController extends Controller
 {
     public function store(StoreLeadTaskRequest $request, Lead $lead, LogLeadActivity $logLeadActivity): RedirectResponse
     {
-        $reminder = ReminderBefore::fromRequest($request);
-        $dueAt = $request->date('due_at');
-
         $task = $lead->tasks()->create([
             'title' => $request->validated('title'),
             'description' => $request->validated('description'),
@@ -31,7 +27,6 @@ class LeadTaskController extends Controller
             'status' => TaskStatus::Pending,
             'created_by_id' => auth()->id(),
             'assigned_to_id' => $request->validated('assigned_to_id') ?? auth()->id(),
-            ...ReminderBefore::attributesFor($reminder, $dueAt),
         ]);
 
         $logLeadActivity->handle(

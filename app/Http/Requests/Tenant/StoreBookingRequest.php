@@ -20,7 +20,10 @@ class StoreBookingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'property_id' => ['required', 'exists:properties,id'],
+            'property_id' => [
+                'required',
+                Rule::exists('properties', 'id')->where(fn ($query) => $query->where('is_active', true)),
+            ],
             'configuration_index' => ['required', 'integer', 'min:0'],
             'unit_number' => ['required', 'string', 'max:50'],
             'agreement_value' => ['required', 'integer', 'min:1'],
@@ -46,7 +49,7 @@ class StoreBookingRequest extends FormRequest
                 return;
             }
 
-            $property = Property::query()->find($this->integer('property_id'));
+            $property = Property::query()->active()->find($this->integer('property_id'));
             $configurationIndex = $this->integer('configuration_index');
             $configurations = $property?->configurations ?? [];
 

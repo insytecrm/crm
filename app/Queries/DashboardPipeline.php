@@ -5,6 +5,7 @@ namespace App\Queries;
 use App\Enums\LeadStatus;
 use App\Models\Lead;
 use App\Support\DashboardPeriodFilter;
+use App\Support\QueryableDate;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -70,9 +71,10 @@ class DashboardPipeline
 
     private function baseQuery(?string $from, ?string $to): Builder
     {
-        return Lead::query()
-            ->when($from !== null, fn (Builder $query): Builder => $query->whereDate('created_at', '>=', $from))
-            ->when($to !== null, fn (Builder $query): Builder => $query->whereDate('created_at', '<=', $to));
+        $query = Lead::query();
+        QueryableDate::constrain($query, 'created_at', $from, $to);
+
+        return $query;
     }
 
     private function barStyle(LeadStatus $status): string

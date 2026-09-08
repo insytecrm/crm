@@ -50,11 +50,14 @@ test('properties index shows card layout with details popup content', function (
         ->assertSee('Mumbai')
         ->assertSee('property-details-'.$property->id, false)
         ->assertSee('Basic Info')
+        ->assertSee('Show on website')
         ->assertSee('Project')
         ->assertSee('Tagging')
         ->assertSee('Amenities')
         ->assertSee('Configurations')
         ->assertSee('Attachments')
+        ->assertSee('Microsite')
+        ->assertSee('Manage')
         ->assertSee('Swimming Pool')
         ->assertSee('2 BHK')
         ->assertDontSee('<table', false);
@@ -73,6 +76,8 @@ test('tenant users can view add property form page', function () {
         ->assertSee('Amenities')
         ->assertSee('Configurations (Unit Variants)')
         ->assertSee('Attachments')
+        ->assertSee('Microsite')
+        ->assertSee('Manage')
         ->assertSee('Brochure Files')
         ->assertSee('Choose files')
         ->assertSee('Add Configuration')
@@ -473,6 +478,7 @@ test('properties with legacy property type values can be loaded', function () {
         'developer_name' => 'Legacy Dev',
         'project_name' => 'Legacy Project',
         'property_type' => 'Apartment',
+        'is_active' => true,
         'created_by_id' => tenantUser()->id,
         'created_at' => now(),
         'updated_at' => now(),
@@ -481,4 +487,142 @@ test('properties with legacy property type values can be loaded', function () {
     $this->get('/acme/properties')
         ->assertOk()
         ->assertSee('Legacy Project');
+});
+
+test('tenant users can activate and deactivate a property from the card switch', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $property = Property::factory()->create([
+        'project_name' => 'Toggle Project',
+        'is_active' => true,
+    ]);
+
+    $this->from('/acme/properties')
+        ->patch('/acme/properties/'.$property->id.'/status', [
+            'is_active' => '0',
+        ])
+        ->assertRedirect('/acme/properties')
+        ->assertSessionHas('status', 'Property deactivated.');
+
+    expect($property->fresh()->is_active)->toBeFalse();
+
+    $this->from('/acme/properties')
+        ->patch('/acme/properties/'.$property->id.'/status', [
+            'is_active' => '1',
+        ])
+        ->assertRedirect('/acme/properties')
+        ->assertSessionHas('status', 'Property activated.');
+
+    expect($property->fresh()->is_active)->toBeTrue();
+});
+
+test('inactive properties are excluded from crm property options', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $active = Property::factory()->create([
+        'project_name' => 'Active CRM Project',
+        'is_active' => true,
+    ]);
+    Property::factory()->inactive()->create([
+        'project_name' => 'Inactive CRM Project',
+    ]);
+
+    $options = Property::bookingFormOptions();
+    $labels = collect($options)->pluck('label')->all();
+
+    expect($options)->toHaveCount(1)
+        ->and($options[0]['id'])->toBe($active->id)
+        ->and($labels)->toContain($active->listLabel())
+        ->and($labels)->not->toContain('Inactive CRM Project');
+});
+
+test('properties index shows active switch on cards', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    Property::factory()->create([
+        'project_name' => 'Switch Card Project',
+    ]);
+
+    $this->get('/acme/properties')
+        ->assertOk()
+        ->assertSee('Switch Card Project')
+        ->assertSee(route('tenant.properties.status.update', Property::query()->first(), false), false)
+        ->assertSee('Toggle property status', false);
+});
+
+test('properties index shows kpi cards and filters by status and featured', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    Property::factory()->create([
+        'project_name' => 'Active Listing',
+        'is_active' => true,
+        'show_on_website' => false,
+    ]);
+    Property::factory()->inactive()->create([
+        'project_name' => 'Deactive Listing',
+    ]);
+    Property::factory()->featured()->create([
+        'project_name' => 'Featured Listing',
+        'is_active' => true,
+    ]);
+
+    $this->get('/acme/properties')
+        ->assertOk()
+        ->assertSee('Total')
+        ->assertSee('Active')
+        ->assertSee('Deactive')
+        ->assertSee('Featured')
+        ->assertSee('Active Listing')
+        ->assertSee('Deactive Listing')
+        ->assertSee('Featured Listing');
+
+    $this->get('/acme/properties?filter=active')
+        ->assertOk()
+        ->assertSee('Active Listing')
+        ->assertSee('Featured Listing')
+        ->assertDontSee('Deactive Listing');
+
+    $this->get('/acme/properties?filter=inactive')
+        ->assertOk()
+        ->assertSee('Deactive Listing')
+        ->assertDontSee('Active Listing')
+        ->assertDontSee('Featured Listing');
+
+    $this->get('/acme/properties?filter=featured')
+        ->assertOk()
+        ->assertSee('Featured Listing')
+        ->assertDontSee('Active Listing')
+        ->assertDontSee('Deactive Listing');
+});
+
+test('tenant users can toggle show on website from the property details switch', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $property = Property::factory()->create([
+        'project_name' => 'Website Toggle Project',
+        'show_on_website' => false,
+    ]);
+
+    $this->from('/acme/properties')
+        ->patch('/acme/properties/'.$property->id.'/website-visibility', [
+            'show_on_website' => '1',
+        ])
+        ->assertRedirect('/acme/properties')
+        ->assertSessionHas('status', 'Property will show on website.');
+
+    expect($property->fresh()->show_on_website)->toBeTrue();
+
+    $this->from('/acme/properties')
+        ->patch('/acme/properties/'.$property->id.'/website-visibility', [
+            'show_on_website' => '0',
+        ])
+        ->assertRedirect('/acme/properties')
+        ->assertSessionHas('status', 'Property hidden from website.');
+
+    expect($property->fresh()->show_on_website)->toBeFalse();
 });

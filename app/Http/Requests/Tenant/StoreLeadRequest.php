@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Tenant;
 
 use App\Enums\LeadBudget;
+use App\Enums\LeadSource;
 use App\Enums\PropertyType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -16,6 +17,10 @@ class StoreLeadRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        if ($this->input('source') === '') {
+            $this->merge(['source' => null]);
+        }
+
         $budget = LeadBudget::tryFromMixed($this->input('budget'));
 
         if ($budget instanceof LeadBudget) {
@@ -42,7 +47,14 @@ class StoreLeadRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
-            'source' => ['nullable', 'string', 'max:255'],
+            'source' => [
+                'nullable',
+                Rule::enum(LeadSource::class),
+                Rule::in(array_map(
+                    static fn (LeadSource $source): string => $source->value,
+                    LeadSource::manualSelectableCases(),
+                )),
+            ],
             'budget' => ['nullable', Rule::enum(LeadBudget::class)],
             'location' => ['nullable', 'string', 'max:255'],
             'property_type' => ['nullable', Rule::enum(PropertyType::class)],

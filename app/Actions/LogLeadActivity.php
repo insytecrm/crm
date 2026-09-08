@@ -2,10 +2,13 @@
 
 namespace App\Actions;
 
+use App\Enums\AutomationTrigger;
 use App\Enums\LeadActivityType;
+use App\Events\LeadActivityRecorded;
 use App\Models\Lead;
 use App\Models\LeadActivity;
 use App\Models\User;
+use App\Support\AutomationRuntime;
 
 class LogLeadActivity
 {
@@ -27,6 +30,10 @@ class LogLeadActivity
         ]);
 
         $lead->update(['last_activity_at' => now()]);
+
+        if (! AutomationRuntime::isRunning() && AutomationTrigger::fromActivity($type) !== null) {
+            LeadActivityRecorded::dispatch($activity);
+        }
 
         return $activity;
     }

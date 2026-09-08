@@ -18,7 +18,12 @@ class DuplicateLeadGroups
     public function all(): Collection
     {
         $leads = Lead::query()
-            ->with('assignedTo')
+            ->with([
+                'assignedTo',
+                'scheduledEvents.property',
+                'completedSiteVisitEvents.property',
+                'latestBooking.property',
+            ])
             ->where(function ($query): void {
                 $query->where(function ($query): void {
                     $query->whereNotNull('phone')->where('phone', '!=', '');

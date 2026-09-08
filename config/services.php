@@ -35,4 +35,22 @@ return [
         ],
     ],
 
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-5.6-luna'),
+    ],
+
+    'google_sheets' => [
+        'api_key' => env('GOOGLE_SHEETS_API_KEY'),
+    ],
+
+    'meta' => [
+        'app_id' => env('META_APP_ID'),
+        'app_secret' => env('META_APP_SECRET'),
+        'verify_token' => env('META_WEBHOOK_VERIFY_TOKEN'),
+        // Absolute HTTPS URL registered in Meta → Facebook Login → Valid OAuth Redirect URIs
+        'oauth_redirect_uri' => env('META_OAUTH_REDIRECT_URI'),
+        // Long-lived Page access token used to verify pages and fetch Lead Ads (agency / system user)
+        'page_access_token' => env('META_PAGE_ACCESS_TOKEN'),
+    ],
 ];

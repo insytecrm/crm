@@ -15,11 +15,12 @@ class LeadListing
         $listFilters ??= new LeadListFilters;
 
         $query = Lead::query()
-            ->with(['assignedTo', 'completedSiteVisitEvents.property', 'scheduledEvents'])
-            ->when(
-                $filter === LeadListingFilter::Converted,
-                fn ($query) => $query->with(['latestBooking.property']),
-            )
+            ->with([
+                'assignedTo',
+                'completedSiteVisitEvents.property',
+                'scheduledEvents.property',
+                'latestBooking.property',
+            ])
             ->withCount([
                 'scheduledEvents as follow_ups_count' => fn ($query) => $query->where('type', LeadScheduledEventType::FollowUp),
                 'scheduledEvents as site_visits_count' => fn ($query) => $query->where('type', LeadScheduledEventType::SiteVisit),

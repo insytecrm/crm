@@ -14,6 +14,7 @@ test('tenant layout renders team inbox header actions and drawer root', function
         ->assertOk()
         ->assertSee('Team inbox', false)
         ->assertSee('Quick add', false)
+        ->assertSee('Notifications', false)
         ->assertSee('id="team-inbox-drawer-root"', false);
 });
 

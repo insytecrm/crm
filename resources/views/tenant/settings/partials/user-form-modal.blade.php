@@ -35,6 +35,19 @@
             </div>
 
             <div>
+                <x-input-label for="{{ $modalName }}_phone" :value="__('Phone Number')" />
+                <x-text-input
+                    id="{{ $modalName }}_phone"
+                    name="phone"
+                    type="tel"
+                    class="mt-1 block w-full"
+                    :value="old('phone', $settingsUser?->phone)"
+                    autocomplete="tel"
+                />
+                <x-input-error class="mt-2" :messages="$errors->get('phone')" />
+            </div>
+
+            <div>
                 <x-input-label for="{{ $modalName }}_role" :value="__('Role')" />
                 <x-ui.form-select
                     id="{{ $modalName }}_role"

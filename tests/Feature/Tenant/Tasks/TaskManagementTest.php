@@ -19,10 +19,11 @@ test('tenant users can view tasks home from sidebar', function () {
         ->assertSee('Tasks')
         ->assertSee('Create Task')
         ->assertSee('Search by task, lead, or assignee...')
-        ->assertSee('Today')
-        ->assertSee('Upcoming')
+        ->assertSee('Total Tasks')
+        ->assertSee('Pending')
+        ->assertSee('In Progress')
         ->assertSee('Completed')
-        ->assertSee('All')
+        ->assertSee('Cancelled')
         ->assertSee('Related To')
         ->assertSee('Assigned To')
         ->assertSee('Due Date');
@@ -41,12 +42,12 @@ test('tasks home renders when a task lead has been soft deleted', function () {
     ]);
     $lead->delete();
 
-    $this->get('/acme/tasks?filter=today')
+    $this->get('/acme/tasks?filter=all')
         ->assertOk()
         ->assertSee('Task With Deleted Lead');
 });
 
-test('tasks home shows today tasks and completed today tasks', function () {
+test('tasks home total filter shows all open and closed tasks', function () {
     createTestTenant();
     actingAsTenantUser();
 
@@ -71,11 +72,12 @@ test('tasks home shows today tasks and completed today tasks', function () {
         'due_at' => now()->addWeek(),
     ]);
 
-    $this->get('/acme/tasks?filter=today')
+    $this->get('/acme/tasks?filter=all')
         ->assertOk()
         ->assertSee('Due Today Task')
         ->assertSee('Completed Today Task')
-        ->assertDontSee('Future Task');
+        ->assertSee('Future Task')
+        ->assertSee('>3</p>', false);
 });
 
 test('tenant users can create a task from tasks home', function () {
@@ -91,7 +93,7 @@ test('tenant users can create a task from tasks home', function () {
         'due_at' => now()->addDay()->format('Y-m-d\TH:i'),
         'assigned_to_id' => $user->id,
     ])
-        ->assertRedirect('/acme/tasks?filter=today');
+        ->assertRedirect('/acme/tasks?filter=all');
 
     $task = LeadTask::query()->where('lead_id', $lead->id)->first();
 
@@ -113,11 +115,11 @@ test('tenant users can mark a started task complete from tasks home', function (
         'due_at' => now()->addHours(2),
     ]);
 
-    $this->from('/acme/tasks?filter=today')
+    $this->from('/acme/tasks?filter=in_progress')
         ->post('/acme/tasks/'.$task->id.'/complete', [
-            'filter' => 'today',
+            'filter' => 'in_progress',
         ])
-        ->assertRedirect('/acme/tasks?filter=today');
+        ->assertRedirect('/acme/tasks?filter=in_progress');
 
     $task->refresh();
 
@@ -137,9 +139,9 @@ test('pending tasks cannot be marked complete until started', function () {
         'status' => TaskStatus::Pending,
     ]);
 
-    $this->from('/acme/tasks?filter=today')
+    $this->from('/acme/tasks?filter=all')
         ->post('/acme/tasks/'.$task->id.'/complete', [
-            'filter' => 'today',
+            'filter' => 'all',
         ])
         ->assertNotFound();
 
@@ -157,7 +159,7 @@ test('tasks home shows mark complete popup only for in progress tasks', function
         'due_at' => now()->addHours(2),
     ]);
 
-    $this->get('/acme/tasks?filter=today')
+    $this->get('/acme/tasks?filter=in_progress')
         ->assertOk()
         ->assertSee('What happened?', false)
         ->assertSee('Add completion notes (optional)', false)
@@ -175,12 +177,12 @@ test('marking a started task complete stores optional completion notes', functio
         'due_at' => now()->addHours(2),
     ]);
 
-    $this->from('/acme/tasks?filter=today')
+    $this->from('/acme/tasks?filter=in_progress')
         ->post('/acme/tasks/'.$task->id.'/complete', [
-            'filter' => 'today',
+            'filter' => 'in_progress',
             'notes' => 'Client confirmed budget',
         ])
-        ->assertRedirect('/acme/tasks?filter=today');
+        ->assertRedirect('/acme/tasks?filter=in_progress');
 
     $task->refresh();
 
@@ -206,22 +208,22 @@ test('tenant users can start and cancel a task with a reason from tasks home', f
         'due_at' => now()->addHours(2),
     ]);
 
-    $this->from('/acme/tasks?filter=today')
+    $this->from('/acme/tasks?filter=all')
         ->patch('/acme/tasks/'.$task->id.'/status', [
             'status' => TaskStatus::InProgress->value,
-            'filter' => 'today',
+            'filter' => 'all',
         ])
-        ->assertRedirect('/acme/tasks?filter=today');
+        ->assertRedirect('/acme/tasks?filter=all');
 
     expect($task->fresh()->status)->toBe(TaskStatus::InProgress);
 
-    $this->from('/acme/tasks?filter=today')
+    $this->from('/acme/tasks?filter=in_progress')
         ->patch('/acme/tasks/'.$task->id.'/status', [
             'status' => TaskStatus::Cancelled->value,
-            'filter' => 'today',
+            'filter' => 'in_progress',
             'notes' => 'Lead asked to pause',
         ])
-        ->assertRedirect('/acme/tasks?filter=today');
+        ->assertRedirect('/acme/tasks?filter=in_progress');
 
     $task->refresh();
 
@@ -240,10 +242,10 @@ test('cancelling a task without a reason is rejected', function () {
         'due_at' => now()->addHours(2),
     ]);
 
-    $this->from('/acme/tasks?filter=today')
+    $this->from('/acme/tasks?filter=all')
         ->patch('/acme/tasks/'.$task->id.'/status', [
             'status' => TaskStatus::Cancelled->value,
-            'filter' => 'today',
+            'filter' => 'all',
         ])
         ->assertSessionHasErrors('notes');
 
@@ -264,7 +266,7 @@ test('dashboard task actions stay on the dashboard', function () {
     $this->from('/acme/dashboard')
         ->patch('/acme/tasks/'.$task->id.'/status', [
             'status' => TaskStatus::InProgress->value,
-            'filter' => 'today',
+            'filter' => 'all',
         ])
         ->assertRedirect('/acme/dashboard');
 
@@ -272,7 +274,7 @@ test('dashboard task actions stay on the dashboard', function () {
 
     $this->from('/acme/dashboard')
         ->post('/acme/tasks/'.$task->id.'/complete', [
-            'filter' => 'today',
+            'filter' => 'all',
         ])
         ->assertRedirect('/acme/dashboard');
 
@@ -307,4 +309,44 @@ test('completed filter shows only completed tasks', function () {
         ->assertSee('Done Task')
         ->assertDontSee('Open Task')
         ->assertDontSee('Cancelled Task');
+});
+
+test('in progress and cancelled filters show matching tasks and kpi counts', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $lead = Lead::factory()->create(['name' => 'Status Filter Lead']);
+
+    LeadTask::factory()->inProgress()->create([
+        'lead_id' => $lead->id,
+        'title' => 'Active Task',
+        'due_at' => now()->addHours(2),
+    ]);
+    LeadTask::factory()->cancelled()->create([
+        'lead_id' => $lead->id,
+        'title' => 'Stopped Task',
+    ]);
+    LeadTask::factory()->create([
+        'lead_id' => $lead->id,
+        'title' => 'Pending Task',
+        'due_at' => now()->addDay(),
+    ]);
+
+    $this->get('/acme/tasks?filter=pending')
+        ->assertOk()
+        ->assertSee('Pending Task')
+        ->assertDontSee('Active Task')
+        ->assertDontSee('Stopped Task');
+
+    $this->get('/acme/tasks?filter=in_progress')
+        ->assertOk()
+        ->assertSee('Active Task')
+        ->assertDontSee('Stopped Task')
+        ->assertDontSee('Pending Task');
+
+    $this->get('/acme/tasks?filter=cancelled')
+        ->assertOk()
+        ->assertSee('Stopped Task')
+        ->assertDontSee('Active Task')
+        ->assertDontSee('Pending Task');
 });

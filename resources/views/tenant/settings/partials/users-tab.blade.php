@@ -38,6 +38,7 @@
                             <x-tenant.manageable-table.checkbox-header />
                             <th x-show="isColumnVisible('name')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Name') }}</th>
                             <th x-show="isColumnVisible('email')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Email') }}</th>
+                            <th x-show="isColumnVisible('phone')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Phone') }}</th>
                             <th x-show="isColumnVisible('role')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Role') }}</th>
                             <th x-show="isColumnVisible('status')" class="whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Status') }}</th>
                             <x-tenant.manageable-table.custom-column-headers />
@@ -55,6 +56,7 @@
                                     {{ $settingsUser->name }}
                                 </td>
                                 <td x-show="isColumnVisible('email')" class="whitespace-nowrap px-4 py-3 align-middle text-sm text-slate-600">{{ $settingsUser->email }}</td>
+                                <td x-show="isColumnVisible('phone')" class="whitespace-nowrap px-4 py-3 align-middle text-sm text-slate-600">{{ $settingsUser->phone ?: '—' }}</td>
                                 <td x-show="isColumnVisible('role')" class="whitespace-nowrap px-4 py-3 align-middle text-sm text-slate-600">{{ $settingsUser->role?->name ?? '—' }}</td>
                                 <td x-show="isColumnVisible('status')" class="whitespace-nowrap px-4 py-3 align-middle text-sm">
                                     @if ($settingsUser->isActive())

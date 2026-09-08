@@ -41,7 +41,18 @@ class StorePropertyRequest extends FormRequest
             $this->amenitiesRules(),
             $this->configurationsRules(),
             $this->attachmentsRules(),
+            $this->micrositeRules(),
         );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function micrositeRules(): array
+    {
+        return [
+            'microsite_enabled' => ['sometimes', Rule::in(['0', '1', 0, 1, true, false])],
+        ];
     }
 
     /**

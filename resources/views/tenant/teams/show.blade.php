@@ -145,31 +145,43 @@
                 'managers' => $managers,
             ])
 
-            <x-modal name="add-team-member" maxWidth="md">
-                <div class="p-6">
-                    <h2 class="text-lg font-bold text-black">{{ __('Add Member') }}</h2>
+            <x-modal name="add-team-member" maxWidth="xl">
+                <x-ui.modal.header
+                    :title="__('Add Member')"
+                    :description="__('Add a salesperson to this team')"
+                    modal-name="add-team-member"
+                >
+                    <x-slot:icon>
+                        <svg class="size-4.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                        </svg>
+                    </x-slot:icon>
+                </x-ui.modal.header>
 
-                    <form method="POST" action="{{ route('tenant.teams.members.store', $team) }}" class="mt-4 space-y-4">
-                        @csrf
+                <form method="POST" action="{{ route('tenant.teams.members.store', $team) }}">
+                    @csrf
 
-                        <div>
-                            <x-input-label for="add_team_member_user_id" :value="__('User')" />
-                            <x-ui.combobox
-                                id="add_team_member_user_id"
-                                name="user_id"
-                                :options="collect($memberCandidates)->map(fn ($user) => ['value' => (string) $user->id, 'label' => $user->name . ' (' . $user->email . ')'])->prepend(['value' => '', 'label' => __('Select a user')])->all()"
-                                :value="old('user_id', '')"
-                                :placeholder="__('Select a user')"
-                            />
-                            <x-input-error class="mt-2" :messages="$errors->get('user_id')" />
-                        </div>
+                    <x-ui.modal.body>
+                        <x-ui.modal.section :title="__('Member')">
+                            <div>
+                                <x-ui.modal.field-label for="add_team_member_user_id" :value="__('User')" required />
+                                <x-ui.combobox
+                                    id="add_team_member_user_id"
+                                    name="user_id"
+                                    :options="collect($memberCandidates)->map(fn ($user) => ['value' => (string) $user->id, 'label' => $user->name . ' (' . $user->email . ')'])->prepend(['value' => '', 'label' => __('Select a user')])->all()"
+                                    :value="old('user_id', '')"
+                                    :placeholder="__('Select a user')"
+                                />
+                                <x-input-error class="mt-1" :messages="$errors->get('user_id')" />
+                            </div>
+                        </x-ui.modal.section>
+                    </x-ui.modal.body>
 
-                        <div class="flex justify-end gap-2">
-                            <x-ui.button type="button" variant="outline" @click="$dispatch('close-modal', 'add-team-member')">{{ __('Cancel') }}</x-ui.button>
-                            <x-ui.button type="submit" variant="default">{{ __('Add Member') }}</x-ui.button>
-                        </div>
-                    </form>
-                </div>
+                    <x-ui.modal.footer>
+                        <x-ui.modal.cancel-button modal-name="add-team-member" />
+                        <x-ui.modal.submit-button>{{ __('Add Member') }}</x-ui.modal.submit-button>
+                    </x-ui.modal.footer>
+                </form>
             </x-modal>
         @endpush
     @endif

@@ -49,7 +49,7 @@ test('dashboard shows kpi cards with live counts from the database', function ()
         ->assertSee('Active Leads')
         ->assertSee('Site Visits')
         ->assertSee('Bookings')
-        ->assertSee('Revenue')
+        ->assertSee('Sales')
         ->assertViewHas('kpis', fn (array $kpis): bool => $kpis === [
             'total_leads' => 4,
             'active_leads' => 2,

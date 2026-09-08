@@ -14,9 +14,12 @@ export default {
     theme: {
         extend: {
             colors: {
-                navy: '#367589',
+                navy: {
+                    DEFAULT: '#34b6ff',
+                    dark: '#1a92e0',
+                },
                 brand: {
-                    DEFAULT: '#367589',
+                    DEFAULT: '#34b6ff',
                     light: '#4d95a8',
                     dark: '#275564',
                     muted: '#3d7f94',
@@ -66,12 +69,12 @@ export default {
                 sidebar: {
                     DEFAULT: '#ffffff',
                     foreground: '#000000',
-                    primary: '#367589',
+                    primary: '#34b6ff',
                     'primary-foreground': '#ffffff',
                     accent: '#e8f1f4',
                     'accent-foreground': '#000000',
                     border: '#e2e8f0',
-                    ring: '#367589',
+                    ring: '#34b6ff',
                 },
             },
             borderRadius: {

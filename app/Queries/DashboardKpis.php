@@ -29,12 +29,21 @@ class DashboardKpis
     public function forTenant(): array
     {
         $closedStatuses = [LeadStatus::Converted, LeadStatus::Lost];
+        $converted = LeadStatus::Converted->value;
+        $lost = LeadStatus::Lost->value;
+
+        $leadCounts = Lead::query()
+            ->toBase()
+            ->selectRaw(
+                'count(*) as total_leads,
+                 coalesce(sum(case when status not in (?, ?) then 1 else 0 end), 0) as active_leads',
+                [$converted, $lost],
+            )
+            ->first();
 
         return [
-            'total_leads' => Lead::query()->count(),
-            'active_leads' => Lead::query()
-                ->whereNotIn('status', $closedStatuses)
-                ->count(),
+            'total_leads' => (int) ($leadCounts->total_leads ?? 0),
+            'active_leads' => (int) ($leadCounts->active_leads ?? 0),
             'site_visits' => LeadScheduledEvent::query()
                 ->where('type', LeadScheduledEventType::SiteVisit)
                 ->where('status', LeadScheduledEventStatus::Scheduled)

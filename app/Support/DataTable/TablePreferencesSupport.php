@@ -52,7 +52,7 @@ class TablePreferencesSupport
         return match ($tableKey) {
             'follow_ups', 'site_visits' => ScheduledActivityStage::Pending->value,
             'activities', 'activities_site_visits' => ActivityFilter::All->value,
-            'tasks' => TaskFilter::Today->value,
+            'tasks' => TaskFilter::All->value,
             default => null,
         };
     }

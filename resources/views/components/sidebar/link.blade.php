@@ -7,7 +7,7 @@
         'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground' => ! $active,
     ])
 >
-    <span class="shrink-0 {{ $active ? '' : 'text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground' }}">
+    <span class="shrink-0">
         {{ $icon }}
     </span>
     <span class="sidebar-label truncate">{{ $slot }}</span>

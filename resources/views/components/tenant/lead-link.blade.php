@@ -13,7 +13,7 @@
             'phone' => $lead->phone,
             'email' => $lead->email,
             'status' => $lead->status->label(),
-            'source' => $lead->source,
+            'source' => $lead->sourceDisplay(),
             'budget' => $lead->budget?->label(),
             'location' => $lead->location,
             'assignedTo' => $lead->assignedTo?->name,

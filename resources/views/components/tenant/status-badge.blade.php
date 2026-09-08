@@ -1,4 +1,7 @@
-@props(['status'])
+@props([
+    'status',
+    'lead' => null,
+])
 
 @php
     $classes = match ($status->value) {
@@ -12,8 +15,18 @@
         'lost' => 'bg-rose-100 text-rose-700',
         default => 'bg-slate-100 text-slate-700',
     };
+
+    $badgeClass = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {$classes}";
 @endphp
 
-<span {{ $attributes->merge(['class' => "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {$classes}"]) }}>
-    {{ $status->label() }}
-</span>
+@if ($lead)
+    <x-tenant.lead-status-hover :lead="$lead" {{ $attributes }}>
+        <span class="{{ $badgeClass }}">
+            {{ $status->label() }}
+        </span>
+    </x-tenant.lead-status-hover>
+@else
+    <span {{ $attributes->merge(['class' => $badgeClass]) }}>
+        {{ $status->label() }}
+    </span>
+@endif

@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>InSyte CRM — Product & technical documentation</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dark: #275564;
+            --muted: #3d7f94;
+            --light: #4d95a8;
+            --accent: #38b6ff;
+            --navy: #34b6ff;
+            --green: #00bf63;
+            --text: #0f172a;
+            --secondary: #64748b;
+            --border: #e2e8f0;
+            --paper: #ffffff;
+            --tint: #f8fafc;
+            --soft: #e8f1f4;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--paper);
+            color: var(--text);
+            font-family: Inter, system-ui, sans-serif;
+            font-size: 10.5pt;
+            line-height: 1.55;
+        }
+
+        @page { size: A4; }
+
+        body { padding: 0 16mm; }
+
+        .cover {
+            background: var(--dark);
+            color: #fff;
+            margin: 0 -16mm;
+            padding: 28mm 18mm 20mm;
+            min-height: 250mm;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .cover img { height: 48px; width: auto; }
+        .cover .eyebrow {
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--accent);
+            margin: 0 0 12px;
+        }
+        .cover h1 {
+            font-size: 36px;
+            line-height: 1.15;
+            margin: 0 0 12px;
+            font-weight: 700;
+        }
+        .cover p { color: rgba(255,255,255,.78); max-width: 420px; margin: 0; }
+        .cover .meta { font-size: 11px; color: rgba(255,255,255,.65); display: flex; gap: 24px; }
+
+        .part-break {
+            background: var(--dark);
+            color: #fff;
+            margin: 0 -16mm;
+            padding: 32mm 18mm;
+            min-height: 240mm;
+            page-break-before: always;
+            page-break-after: always;
+        }
+        .part-break .eyebrow {
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .part-break h1 { font-size: 34px; margin: 10px 0 12px; }
+        .part-break p { color: rgba(255,255,255,.75); max-width: 460px; }
+
+        h2 {
+            font-size: 20px;
+            margin: 28px 0 8px;
+            page-break-after: avoid;
+        }
+        h3 {
+            font-size: 13.5px;
+            margin: 22px 0 6px;
+            page-break-after: avoid;
+        }
+        h2 .num, h3 .num {
+            color: var(--accent);
+            font-weight: 700;
+            margin-right: 6px;
+        }
+
+        p { margin: 0 0 10px; }
+        .lede { color: var(--secondary); font-size: 11.5pt; }
+
+        .eyebrow {
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--accent);
+            margin: 22px 0 4px;
+        }
+
+        a { color: var(--dark); }
+
+        .toc { page-break-after: always; padding-top: 8mm; }
+        .toc ol { padding-left: 18px; }
+        .toc li { margin: 5px 0; }
+        .toc a { text-decoration: none; color: var(--text); }
+        .toc .sub { color: var(--secondary); font-weight: 400; }
+
+        .note {
+            background: var(--tint);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin: 12px 0 16px;
+            color: var(--secondary);
+            font-size: 10pt;
+        }
+
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 14px; }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 2px 9px;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: .02em;
+        }
+        .chip-shipped { background: #ecfdf5; color: #047857; }
+        .chip-gated { background: #eff6ff; color: #1d4ed8; }
+        .chip-no { background: #fff7ed; color: #c2410c; }
+        .chip-stub { background: #f1f5f9; color: #475569; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9.5pt;
+            margin: 8px 0 16px;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            text-align: left;
+            padding: 7px 8px;
+            vertical-align: top;
+        }
+        th { background: var(--tint); font-weight: 600; font-size: 8.5pt; color: var(--secondary); }
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8.5pt; }
+
+        figure {
+            margin: 10px 0 18px;
+            page-break-inside: avoid;
+        }
+        figure img {
+            width: 100%;
+            max-height: 108mm;
+            object-fit: contain;
+            object-position: top left;
+            background: var(--tint);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: block;
+        }
+        figcaption {
+            font-size: 9pt;
+            color: var(--secondary);
+            margin-top: 6px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 10px 0 16px;
+        }
+        .grid-2 figure { margin: 0; }
+        .grid-2 figure img { max-height: 78mm; }
+
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            background: var(--paper);
+        }
+        .card h3 { margin-top: 0; }
+        .diagram {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 10px 0 16px;
+        }
+        .diagram .box {
+            background: var(--soft);
+            border-radius: 8px;
+            padding: 12px 10px;
+            text-align: center;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+        .diagram .box span {
+            display: block;
+            font-weight: 400;
+            color: var(--secondary);
+            font-size: 8pt;
+            margin-top: 4px;
+        }
+
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 8px 0 16px;
+            font-size: 9.5pt;
+        }
+        .flow b {
+            background: var(--dark);
+            color: #fff;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-weight: 600;
+        }
+        .flow i { color: var(--accent); font-style: normal; font-weight: 700; }
+
+        .module { page-break-inside: avoid; margin-bottom: 8px; }
+        .journey { page-break-inside: avoid; }
+
+        ul.plain { margin: 6px 0 12px; padding-left: 18px; }
+        ul.plain li { margin: 3px 0; }
+
+        .footer-note {
+            color: var(--secondary);
+            font-size: 9pt;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<section class="cover">
+    <div>
+        <img src="assets/logo-dark.png" alt="InSyte">
+        <p class="eyebrow" style="margin-top: 36px;">Product &amp; technical documentation</p>
+        <h1>How InSyte CRM is built, and what it does.</h1>
+        <p>One document. Part 1 is the stack, architecture, and integrations. Part 2 is the product: modules, features, and the paths people follow in the app.</p>
+    </div>
+    <div class="meta">
+        <span>September 2026</span>
+        <span>Version: current codebase</span>
+        <span>Audience: product, sales, and engineering</span>
+    </div>
+</section>
+
+<section class="toc">
+    <p class="eyebrow">Contents</p>
+    <h2>What is in this document</h2>
+    <p class="lede">Read Part 1 if you need to know how the system is put together. Read Part 2 if you need to explain or use the product. Screenshots are from a local Acme workspace. That workspace had no leads or properties yet, so several screens show empty states. The layout is still the live product.</p>
+
+    <div class="chips">
+        <span class="chip chip-shipped">Shipped</span>
+        <span class="chip chip-gated">Plan-gated</span>
+        <span class="chip chip-no">Not built yet</span>
+        <span class="chip chip-stub">UI placeholder</span>
+    </div>
+
+    <ol>
+        <li><a href="#read">How to read this</a></li>
+        <li><strong>Part 1 — How it is built</strong>
+            <ol>
+                <li><a href="#p1-what">What the system is</a></li>
+                <li><a href="#p1-stack">Stack</a></li>
+                <li><a href="#p1-map">What each technology is used for</a></li>
+                <li><a href="#p1-arch">How the code is organized</a></li>
+                <li><a href="#p1-surfaces">Surfaces and tenancy</a></li>
+                <li><a href="#p1-int">Integrations and APIs</a></li>
+                <li><a href="#p1-plans">Plans as controls</a></li>
+                <li><a href="#p1-status">Shipped vs not built</a></li>
+            </ol>
+        </li>
+        <li><strong>Part 2 — What it does</strong>
+            <ol>
+                <li><a href="#p2-overview">Product overview</a></li>
+                <li><a href="#p2-modules">Product modules</a></li>
+                <li><a href="#p2-features">Master feature list</a></li>
+                <li><a href="#p2-why">What each feature is for</a></li>
+                <li><a href="#p2-journeys">User journeys</a></li>
+            </ol>
+        </li>
+    </ol>
+
+    <div class="note">
+        Names in this document match the product: <strong>InSyte</strong>, <strong>InSyte CRM</strong>, <strong>InSyte AI OS</strong>. Typeface is Inter. Colour tokens come from the app: dark <span class="mono">#275564</span>, accent <span class="mono">#38b6ff</span>, green <span class="mono">#00bf63</span>.
+    </div>
+</section>
+
+<section id="read">
+    <p class="eyebrow">Before you start</p>
+    <h2><span class="num">00</span>How to read this</h2>
+    <p>This is not a pitch deck. Sentences describe what the software actually does. Where the marketing site talks about scoring, voice campaigns, or social posts, and the code does not ship those yet, they are listed as <strong>not built yet</strong>.</p>
+    <p>There are three apps in one repository:</p>
+    <ul class="plain">
+        <li><strong>Marketing site</strong> — public landing, demo and trial forms, legal pages.</li>
+        <li><strong>Platform</strong> — <span class="mono">/platform</span> for InSyte superadmins. Plans, channel partners, usage.</li>
+        <li><strong>Tenant CRM</strong> — <span class="mono">/{company}/…</span> or a custom CRM domain. This is what a channel partner’s team uses every day. Public property pages live on the same tenant, or on a separate website domain.</li>
+    </ul>
+</section>
+
+<section class="part-break" id="part-1">
+    <p class="eyebrow">Part 1</p>
+    <h1>How it is built</h1>
+    <p>Stack, architecture, tenancy, integrations, and the plan system that turns modules on and off.</p>
+</section>
+
+<section id="p1-what">
+    <p class="eyebrow">Architecture</p>
+    <h2><span class="num">1.1</span>What the system is</h2>
+    <p class="lede">InSyte CRM is a multi-tenant Laravel application for real-estate channel partners. Each company is a tenant with its own database. The central database holds plans, tenants, and platform users.</p>
+
+    <div class="diagram">
+        <div class="box">Landing<span>Central domain</span></div>
+        <div class="box">Platform<span>Superadmin</span></div>
+        <div class="box">Tenant CRM<span>Path or CRM domain</span></div>
+        <div class="box">Microsites<span>Website domain</span></div>
+    </div>
+
+    <p>Tenancy is implemented with Stancl Tenancy. Identification is by path (<span class="mono">/acme/dashboard</span>) or by a verified custom domain. Tenant databases, cache, files, and queues are isolated. A tenant can also attach two domain purposes: <strong>CRM</strong> (the app) and <strong>website</strong> (public property pages).</p>
+</section>
+
+<section id="p1-stack">
+    <h2><span class="num">1.2</span>Stack</h2>
+    <table>
+        <thead>
+            <tr><th>Layer</th><th>Technology</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Runtime</td><td>PHP 8.3</td><td>Typed, constructor promotion, enums</td></tr>
+            <tr><td>Framework</td><td>Laravel 13</td><td>Routing, Eloquent, queues, mail, validation</td></tr>
+            <tr><td>Tenancy</td><td>Stancl Tenancy 3.10</td><td>Database-per-tenant plus cache, files, queues</td></tr>
+            <tr><td>Database</td><td>MySQL in this environment</td><td>SQLite and Postgres managers are configured</td></tr>
+            <tr><td>Auth (platform)</td><td>Laravel Breeze</td><td>Login, reset, email verification</td></tr>
+            <tr><td>Auth (tenant)</td><td>Separate session controller</td><td>Company login at <span class="mono">/{tenant}/login</span></td></tr>
+            <tr><td>HTML</td><td>Blade</td><td>CRM, platform, microsite CMS</td></tr>
+            <tr><td>Behaviour</td><td>Alpine.js 3</td><td>Drawers, tables, pipeline chart, inbox</td></tr>
+            <tr><td>Islands</td><td>React 19 + Vite 8</td><td>Landing, charts, date pickers, UI primitives</td></tr>
+            <tr><td>CSS</td><td>Tailwind CSS 4</td><td>Inter via Bunny Fonts</td></tr>
+            <tr><td>Charts</td><td>Recharts</td><td>Reports and analytics</td></tr>
+            <tr><td>Dates</td><td>Atlaskit datetime picker</td><td>Follow-ups, visits, tasks</td></tr>
+            <tr><td>Tests</td><td>Pest 4 + Pint</td><td>Feature tests are the default</td></tr>
+            <tr><td>Queue / cache / session</td><td>Database drivers</td><td>Local default</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section id="p1-map">
+    <h2><span class="num">1.3</span>What each technology is used for</h2>
+    <p>This is the map from product capability to library or service.</p>
+    <table>
+        <thead>
+            <tr><th>Capability</th><th>What it uses</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Company isolation</td><td>Stancl Tenancy: one database per tenant, plus cache, filesystem, and queue bootstrappers</td></tr>
+            <tr><td>CRM screens</td><td>Blade layouts, Alpine stores, Tailwind. Lead drawer loads HTML over fetch</td></tr>
+            <tr><td>Marketing site</td><td>React landing mounted on <span class="mono">#landing-root</span>; Framer Motion, GSAP, Lenis for motion</td></tr>
+            <tr><td>Report charts</td><td>React + Recharts islands on Blade report pages</td></tr>
+            <tr><td>InSyte AI OS</td><td>OpenAI Responses API via <span class="mono">OpenAiChatClient</span>; tools in <span class="mono">InsyteAiTool</span></td></tr>
+            <tr><td>Google Sheets leads</td><td><span class="mono">google/apiclient</span>, connect/verify/map/sync; scheduled <span class="mono">google-sheets:sync</span> every minute</td></tr>
+            <tr><td>Facebook Lead Ads</td><td>Meta OAuth callback, page token, field mapping, <span class="mono">/api/webhooks/meta/leads</span></td></tr>
+            <tr><td>99acres, Housing, MagicBricks, NoBroker</td><td>Per-tenant webhook URL <span class="mono">/api/webhooks/{portal}/wh_…</span></td></tr>
+            <tr><td>Website / custom forms</td><td><span class="mono">POST /api/v1/leads</span> with a Bearer token on the tenant</td></tr>
+            <tr><td>WhatsApp today</td><td>Opens WhatsApp Web compose (<span class="mono">web.whatsapp.com/send</span>). Not the WhatsApp Business API</td></tr>
+            <tr><td>Public project pages</td><td>Property microsite Blade + <span class="mono">microsite.css</span>; enquiry creates a lead</td></tr>
+            <tr><td>Custom domains</td><td>DNS CNAME check, purpose CRM or website</td></tr>
+            <tr><td>Module access</td><td><span class="mono">PlanFeature</span> + <span class="mono">PlanCapability</span> + <span class="mono">PlanLimitKey</span></td></tr>
+            <tr><td>User access</td><td>Custom roles and <span class="mono">TenantPermission</span> (not Spatie)</td></tr>
+            <tr><td>Automations</td><td>Lead activity event → match workflows → actions (task, note, status, follow-up)</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section id="p1-arch">
+    <h2><span class="num">1.4</span>How the code is organized</h2>
+    <p>HTTP controllers stay thin. Work lives in Actions. List screens and KPIs live in Query objects. Validation lives in Form Requests. Statuses and plan keys are PHP enums.</p>
+    <table>
+        <thead>
+            <tr><th>Folder</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+            <tr><td class="mono">app/Actions</td><td>One job: create a lead, run an automation, complete OAuth, sync a sheet, run an AI turn</td></tr>
+            <tr><td class="mono">app/Queries</td><td>Listings, dashboard KPIs, reports, team performance</td></tr>
+            <tr><td class="mono">app/Http/Requests</td><td>Input rules at the HTTP boundary</td></tr>
+            <tr><td class="mono">app/Enums</td><td>Lead status, plan features, permissions, automation triggers</td></tr>
+            <tr><td class="mono">app/Support</td><td>AI client, Google Sheets client, Meta Graph client, plan access</td></tr>
+            <tr><td class="mono">app/Events</td><td>e.g. lead activity recorded → dispatch automations</td></tr>
+        </tbody>
+    </table>
+    <p>Platform users and tenant users are both <span class="mono">User</span> models, but they log in through different routes and middleware. Superadmin is a platform gate. Tenant permissions are checked with <span class="mono">permission:</span> middleware and Blade <span class="mono">&lt;x-tenant.can&gt;</span>.</p>
+</section>
+
+<section id="p1-surfaces">
+    <h2><span class="num">1.5</span>Surfaces and tenancy</h2>
+    <figure>
+        <img src="screenshots/05-platform-login.png" alt="Platform login">
+        <figcaption>Platform login at /platform/login. Superadmins only.</figcaption>
+    </figure>
+    <figure>
+        <img src="screenshots/15-tenant-login.png" alt="Tenant login">
+        <figcaption>Tenant login at /{company}/login. This example is the Acme workspace.</figcaption>
+    </figure>
+    <p>Custom domains: a tenant admin pastes a hostname, creates a CNAME to the InSyte target, then verifies. Purpose <strong>crm</strong> serves the CRM. Purpose <strong>website</strong> serves public project pages. Suspended tenants cannot use either surface.</p>
+</section>
+
+<section id="p1-int">
+    <h2><span class="num">1.6</span>Integrations and APIs</h2>
+    <p>Lead ingest is the same idea everywhere: a payload arrives, it is normalized, a lead is created in the tenant database, activity is logged, automations may run.</p>
+    <table>
+        <thead>
+            <tr><th>Source</th><th>Entry</th><th>Auth</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Lead API</td><td class="mono">POST /api/v1/leads</td><td>Bearer tenant token</td></tr>
+            <tr><td>Meta Lead Ads</td><td class="mono">GET/POST /api/webhooks/meta/leads</td><td>Verify token (GET); signature on POST</td></tr>
+            <tr><td>Facebook OAuth</td><td class="mono">GET /api/oauth/facebook/callback</td><td>OAuth state / session</td></tr>
+            <tr><td>Portals</td><td class="mono">POST /api/webhooks/{portal}/wh_…</td><td>Per-endpoint webhook secret</td></tr>
+            <tr><td>Google Sheets</td><td>Scheduler + on-demand sync</td><td>API key / sheet sharing as configured</td></tr>
+            <tr><td>Microsite form</td><td class="mono">POST …/projects/{slug}/enquire</td><td>Throttle 8/minute</td></tr>
+        </tbody>
+    </table>
+    <div class="grid-2">
+        <figure>
+            <img src="screenshots/46-tenant-settings-integrations.png" alt="Integrations settings">
+            <figcaption>Settings → Integrations. WhatsApp Business and Email are marked coming soon on this screen.</figcaption>
+        </figure>
+        <figure>
+            <img src="screenshots/48-tenant-google-sheets.png" alt="Google Sheets">
+            <figcaption>Google Sheets connection list: add a sheet, verify, map columns, sync or pause.</figcaption>
+        </figure>
+    </div>
+    <div class="grid-2">
+        <figure>
+            <img src="screenshots/49-tenant-facebook.png" alt="Facebook pages">
+            <figcaption>Facebook pages: connect, verify, map lead form fields, activate or pause.</figcaption>
+        </figure>
+        <figure>
+            <img src="screenshots/50-tenant-portal-99acres.png" alt="99acres webhook">
+            <figcaption>Portal webhook setup (99acres shown). Housing, MagicBricks, and NoBroker use the same pattern.</figcaption>
+        </figure>
+    </div>
+    <div class="note">The Lead API settings screen shows a live token. That screenshot is not in this PDF. The endpoint is <span class="mono">POST /api/v1/leads</span> with header <span class="mono">Authorization: Bearer {token}</span>. Fields: name (required), phone, email, source, budget, location, property_type, configuration.</div>
+</section>
+
+<section id="p1-plans">
+    <h2><span class="num">1.7</span>Plans as controls</h2>
+    <p>Superadmins define plans. A plan has modules (features), optional packs (Basic / Advanced / Custom) on CRM, Reports, Automations, and InSyte AI, plus numeric limits.</p>
+    <figure>
+        <img src="screenshots/09-platform-plan-wizard.png" alt="Create plan wizard">
+        <figcaption>Create Plan wizard: Basic info → Pricing → Features → Limits → Review.</figcaption>
+    </figure>
+    <table>
+        <thead>
+            <tr><th>Default plan</th><th>What it turns on</th><th>Example limits</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Starter</td><td>CRM, properties, bookings, revenue, reports, teams, automations, inbox, WhatsApp, API + Sheets. No AI, no microsites.</td><td>5 users, 2,000 leads, 0 AI messages / month</td></tr>
+            <tr><td>Growth</td><td>Everything in Starter plus InSyte AI (basic pack), microsites, custom domains, Facebook</td><td>15 users, 10,000 leads, 1,000 AI messages / month</td></tr>
+            <tr><td>Pro</td><td>All modules, advanced AI pack, all integration capabilities</td><td>50 users, 50,000 leads, 10,000 AI messages / month</td></tr>
+        </tbody>
+    </table>
+    <p>Limits that exist in code: users, leads, automations, automation runs / month, WhatsApp messages / month, AI messages / month, integrations, properties, teams, microsites.</p>
+    <figure>
+        <img src="screenshots/08-platform-plans.png" alt="Plans index">
+        <figcaption>Plans index. This local platform database had no saved plans yet — empty state of the live screen.</figcaption>
+    </figure>
+    <p>Channel partner records (tenants) sit next to plans. Superadmins create a company, assign a plan, and inspect users, subscription, usage, integrations, and activity.</p>
+    <div class="grid-2">
+        <figure>
+            <img src="screenshots/10-platform-tenants.png" alt="Channel partners">
+            <figcaption>Channel partners list.</figcaption>
+        </figure>
+        <figure>
+            <img src="screenshots/11-platform-tenant-overview.png" alt="Tenant overview">
+            <figcaption>One partner overview (Acme).</figcaption>
+        </figure>
+    </div>
+</section>
+
+<section id="p1-status">
+    <h2><span class="num">1.8</span>Shipped vs not built</h2>
+    <table>
+        <thead>
+            <tr><th>Item</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>CRM leads, activities, tasks, documents, import/export, duplicates</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Properties, bookings, invoices, payouts, reports, analytics</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>InSyte AI OS Chat and tools (search, schedule, complete, notes, tasks)</td><td><span class="chip chip-shipped">Shipped</span> <span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>AI tabs: Lead Insights, Content &amp; Scripts, Task Assistant, Reports &amp; Analysis</td><td><span class="chip chip-no">Not built yet</span></td></tr>
+            <tr><td>Automations: lead created, status changed, follow-up scheduled</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Automation trigger: follow-up overdue</td><td><span class="chip chip-no">Not ready</span></td></tr>
+            <tr><td>Automation send WhatsApp / email actions</td><td><span class="chip chip-no">In enum, not selectable</span></td></tr>
+            <tr><td>WhatsApp compose from a lead (opens WhatsApp Web)</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>WhatsApp Business API, Email, Calendar integrations</td><td><span class="chip chip-no">Not built yet</span></td></tr>
+            <tr><td>Lead scoring, voice campaigns, social post generation</td><td><span class="chip chip-no">Marketing only</span></td></tr>
+            <tr><td>Platform: Revenue, Quotations, Integrations, Analytics, Utilities, Settings</td><td><span class="chip chip-stub">Stub pages</span></td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="part-break" id="part-2">
+    <p class="eyebrow">Part 2</p>
+    <h1>What it does</h1>
+    <p>Product overview, modules, the full feature list, why each piece exists, and the paths users follow.</p>
+</section>
+
+<section id="p2-overview">
+    <p class="eyebrow">Product</p>
+    <h2><span class="num">2.1</span>Product overview</h2>
+    <p class="lede">InSyte CRM is for people who sell property through a channel-partner business. The daily job is: take an enquiry, follow up, take a site visit, book a unit, and see commission.</p>
+
+    <figure>
+        <img src="screenshots/01-landing-hero.png" alt="Marketing landing">
+        <figcaption>Public marketing site. The product promise on this page is broader than what Chat currently does; Part 1.8 is the accurate list.</figcaption>
+    </figure>
+
+    <h3>Who uses it</h3>
+    <table>
+        <thead>
+            <tr><th>Role</th><th>Where</th><th>Typical work</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Sales executive</td><td>Tenant CRM</td><td>Leads, WhatsApp, follow-ups, site visits, tasks</td></tr>
+            <tr><td>Team lead / manager</td><td>Tenant CRM</td><td>Assign leads, pipeline, team performance, reports</td></tr>
+            <tr><td>Tenant admin</td><td>Settings</td><td>Users, roles, domains, integrations, company profile</td></tr>
+            <tr><td>Platform superadmin</td><td>/platform</td><td>Plans, onboard partners, usage</td></tr>
+            <tr><td>Buyer (public)</td><td>Property page</td><td>View a project and send an enquiry</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Lead pipeline</h3>
+    <div class="flow">
+        <b>New</b> <i>→</i> <b>Contacted</b> <i>→</i> <b>Qualified</b> <i>→</i> <b>Follow-up</b> <i>→</i> <b>Site visit</b> <i>→</i> <b>Negotiation</b> <i>→</i> <b>Converted</b>
+        <span style="color:#64748b">or</span>
+        <b>Lost</b>
+    </div>
+    <p>Converted and Lost are closed states. They are not chosen from the normal status dropdown; they are set by Close or Mark lost actions.</p>
+
+    <h3>Operating loop</h3>
+    <table>
+        <thead>
+            <tr><th>Step</th><th>In the product</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Capture</td><td>Manual lead, import, API, Sheets, Facebook, portals, microsite enquiry</td></tr>
+            <tr><td>Follow up</td><td>Call / WhatsApp, scheduled follow-up, site visit, tasks, notes</td></tr>
+            <tr><td>Book</td><td>Convert lead → booking (property, unit, agreement value)</td></tr>
+            <tr><td>Earn</td><td>Invoice, mark agreement, payout received, revenue screens</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section id="p2-modules">
+    <h2><span class="num">2.2</span>Product modules</h2>
+    <p class="lede">The tenant sidebar is the module map. Items appear only if the user’s role allows it and the company’s plan includes that feature.</p>
+
+    <div class="module">
+        <h3>Dashboard</h3>
+        <p>Welcome line, five KPIs (total leads, active leads, site visits, bookings, sales), sales pipeline by status, today’s tasks, and My Day (follow-ups and site visits due).</p>
+        <figure>
+            <img src="screenshots/17-tenant-dashboard.png" alt="Tenant dashboard">
+            <figcaption>Tenant dashboard. Empty KPIs because this Acme workspace has no leads yet.</figcaption>
+        </figure>
+    </div>
+
+    <div class="module">
+        <h3>InSyte AI OS</h3>
+        <p>Chat is shipped. The model can search leads, read today’s agenda, schedule or complete follow-ups and site visits, create or complete tasks, and add notes. Other tabs are visible and labelled as not ready. Access: permission <span class="mono">ai.use</span> and plan feature InSyte AI.</p>
+        <figure>
+            <img src="screenshots/18-tenant-ai-os.png" alt="InSyte AI OS">
+            <figcaption>InSyte AI OS — Chat tab with example prompts and quick actions. BETA in the UI.</figcaption>
+        </figure>
+    </div>
+
+    <div class="module">
+        <h3>Leads</h3>
+        <p>All leads table with search, filters, import, column editor, bulk assign / status / delete. Sub-views: Priority, Unassigned, Converted, Lost, Duplicates. Opening a lead uses a drawer (name, status, budget, property type, notes, documents, timeline, WhatsApp, follow-up, site visit, tasks).</p>
+        <figure>
+            <img src="screenshots/19-tenant-leads.png" alt="Leads list">
+            <figcaption>Leads list. Columns include name, phone, source, requirement, assignee, status, next follow-up, last activity.</figcaption>
+        </figure>
+        <figure>
+            <img src="screenshots/51-tenant-add-lead.png" alt="Add lead modal">
+            <figcaption>Add Lead: name, phone, email, source, budget, location, property type, configuration, assignee.</figcaption>
+        </figure>
+    </div>
+
+    <div class="module">
+        <h3>Activities</h3>
+        <p>Home for scheduled work. Follow-ups and site visits are separate lists with reschedule and complete. Site visits record type (fresh visit or revisit) and a property.</p>
+        <div class="grid-2">
+            <figure>
+                <img src="screenshots/25-tenant-activities.png" alt="Activities">
+                <figcaption>Activities home.</figcaption>
+            </figure>
+            <figure>
+                <img src="screenshots/26-tenant-follow-ups.png" alt="Follow-ups">
+                <figcaption>Follow-ups list.</figcaption>
+            </figure>
+        </div>
+        <figure>
+            <img src="screenshots/27-tenant-site-visits.png" alt="Site visits">
+            <figcaption>Site visits list.</figcaption>
+        </figure>
+    </div>
+
+    <div class="module">
+        <h3>Tasks</h3>
+        <p>Standalone task list plus tasks on a lead. Statuses: Pending → In progress → Complete, or Cancelled.</p>
+        <figure>
+            <img src="screenshots/28-tenant-tasks.png" alt="Tasks">
+            <figcaption>Tasks.</figcaption>
+        </figure>
+    </div>
+
+    <div class="module">
+        <h3>Properties</h3>
+        <p>Project inventory (apartment, villa, plot, shop, office). Status, website visibility, optional public microsite. Microsite CMS sections: hero, highlights, about, configurations, amenities, visuals, location, developer, call to action.</p>
+        <figure>
+            <img src="screenshots/29-tenant-properties.png" alt="Properties">
+            <figcaption>Properties. Counts for total, active, inactive, featured.</figcaption>
+        </figure>
+    </div>
+
+    <div class="module">
+        <h3>Bookings</h3>
+        <p>Create a booking from a converted (or converting) lead: property, unit, agreement value, date. Later: mark agreement, create invoice.</p>
+        <figure>
+            <img src="screenshots/30-tenant-bookings.png" alt="Bookings">
+            <figcaption>Bookings.</figcaption>
+        </figure>
+    </div>
+
+    <div class="module">
+        <h3>Revenue</h3>
+        <p>Sales totals, invoices (edit, PDF, mark paid), payouts (mark paid). This is how commission is tracked in the product today.</p>
+        <div class="grid-2">
+            <figure>
+                <img src="screenshots/31-tenant-revenue.png" alt="Revenue">
+                <figcaption>Revenue.</figcaption>
+            </figure>
+            <figure>
+                <img src="screenshots/32-tenant-invoices.png" alt="Invoices">
+                <figcaption>Invoices.</figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="module">
+        <h3>Reports</h3>
+        <p>Operational reports with export and print. Analytics adds velocity, aging, property-type performance, source and agent tables. Plan-gated: analytics, export, print.</p>
+        <div class="grid-2">
+            <figure>
+                <img src="screenshots/34-tenant-reports.png" alt="Reports">
+                <figcaption>Reports.</figcaption>
+            </figure>
+            <figure>
+                <img src="screenshots/35-tenant-reports-analytics.png" alt="Analytics">
+                <figcaption>Analytics.</figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="module">
+        <h3>Teams</h3>
+        <p>Sales teams, members, archive. Performance view per team. Team Inbox is a header drawer (conversations, attachments), gated by the Team Inbox plan feature.</p>
+        <div class="grid-2">
+            <figure>
+                <img src="screenshots/36-tenant-teams.png" alt="Teams">
+                <figcaption>Teams.</figcaption>
+            </figure>
+            <figure>
+                <img src="screenshots/37-tenant-team-performance.png" alt="Team performance">
+                <figcaption>Team performance.</figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="module">
+        <h3>Automations</h3>
+        <p>Workflows: trigger + conditions + actions, test run, on/off. Templates: WhatsApp / email / SMS copy with merge variables. Workflows apply to leads assigned to the current user unless the workflow is set otherwise in the editor.</p>
+        <div class="grid-2">
+            <figure>
+                <img src="screenshots/38-tenant-automations.png" alt="Automations home">
+                <figcaption>Automations home.</figcaption>
+            </figure>
+            <figure>
+                <img src="screenshots/39-tenant-workflows.png" alt="Workflows">
+                <figcaption>Workflows — create, search, on/off filter.</figcaption>
+            </figure>
+        </div>
+        <figure>
+            <img src="screenshots/40-tenant-templates.png" alt="Templates">
+            <figcaption>Message templates.</figcaption>
+        </figure>
+    </div>
+
+    <div class="module">
+        <h3>Settings</h3>
+        <p>Tabs: Profile, Company, Security, Users, Roles &amp; Permissions, Domains, Integrations. Roles are switch-based permissions grouped by module.</p>
+        <div class="grid-2">
+            <figure>
+                <img src="screenshots/44-tenant-settings-roles.png" alt="Roles">
+                <figcaption>Roles &amp; permissions.</figcaption>
+            </figure>
+            <figure>
+                <img src="screenshots/45-tenant-settings-domains.png" alt="Domains">
+                <figcaption>Custom CRM and website domains.</figcaption>
+            </figure>
+        </div>
+        <figure>
+            <img src="screenshots/43-tenant-settings-users.png" alt="Users">
+            <figcaption>Workspace users.</figcaption>
+        </figure>
+    </div>
+
+    <div class="module">
+        <h3>Platform</h3>
+        <p>Superadmin: dashboard, channel partners, plans. Revenue &amp; Billing, Quotations, Integrations, Analytics, Utilities, and Settings in the platform sidebar are stub routes today.</p>
+        <figure>
+            <img src="screenshots/07-platform-dashboard.png" alt="Platform dashboard">
+            <figcaption>Platform dashboard.</figcaption>
+        </figure>
+    </div>
+</section>
+
+<section id="p2-features">
+    <h2><span class="num">2.3</span>Master feature list</h2>
+
+    <h3>Capture</h3>
+    <table>
+        <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+        <tbody>
+            <tr><td>Add lead (modal)</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Import / export CSV</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Duplicate detection and merge</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Lead API</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Google Sheets sync</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Facebook Lead Ads</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>99acres, Housing.com, MagicBricks, NoBroker webhooks</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Microsite enquiry → lead</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+        </tbody>
+    </table>
+
+    <h3>Work the lead</h3>
+    <table>
+        <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+        <tbody>
+            <tr><td>Status, budget, property type, assignment</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Notes, documents, activity timeline</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Schedule / reschedule / complete follow-up</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Schedule / complete site visit (fresh or revisit)</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Tasks on lead and global task list</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Bulk assign, bulk status, bulk delete</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Table column preferences</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>WhatsApp compose (WhatsApp Web)</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Close / mark lost with reasons</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Priority / unassigned / converted / lost views</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+        </tbody>
+    </table>
+
+    <h3>Convert and earn</h3>
+    <table>
+        <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+        <tbody>
+            <tr><td>Booking (property, unit, agreement value)</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Mark agreement</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Invoice create, edit, PDF, mark paid</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Payouts mark paid</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Revenue dashboard</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+        </tbody>
+    </table>
+
+    <h3>Team and admin</h3>
+    <table>
+        <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+        <tbody>
+            <tr><td>Sales teams and members</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Team performance</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Team Inbox</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Users, roles, permission switches</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Custom CRM and website domains</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+        </tbody>
+    </table>
+
+    <h3>Automate and AI</h3>
+    <table>
+        <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+        <tbody>
+            <tr><td>Workflows: create task, add note, change status, schedule follow-up</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>Conditions on status, source, budget, property type, location</td><td><span class="chip chip-shipped">Shipped</span></td></tr>
+            <tr><td>Message templates</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>AI Chat tools listed in 2.2</td><td><span class="chip chip-gated">Plan-gated</span></td></tr>
+            <tr><td>AI Lead Insights / Content / Task Assistant / Reports tabs</td><td><span class="chip chip-no">Not built yet</span></td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section id="p2-why">
+    <h2><span class="num">2.4</span>What each feature is for</h2>
+    <p>Plain reasons, tied to the screens above.</p>
+    <table>
+        <thead>
+            <tr><th>Feature</th><th>What it is for</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>One lead list</td><td>Stop splitting enquiries across Excel, WhatsApp, and portal dashboards</td></tr>
+            <tr><td>Source field + integrations</td><td>See whether a lead came from an ad, a portal, a sheet, or a form</td></tr>
+            <tr><td>Priority and unassigned views</td><td>Managers see what needs a person today</td></tr>
+            <tr><td>Duplicates</td><td>Two records for the same phone become one, with a merge in the timeline</td></tr>
+            <tr><td>Follow-up and site visit schedules</td><td>The next action has a time, not a chat reminder that gets buried</td></tr>
+            <tr><td>Pipeline on the dashboard</td><td>Count leads in each stage without exporting</td></tr>
+            <tr><td>Bookings → invoices → payouts</td><td>Agreement value and commission sit next to the lead that produced them</td></tr>
+            <tr><td>Reports / analytics</td><td>Conversion, aging, and source performance from the same database</td></tr>
+            <tr><td>Roles</td><td>An agent can work leads without editing company settings or integrations</td></tr>
+            <tr><td>Plans and packs</td><td>InSyte sells Starter / Growth / Pro without forking the codebase</td></tr>
+            <tr><td>Automations</td><td>The same first response happens when a lead is created or a status changes</td></tr>
+            <tr><td>InSyte AI OS Chat</td><td>Ask in language: find a person, schedule a visit, write a note — without hunting menus</td></tr>
+            <tr><td>Microsites</td><td>Share a project URL; the enquiry lands as a lead</td></tr>
+            <tr><td>WhatsApp compose</td><td>Start a chat with the lead’s number and log that a message was sent. It does not send inside InSyte</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section id="p2-journeys">
+    <h2><span class="num">2.5</span>User journeys</h2>
+
+    <div class="journey">
+        <h3>1. Superadmin creates a channel partner</h3>
+        <ol>
+            <li>Sign in at <span class="mono">/platform/login</span>.</li>
+            <li>Open Channel Partners → create company (wizard: company details, admin user, plan).</li>
+            <li>Partner appears on the list. Overview, users, subscription, and usage are available.</li>
+            <li>The new admin signs in at <span class="mono">/{slug}/login</span> and lands on the dashboard.</li>
+        </ol>
+        <div class="grid-2">
+            <figure>
+                <img src="screenshots/10-platform-tenants.png" alt="Partners">
+                <figcaption>Partners list.</figcaption>
+            </figure>
+            <figure>
+                <img src="screenshots/13-platform-tenant-subscription.png" alt="Subscription">
+                <figcaption>Partner subscription.</figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="journey">
+        <h3>2. Agent starts the day</h3>
+        <ol>
+            <li>Sign in to the tenant CRM.</li>
+            <li>Dashboard: My Day and today’s tasks.</li>
+            <li>Open Priority leads, or ask InSyte AI OS “what is due today?”.</li>
+            <li>On a lead: call or WhatsApp, log activity, complete or reschedule the follow-up.</li>
+        </ol>
+        <figure>
+            <img src="screenshots/16-tenant-after-login.png" alt="After tenant login">
+            <figcaption>After login — dashboard.</figcaption>
+        </figure>
+    </div>
+
+    <div class="journey">
+        <h3>3. Facebook or portal lead arrives</h3>
+        <ol>
+            <li>Admin connects Facebook or copies a portal webhook in Settings → Integrations.</li>
+            <li>A buyer submits a lead form on Meta or a portal.</li>
+            <li>Webhook creates the lead with the right source.</li>
+            <li>If a workflow is on for “lead created”, InSyte can add a task, a note, change status, or schedule a follow-up.</li>
+            <li>The assigned agent sees the lead in the list and contacts them.</li>
+        </ol>
+    </div>
+
+    <div class="journey">
+        <h3>4. Google Sheet row becomes a lead</h3>
+        <ol>
+            <li>Settings → Integrations → Google Sheets → add spreadsheet URL.</li>
+            <li>Verify access, map columns (name, phone, and the other mappable fields).</li>
+            <li>Connect. Sync now, or wait for the one-minute scheduler.</li>
+            <li>New rows appear as leads. Pause stops further sync without deleting the connection.</li>
+        </ol>
+        <figure>
+            <img src="screenshots/48-tenant-google-sheets.png" alt="Sheets journey">
+            <figcaption>Google Sheets connections.</figcaption>
+        </figure>
+    </div>
+
+    <div class="journey">
+        <h3>5. Site visit to booking to payout</h3>
+        <ol>
+            <li>On the lead, schedule a site visit (property + fresh visit or revisit + time).</li>
+            <li>Complete the visit (outcome / notes as the form requires).</li>
+            <li>Move through negotiation. Close as converted and create a booking (or create booking from Bookings).</li>
+            <li>Mark agreement if needed. Create invoice. Download PDF.</li>
+            <li>When commission is received, mark the payout paid. Revenue totals update.</li>
+        </ol>
+        <div class="grid-2">
+            <figure>
+                <img src="screenshots/30-tenant-bookings.png" alt="Bookings journey">
+                <figcaption>Bookings.</figcaption>
+            </figure>
+            <figure>
+                <img src="screenshots/33-tenant-payouts.png" alt="Payouts">
+                <figcaption>Payouts.</figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="journey">
+        <h3>6. Property page enquiry</h3>
+        <ol>
+            <li>Add a property. Turn microsite on (plan must include microsites).</li>
+            <li>Edit CMS sections and media.</li>
+            <li>Share <span class="mono">/{tenant}/projects/{slug}</span> or the website domain URL.</li>
+            <li>Buyer submits Enquire. A lead is created, throttled to 8 per minute per project.</li>
+        </ol>
+        <p class="lede">This local Acme workspace had no properties, so there is no public microsite screenshot in this edition.</p>
+    </div>
+
+    <div class="journey">
+        <h3>7. Ask InSyte AI OS to schedule a follow-up</h3>
+        <ol>
+            <li>Open InSyte AI OS. Stay on Chat.</li>
+            <li>Example: “Schedule a follow-up for Rahul tomorrow at 4pm.”</li>
+            <li>The model calls <span class="mono">search_leads</span> / <span class="mono">get_lead</span>, then <span class="mono">schedule_follow_up</span>.</li>
+            <li>The follow-up appears on the lead and in Follow-ups / My Day. Usage counts against the monthly AI message limit.</li>
+        </ol>
+        <figure>
+            <img src="screenshots/18-tenant-ai-os.png" alt="AI journey">
+            <figcaption>Chat is the path that can write to the CRM. Other tabs are not built yet.</figcaption>
+        </figure>
+    </div>
+
+    <div class="journey">
+        <h3>8. Admin sets a role</h3>
+        <ol>
+            <li>Settings → Roles &amp; Permissions → create or edit a role.</li>
+            <li>Switch permissions by group (Leads, Activities, Revenue, and so on).</li>
+            <li>Settings → Users → assign the role. An agent without <span class="mono">settings.company</span> will not see company or domain tabs.</li>
+        </ol>
+        <figure>
+            <img src="screenshots/44-tenant-settings-roles.png" alt="Roles journey">
+            <figcaption>Role editor with permission groups.</figcaption>
+        </figure>
+    </div>
+
+    <div class="journey">
+        <h3>9. Marketing visitor books a demo</h3>
+        <ol>
+            <li>Open the public site.</li>
+            <li>Submit Book demo or Start trial.</li>
+            <li>The submission is stored centrally (<span class="mono">LandingSubmission</span>). It is not a tenant lead until someone onboards that company.</li>
+        </ol>
+        <div class="grid-2">
+            <figure>
+                <img src="screenshots/02-landing-features.png" alt="Landing features">
+                <figcaption>Landing — product modules.</figcaption>
+            </figure>
+            <figure>
+                <img src="screenshots/04-landing-lead-sources.png" alt="Lead sources">
+                <figcaption>Landing — lead sources.</figcaption>
+            </figure>
+        </div>
+    </div>
+</section>
+
+<p class="footer-note">Generated from the InSyte CRM codebase and screenshots of <span class="mono">http://localhost:8000</span> on 8 September 2026. Tokens and secrets are omitted. Rebuild: <span class="mono">node capture.mjs</span> then <span class="mono">node print-pdf.mjs</span> in <span class="mono">docs/insyte-documentation</span>.</p>
+
+</body>
+</html>

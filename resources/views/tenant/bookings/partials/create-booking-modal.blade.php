@@ -8,37 +8,75 @@
 
 @php
     $fieldId = 'booking_'.$modalName;
+    $configSelectId = $fieldId.'_configuration';
+
+    $configsByProperty = collect($properties)
+        ->mapWithKeys(function (array $property) {
+            $options = collect($property['configurations'] ?? [])
+                ->values()
+                ->map(function (array $configuration, int $index) {
+                    $parts = [$configuration['name'] ?? ''];
+
+                    if (! empty($configuration['carpet_area_sqft'])) {
+                        $parts[] = $configuration['carpet_area_sqft'].' sqft';
+                    }
+
+                    if (! empty($configuration['price'])) {
+                        $parts[] = '₹'.number_format((int) $configuration['price']);
+                    }
+
+                    return [
+                        'value' => (string) $index,
+                        'label' => implode(' · ', array_filter($parts)),
+                    ];
+                })
+                ->all();
+
+            return [(string) $property['id'] => $options];
+        })
+        ->all();
 @endphp
 
 <x-modal :name="$modalName" maxWidth="xl">
     <div
         x-data="{
-            propertyId: @js(old('property_id', '')),
-            configurationIndex: @js(old('configuration_index', '')),
-            leadId: @js(old('lead_id', $defaultLeadId ?? '')),
-            properties: @js($properties),
-            get selectedProperty() {
-                return this.properties.find((property) => String(property.id) === String(this.propertyId)) ?? null;
-            },
-            get configurations() {
-                return this.selectedProperty?.configurations ?? [];
-            },
-            configurationLabel(configuration) {
-                const parts = [configuration.name];
+            propertyId: @js((string) old('property_id', '')),
+            configurationIndex: @js(old('configuration_index', '') === null || old('configuration_index', '') === '' ? '' : (string) old('configuration_index')),
+            configsByProperty: @js($configsByProperty),
+            fillConfigurationOptions() {
+                const select = this.$refs.configSelect;
 
-                if (configuration.carpet_area_sqft) {
-                    parts.push(configuration.carpet_area_sqft + ' sqft');
+                if (! select) {
+                    return;
                 }
 
-                if (configuration.price) {
-                    parts.push('₹' + Number(configuration.price).toLocaleString('en-IN'));
+                const previous = String(this.configurationIndex ?? '');
+                const matching = this.configsByProperty[String(this.propertyId)] ?? [];
+
+                while (select.options.length > 1) {
+                    select.remove(1);
                 }
 
-                return parts.join(' · ');
+                matching.forEach((option) => {
+                    select.add(new Option(option.label, option.value));
+                });
+
+                const values = matching.map((option) => String(option.value));
+                const nextValue = values.includes(previous) ? previous : '';
+
+                if (this.configurationIndex !== nextValue) {
+                    this.configurationIndex = nextValue;
+                }
+
+                select.value = nextValue;
             },
-            onPropertySelected(value) {
-                this.propertyId = value;
-                this.configurationIndex = '';
+            init() {
+                this.$watch('propertyId', () => {
+                    this.configurationIndex = '';
+                    this.$nextTick(() => this.fillConfigurationOptions());
+                });
+
+                this.$nextTick(() => this.fillConfigurationOptions());
             },
         }"
     >
@@ -59,6 +97,7 @@
 
         <form method="POST" action="{{ route('tenant.bookings.store') }}">
             @csrf
+            <input type="hidden" name="_open_modal" value="{{ $modalName }}">
             <x-ui.modal.body>
                 <x-ui.modal.section :title="__('Lead & Property')">
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-x-4 sm:gap-y-3">
@@ -77,7 +116,6 @@
                                     :value="old('lead_id', $defaultLeadId ?? '')"
                                     :placeholder="__('Select a lead')"
                                     required
-                                    x-on:selected="leadId = $event.detail"
                                 />
                                 @error('lead_id')
                                     <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
@@ -86,32 +124,36 @@
                         </div>
                         <div>
                             <x-ui.modal.field-label for="{{ $fieldId }}_property" :value="__('Property')" required />
-                            <x-ui.combobox
+                            <select
                                 id="{{ $fieldId }}_property"
                                 name="property_id"
-                                :options="collect($properties)->map(fn ($property) => ['value' => (string) $property['id'], 'label' => $property['label']])->all()"
-                                :value="old('property_id', '')"
-                                :placeholder="__('Select a property')"
+                                x-model="propertyId"
                                 required
-                                @selected="onPropertySelected($event.detail)"
-                            />
+                                class="mt-0 block h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-black shadow-sm focus:border-navy focus:ring-navy"
+                            >
+                                <option value="">{{ __('Select a property') }}</option>
+                                @foreach ($properties as $property)
+                                    <option value="{{ $property['id'] }}">
+                                        {{ $property['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
                             @error('property_id')
                                 <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
                             @enderror
                         </div>
-                        <div x-show="propertyId !== ''" x-cloak>
-                            <x-ui.modal.field-label for="{{ $fieldId }}_configuration" :value="__('Configuration')" required />
+                        <div>
+                            <x-ui.modal.field-label for="{{ $configSelectId }}" :value="__('Configuration')" required />
                             <select
-                                id="{{ $fieldId }}_configuration"
+                                id="{{ $configSelectId }}"
                                 name="configuration_index"
+                                x-ref="configSelect"
                                 x-model="configurationIndex"
-                                required
-                                class="mt-0 block h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-black shadow-sm focus:border-navy focus:ring-navy"
+                                :disabled="propertyId === ''"
+                                :required="propertyId !== ''"
+                                class="mt-0 block h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-black shadow-sm focus:border-navy focus:ring-navy disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
                             >
                                 <option value="">{{ __('Select configuration') }}</option>
-                                <template x-for="(configuration, index) in configurations" :key="index">
-                                    <option :value="index" x-text="configurationLabel(configuration)"></option>
-                                </template>
                             </select>
                             @error('configuration_index')
                                 <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>

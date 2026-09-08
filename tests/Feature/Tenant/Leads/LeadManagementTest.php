@@ -7,9 +7,12 @@ use App\Enums\LeadListingFilter;
 use App\Enums\LeadLostReason;
 use App\Enums\LeadScheduledEventStatus;
 use App\Enums\LeadScheduledEventType;
+use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\PropertyType;
 use App\Enums\ScheduledActivityPriority;
+use App\Enums\SiteVisitNextStep;
+use App\Enums\SiteVisitOutcome;
 use App\Enums\SiteVisitType;
 use App\Models\Booking;
 use App\Models\Lead;
@@ -436,7 +439,7 @@ test('creating a lead schedules an initial contact follow-up in five minutes', f
         'name' => 'Initial Contact Lead',
         'phone' => '+91 9876543210',
         'email' => 'prospect@example.com',
-        'source' => 'Website',
+        'source' => LeadSource::Referral->value,
         'budget' => LeadBudget::FiftyLakhToSeventyLakh->value,
         'location' => 'Mumbai',
         'property_type' => PropertyType::Apartment->value,
@@ -531,6 +534,42 @@ test('tenant users can schedule a follow-up', function () {
     expect($lead->next_follow_up_at)->not->toBeNull()
         ->and($lead->scheduledEvents()->where('type', LeadScheduledEventType::FollowUp)->count())->toBe(1)
         ->and(LeadActivity::query()->where('lead_id', $lead->id)->where('type', LeadActivityType::FollowUpScheduled)->exists())->toBeTrue();
+});
+
+test('scheduling a follow-up from activities does not open the lead drawer', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $lead = Lead::factory()->create();
+
+    $this->from('/acme/activities?filter=today')
+        ->post('/acme/leads/'.$lead->id.'/follow-up', [
+            'next_follow_up_at' => now()->addDay()->format('Y-m-d H:i:s'),
+            'priority' => ScheduledActivityPriority::Normal->value,
+        ])
+        ->assertRedirect('/acme/activities?filter=today')
+        ->assertSessionHas('status');
+});
+
+test('completing a site visit ready to book stays on the current page', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $lead = Lead::factory()->create([
+        'upcoming_site_visit_at' => now()->subHour(),
+    ]);
+    $event = scheduleSiteVisitForLead($lead, [
+        'scheduled_at' => now()->subHour(),
+    ]);
+
+    $this->from('/acme/dashboard')
+        ->post('/acme/scheduled-events/'.$event->id.'/complete-site-visit', [
+            'attended' => true,
+            'outcome' => SiteVisitOutcome::ReadyToBook->value,
+            'next_step' => SiteVisitNextStep::CreateBooking->value,
+        ])
+        ->assertRedirect('/acme/dashboard')
+        ->assertSessionHas('status');
 });
 
 test('scheduling follow-ups creates numbered system records', function () {

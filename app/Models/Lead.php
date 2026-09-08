@@ -8,9 +8,11 @@ use App\Enums\LeadClosingReason;
 use App\Enums\LeadLostReason;
 use App\Enums\LeadScheduledEventStatus;
 use App\Enums\LeadScheduledEventType;
+use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\PropertyType;
 use App\Models\Scopes\LeadVisibilityScope;
+use App\Support\LeadSourcePath;
 use Database\Factories\LeadFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,6 +29,8 @@ use Illuminate\Support\Collection;
     'phone',
     'email',
     'source',
+    'sub_source',
+    'source_context',
     'budget',
     'location',
     'property_type',
@@ -72,7 +76,53 @@ class Lead extends Model
             'last_activity_at' => 'datetime',
             'closed_at' => 'datetime',
             'lost_reasons' => 'array',
+            'source_context' => 'array',
         ];
+    }
+
+    public function sourceEnum(): ?LeadSource
+    {
+        return is_string($this->source) && $this->source !== ''
+            ? LeadSource::tryFromMixed($this->source)
+            : null;
+    }
+
+    public function sourceLabel(): ?string
+    {
+        if ($this->sourceEnum() instanceof LeadSource) {
+            return $this->sourceEnum()->label();
+        }
+
+        return filled($this->source) ? (string) $this->source : null;
+    }
+
+    public function subSourceDisplay(): ?string
+    {
+        $fromContext = LeadSourcePath::breadcrumb(
+            is_array($this->source_context) ? $this->source_context : null,
+        );
+
+        if (filled($fromContext)) {
+            return $fromContext;
+        }
+
+        return filled($this->sub_source) ? (string) $this->sub_source : null;
+    }
+
+    public function sourceDisplay(): ?string
+    {
+        $label = $this->sourceLabel();
+        $subSource = $this->subSourceDisplay();
+
+        if (filled($label) && filled($subSource)) {
+            return $label.' · '.$subSource;
+        }
+
+        if (filled($label)) {
+            return $label;
+        }
+
+        return $subSource;
     }
 
     /**
@@ -277,13 +327,31 @@ class Lead extends Model
 
     public function whatsAppUrl(): ?string
     {
+        $digits = $this->whatsAppDigits();
+
+        return $digits ? 'https://wa.me/'.$digits : null;
+    }
+
+    public function whatsAppComposeUrl(string $text): ?string
+    {
+        $digits = $this->whatsAppDigits();
+
+        if ($digits === null) {
+            return null;
+        }
+
+        return 'https://web.whatsapp.com/send?phone='.$digits.'&text='.rawurlencode($text);
+    }
+
+    public function whatsAppDigits(): ?string
+    {
         if (! $this->phone) {
             return null;
         }
 
         $digits = preg_replace('/\D/', '', $this->phone);
 
-        return $digits ? 'https://wa.me/'.$digits : null;
+        return $digits !== '' ? $digits : null;
     }
 
     public function callUrl(): ?string

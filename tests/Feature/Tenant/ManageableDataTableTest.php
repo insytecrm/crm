@@ -13,7 +13,7 @@ test('tenant users can persist task table column preferences', function () {
     $definition = new TasksTableDefinition;
 
     $this->patchJson('/acme/table-preferences/tasks', [
-        'listing' => 'today',
+        'listing' => 'all',
         'columns' => array_merge($definition->defaultColumns(), [
             'description' => true,
             'assigned_to' => false,
@@ -33,7 +33,7 @@ test('tenant users can persist task table column preferences', function () {
         ->assertJsonCount(1, 'custom_columns');
 
     $user->refresh();
-    $preferences = $user->dataTablePreferences('tasks', $definition, 'today');
+    $preferences = $user->dataTablePreferences('tasks', $definition, 'all');
 
     expect($preferences['columns']['assigned_to'])->toBeFalse()
         ->and($preferences['custom_columns'][0]['label'])->toBe('Priority tag')
@@ -46,7 +46,7 @@ test('task table column preferences are stored separately per listing', function
     $definition = new TasksTableDefinition;
 
     $this->patchJson('/acme/table-preferences/tasks', [
-        'listing' => 'today',
+        'listing' => 'all',
         'columns' => array_merge($definition->defaultColumns(), [
             'assigned_to' => false,
         ]),
@@ -54,7 +54,7 @@ test('task table column preferences are stored separately per listing', function
     ])->assertOk();
 
     $this->patchJson('/acme/table-preferences/tasks', [
-        'listing' => 'upcoming',
+        'listing' => 'in_progress',
         'columns' => array_merge($definition->defaultColumns(), [
             'assigned_to' => true,
             'description' => true,
@@ -64,9 +64,9 @@ test('task table column preferences are stored separately per listing', function
 
     $user->refresh();
 
-    expect($user->dataTablePreferences('tasks', $definition, 'today')['columns']['assigned_to'])->toBeFalse()
-        ->and($user->dataTablePreferences('tasks', $definition, 'upcoming')['columns']['assigned_to'])->toBeTrue()
-        ->and($user->dataTablePreferences('tasks', $definition, 'upcoming')['columns']['description'])->toBeTrue();
+    expect($user->dataTablePreferences('tasks', $definition, 'all')['columns']['assigned_to'])->toBeFalse()
+        ->and($user->dataTablePreferences('tasks', $definition, 'in_progress')['columns']['assigned_to'])->toBeTrue()
+        ->and($user->dataTablePreferences('tasks', $definition, 'in_progress')['columns']['description'])->toBeTrue();
 });
 
 test('tasks index shows manageable table controls', function () {
@@ -159,10 +159,10 @@ test('tenant users can reset task table preferences', function () {
     $user->save();
 
     $this->patchJson('/acme/table-preferences/tasks', [
-        'listing' => 'today',
+        'listing' => 'all',
         'columns' => $definition->defaultColumns(),
         'custom_columns' => [],
     ])->assertOk();
 
-    expect($user->fresh()->dataTablePreferences('tasks', $definition, 'today'))->toBe(TablePreferencesSupport::defaults($definition));
+    expect($user->fresh()->dataTablePreferences('tasks', $definition, 'all'))->toBe(TablePreferencesSupport::defaults($definition));
 });

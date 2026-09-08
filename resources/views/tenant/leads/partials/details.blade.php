@@ -83,8 +83,14 @@
                     <dl class="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
                         <div>
                             <dt class="text-xs font-medium text-slate-500">{{ __('Source') }}</dt>
-                            <dd class="mt-1 text-sm font-medium text-black">{{ $lead->source ?? '—' }}</dd>
+                            <dd class="mt-1 text-sm font-medium text-black">{{ $lead->sourceLabel() ?? '—' }}</dd>
                         </div>
+                        @if (filled($lead->subSourceDisplay()))
+                            <div>
+                                <dt class="text-xs font-medium text-slate-500">{{ __('Sub-source') }}</dt>
+                                <dd class="mt-1 text-sm font-medium text-black">{{ $lead->subSourceDisplay() }}</dd>
+                            </div>
+                        @endif
                         <div>
                             <dt class="text-xs font-medium text-slate-500">{{ __('Budget') }}</dt>
                             <dd class="mt-1">
@@ -119,7 +125,7 @@
                         </div>
                         <div>
                             <dt class="text-xs font-medium text-slate-500">{{ __('Lead Status') }}</dt>
-                            <dd class="mt-1"><x-tenant.status-badge :status="$lead->status" /></dd>
+                            <dd class="mt-1"><x-tenant.status-badge :status="$lead->status" :lead="$lead" /></dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium text-slate-500">{{ __('Lead Score') }}</dt>
@@ -167,9 +173,6 @@
                             <x-ui.datetime-picker name="due_at" class="sm:max-w-xs sm:flex-none" />
                             <x-ui.button type="submit" variant="default" size="sm">{{ __('Add Task') }}</x-ui.button>
                         </div>
-                        @include('tenant.partials.reminder-fields', [
-                            'idPrefix' => 'lead_task_reminder_'.$lead->id,
-                        ])
                     </form>
                     <div class="space-y-3">
                         @forelse ($lead->tasks as $task)

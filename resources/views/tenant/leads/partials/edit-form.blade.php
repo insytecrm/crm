@@ -55,7 +55,27 @@
             </div>
             <div>
                 <x-input-label for="edit_source_{{ $lead->id }}" :value="__('Source')" />
-                <x-auth.icon-input id="edit_source_{{ $lead->id }}" name="source" :value="old('source', $lead->source)" />
+                @php
+                    $currentSource = old('source', $lead->source);
+                    $resolvedSource = \App\Enums\LeadSource::tryFromMixed($currentSource);
+                    $isManualSource = $resolvedSource?->isManual() ?? blank($currentSource);
+                @endphp
+                @if ($isManualSource)
+                    <select
+                        id="edit_source_{{ $lead->id }}"
+                        name="source"
+                        class="mt-1 block h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-black shadow-sm transition-colors focus:border-navy focus:ring-navy"
+                    >
+                        <option value="">{{ __('Select source') }}</option>
+                        @foreach (\App\Enums\LeadSource::manualSelectableCases() as $source)
+                            <option value="{{ $source->value }}" @selected($currentSource === $source->value)>{{ $source->label() }}</option>
+                        @endforeach
+                    </select>
+                @else
+                    <input type="hidden" name="source" value="{{ $lead->source }}">
+                    <p class="mt-1 text-sm font-medium text-black">{{ $lead->sourceDisplay() ?? '—' }}</p>
+                @endif
+                <x-input-error class="mt-2" :messages="$errors->get('source')" />
             </div>
             <div>
                 <x-input-label for="edit_budget_{{ $lead->id }}" :value="__('Budget')" />

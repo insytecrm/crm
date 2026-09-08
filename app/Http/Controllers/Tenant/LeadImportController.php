@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Actions\CreateLead;
 use App\Enums\LeadBudget;
+use App\Enums\LeadSource;
 use App\Enums\PropertyType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\ImportLeadsRequest;
@@ -37,7 +38,7 @@ class LeadImportController extends Controller
                 'name' => $row[0],
                 'phone' => $row[1] ?? null,
                 'email' => $row[2] ?? null,
-                'source' => $row[3] ?? null,
+                ...$this->resolveImportedSource($row[3] ?? null),
                 'budget' => LeadBudget::tryFromMixed($row[4] ?? null)?->value,
                 'location' => $row[5] ?? null,
                 'property_type' => PropertyType::tryFromMixed($row[6] ?? null)?->value,
@@ -55,5 +56,24 @@ class LeadImportController extends Controller
                 'imported' => $imported,
                 'skipped' => $skipped,
             ]));
+    }
+
+    /**
+     * @return array{source?: string, sub_source?: string}
+     */
+    private function resolveImportedSource(mixed $raw): array
+    {
+        if (! is_string($raw) || trim($raw) === '') {
+            return [];
+        }
+
+        $value = trim($raw);
+        $resolved = LeadSource::tryFromMixed($value);
+
+        if ($resolved instanceof LeadSource) {
+            return ['source' => $resolved->value];
+        }
+
+        return ['sub_source' => $value];
     }
 }

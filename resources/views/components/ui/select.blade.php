@@ -13,13 +13,13 @@
         x-ref="hiddenInput"
         x-model="selected"
         name="{{ $name }}"
-        id="{{ $id }}"
         :disabled="disabled"
         @required($required)
     >
 
     <button
         type="button"
+        id="{{ $id }}"
         x-ref="trigger"
         @click="toggle()"
         :disabled="disabled"

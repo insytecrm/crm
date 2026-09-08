@@ -120,7 +120,7 @@
                                             <td class="px-4 py-3 text-sm text-slate-600">{{ $lead->phone ?: '—' }}</td>
                                             <td class="px-4 py-3 text-sm text-slate-600">{{ $lead->email ?: '—' }}</td>
                                             <td class="px-4 py-3">
-                                                <x-tenant.status-badge :status="$lead->status" />
+                                                <x-tenant.status-badge :status="$lead->status" :lead="$lead" />
                                             </td>
                                             <td class="px-4 py-3 text-sm text-slate-600">{{ $lead->assignedTo?->name ?: '—' }}</td>
                                             <td class="px-4 py-3 text-sm text-slate-500">{{ $lead->created_at?->format('M j, Y') }}</td>

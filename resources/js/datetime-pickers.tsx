@@ -10,6 +10,22 @@ function parseMode(value: string | undefined): PickerMode {
   return value === "date" ? "date" : "datetime"
 }
 
+function isPickerVisible(root: HTMLElement): boolean {
+  return root.getClientRects().length > 0
+}
+
+function unmountPicker(root: HTMLElement): void {
+  const reactRoot = roots.get(root)
+
+  if (reactRoot) {
+    reactRoot.unmount()
+    roots.delete(root)
+  }
+
+  delete root.dataset.mounted
+  root.replaceChildren()
+}
+
 function mountPicker(root: HTMLElement): boolean {
   if (roots.has(root)) {
     return true
@@ -27,6 +43,7 @@ function mountPicker(root: HTMLElement): boolean {
   const mode = parseMode(root.dataset.mode)
   const disabled = root.dataset.disabled === "true"
   const required = root.dataset.required === "true"
+  const visible = isPickerVisible(root)
 
   const reactRoot = createRoot(root)
   roots.set(root, reactRoot)
@@ -45,6 +62,12 @@ function mountPicker(root: HTMLElement): boolean {
     />,
   )
 
+  if (! visible) {
+    root.dataset.needsRemount = "true"
+  } else {
+    delete root.dataset.needsRemount
+  }
+
   return true
 }
 
@@ -62,7 +85,7 @@ function observePickerMounts(): void {
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       mutation.addedNodes.forEach((node) => {
-        if (!(node instanceof HTMLElement)) {
+        if (! (node instanceof HTMLElement)) {
           return
         }
 
@@ -85,16 +108,34 @@ function observePickerMounts(): void {
   })
 }
 
-function remountVisiblePickers(): void {
-  window.requestAnimationFrame(() => {
-    mountDateTimePickers()
-  })
+function remountPickersOpenedInOverlay(): void {
+  window.setTimeout(() => {
+    document
+      .querySelectorAll<HTMLElement>(
+        "[data-crm-datetime-picker-root][data-needs-remount='true']",
+      )
+      .forEach((root) => {
+        if (! isPickerVisible(root)) {
+          return
+        }
+
+        unmountPicker(root)
+
+        if (mountPicker(root)) {
+          root.dataset.mounted = "true"
+        }
+      })
+  }, 200)
 }
 
 export function initDateTimePickers(): void {
   mountDateTimePickers()
   observePickerMounts()
 
-  window.addEventListener("open-modal", remountVisiblePickers)
-  window.addEventListener("open-drawer", remountVisiblePickers)
+  window.addEventListener("open-modal", remountPickersOpenedInOverlay)
+  window.addEventListener("open-drawer", remountPickersOpenedInOverlay)
+  window.addEventListener("crm-overlay-opened", remountPickersOpenedInOverlay)
+  document.addEventListener("open-modal", remountPickersOpenedInOverlay)
+  document.addEventListener("open-drawer", remountPickersOpenedInOverlay)
+  document.addEventListener("crm-overlay-opened", remountPickersOpenedInOverlay)
 }

@@ -12,7 +12,6 @@
             'scheduledAt' => $activity['scheduled_at'],
             'notes' => $activity['notes'],
             'priority' => $activity['priority'] ?? null,
-            'reminderBeforeSeconds' => $activity['reminder_before_seconds'] ?? null,
         ])
         @if ($activity['kind'] === 'follow_up')
             @include('tenant.activities.partials.complete-follow-up-modal', [

@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Enums\LeadActivityType;
 use App\Enums\LeadScheduledEventType;
 use App\Enums\LeadStatus;
+use App\Enums\PlanLimitKey;
 use App\Models\Lead;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,8 @@ class CreateLead
     public function __construct(
         private LogLeadActivity $logLeadActivity,
         private RecordLeadScheduledEvent $recordLeadScheduledEvent,
+        private AssertPlanLimit $assertPlanLimit,
+        private ApplyLeadRouting $applyLeadRouting,
     ) {}
 
     /**
@@ -23,14 +26,27 @@ class CreateLead
      */
     public function handle(array $data, ?User $user = null): Lead
     {
+        $this->assertPlanLimit->handle(PlanLimitKey::Leads);
+
         $user ??= auth()->user();
 
         return DB::transaction(function () use ($data, $user): Lead {
+            $assignedToId = filled($data['assigned_to_id'] ?? null)
+                ? (int) $data['assigned_to_id']
+                : null;
+
+            if ($assignedToId === null) {
+                $assignedToId = $this->applyLeadRouting->handle(
+                    isset($data['source']) ? (string) $data['source'] : null,
+                    isset($data['sub_source']) ? (string) $data['sub_source'] : null,
+                ) ?? $user?->id;
+            }
+
             $lead = Lead::query()->create([
                 ...$data,
                 'status' => LeadStatus::New,
                 'created_by_id' => $user?->id,
-                'assigned_to_id' => $data['assigned_to_id'] ?? $user?->id,
+                'assigned_to_id' => $assignedToId,
                 'last_activity_at' => now(),
             ]);
 

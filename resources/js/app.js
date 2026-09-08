@@ -6,13 +6,17 @@ if (document.getElementById('landing-root')) {
     void import('./landing');
 }
 
+if (document.getElementById('welcome-root')) {
+    void import('./welcome');
+}
+
 import './drawers';
 import './lead-hover-cards';
+import './report-donut-charts-loader';
 import './datetime-pickers-loader';
 import { registerLeadTablePreferencesStore } from './lead-table-preferences';
 import { registerTablePreferencesStore, registerManageableDataTable } from './manageable-data-table';
 import { registerPipelineChart } from './pipeline-chart';
-import { registerReminderHost } from './reminder-host';
 
 window.Alpine = Alpine;
 
@@ -20,7 +24,6 @@ document.addEventListener('alpine:init', () => {
     registerLeadTablePreferencesStore(Alpine, window.leadTablePreferencesConfig ?? {});
     registerManageableDataTable(Alpine);
     registerPipelineChart(Alpine);
-    registerReminderHost(Alpine);
 
     if (window.manageableDataTableConfigs) {
         Object.entries(window.manageableDataTableConfigs).forEach(([tableKey, config]) => {
@@ -58,6 +61,7 @@ document.addEventListener('alpine:init', () => {
             open: false,
             activeId: null,
             showUrlTemplate: config.showUrlTemplate ?? '',
+            prefetchTimers: new Map(),
 
             init() {
                 const leadId = new URLSearchParams(window.location.search).get('lead');
@@ -146,11 +150,23 @@ document.addEventListener('alpine:init', () => {
             },
 
             prefetchLead(id) {
-                if (! id) {
+                if (! id || cache.has(id) || inflight.has(id)) {
                     return;
                 }
 
-                void this.fetchLeadHtml(id);
+                const existing = this.prefetchTimers.get(id);
+
+                if (existing) {
+                    window.clearTimeout(existing);
+                }
+
+                // Avoid flooding the single-threaded PHP server while scrolling the list.
+                const timer = window.setTimeout(() => {
+                    this.prefetchTimers.delete(id);
+                    void this.fetchLeadHtml(id);
+                }, 250);
+
+                this.prefetchTimers.set(id, timer);
             },
 
             close(updateUrl = true) {
@@ -283,6 +299,55 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
+    Alpine.data('leadStatusHover', () => ({
+        open: false,
+        panelStyle: {},
+        hideTimer: null,
+
+        show(trigger) {
+            this.cancelHide();
+
+            if (! trigger) {
+                return;
+            }
+
+            const rect = trigger.getBoundingClientRect();
+            const panelWidth = 288;
+            const gap = 6;
+            const padding = 12;
+            const left = Math.min(
+                Math.max(padding, rect.left),
+                Math.max(padding, window.innerWidth - panelWidth - padding),
+            );
+            const spaceBelow = window.innerHeight - rect.bottom - padding;
+            const openAbove = spaceBelow < 220 && rect.top > spaceBelow;
+
+            this.panelStyle = {
+                position: 'fixed',
+                left: `${left}px`,
+                top: openAbove ? `${rect.top - gap}px` : `${rect.bottom + gap}px`,
+                transform: openAbove ? 'translateY(-100%)' : 'none',
+                zIndex: '9999',
+            };
+            this.open = true;
+        },
+
+        scheduleHide() {
+            this.cancelHide();
+            this.hideTimer = window.setTimeout(() => {
+                this.open = false;
+                this.hideTimer = null;
+            }, 120);
+        },
+
+        cancelHide() {
+            if (this.hideTimer !== null) {
+                window.clearTimeout(this.hideTimer);
+                this.hideTimer = null;
+            }
+        },
+    }));
+
     Alpine.data('leadFieldSelect', (config) => ({
         field: config.field,
         value: config.value ?? '',
@@ -396,6 +461,75 @@ document.addEventListener('alpine:init', () => {
 
         init() {
             this.$nextTick(() => this.syncTriggerClass());
+        },
+    }));
+
+    Alpine.data('propertyMicrositeSwitch', (config) => ({
+        enabled: Boolean(config.enabled),
+        url: config.url ?? null,
+        updateUrl: config.updateUrl ?? null,
+        canPublish: config.canPublish !== false,
+        saving: false,
+        lastSavedEnabled: Boolean(config.enabled),
+
+        async save() {
+            if (! this.updateUrl || this.saving) {
+                return;
+            }
+
+            const nextEnabled = Boolean(this.enabled);
+            const previousEnabled = this.lastSavedEnabled;
+            const previousUrl = this.url;
+
+            if (nextEnabled && ! this.canPublish) {
+                this.enabled = previousEnabled;
+                return;
+            }
+
+            // Keep public link in sync with the switch immediately.
+            if (! nextEnabled) {
+                this.url = null;
+            }
+
+            this.saving = true;
+
+            const formData = new FormData();
+            formData.append('_method', 'PATCH');
+            formData.append('microsite_enabled', nextEnabled ? '1' : '0');
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+            if (csrfToken) {
+                formData.append('_token', csrfToken);
+            }
+
+            try {
+                const response = await fetch(this.updateUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        Accept: 'application/json',
+                        ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+                    },
+                    credentials: 'same-origin',
+                });
+
+                if (! response.ok) {
+                    throw new Error('Microsite update failed');
+                }
+
+                const data = await response.json();
+                this.enabled = Boolean(data.microsite_enabled);
+                this.url = this.enabled ? (data.microsite_url ?? null) : null;
+                this.lastSavedEnabled = this.enabled;
+            } catch {
+                this.enabled = previousEnabled;
+                this.url = previousUrl;
+                this.lastSavedEnabled = previousEnabled;
+            } finally {
+                this.saving = false;
+            }
         },
     }));
 
@@ -727,10 +861,17 @@ document.addEventListener('alpine:init', () => {
         },
 
         select(option) {
-            this.selected = option.value;
+            this.selected = String(option.value);
             this.open = false;
             this.search = '';
             this.removeListeners();
+
+            if (this.$refs.hiddenInput) {
+                this.$refs.hiddenInput.value = String(option.value);
+                this.$refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+                this.$refs.hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
             this.$dispatch('selected', option.value);
 
             if (this.submitOnSelect) {
@@ -740,8 +881,6 @@ document.addEventListener('alpine:init', () => {
                 if (! input || ! form) {
                     return;
                 }
-
-                input.value = option.value;
 
                 this.$nextTick(() => form.requestSubmit());
             }

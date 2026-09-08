@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\DomainPurpose;
+use App\Enums\SettingsGroup;
 use App\Enums\SettingsTab;
 use App\Enums\TenantPermission;
 use App\Http\Controllers\Controller;
@@ -26,10 +28,19 @@ class SettingsController extends Controller
         /** @var User $authUser */
         $authUser = auth()->user();
         $visibleTabs = SettingsTab::visibleFor($authUser);
+        $visibleGroups = SettingsGroup::visibleFor($authUser);
         $tab = SettingsTab::fromQuery(request('tab'));
 
         if (! in_array($tab, $visibleTabs, true)) {
             $tab = SettingsTab::Profile;
+        }
+
+        $group = $tab->group();
+
+        if (! in_array($group, $visibleGroups, true)) {
+            $group = $visibleGroups[0] ?? SettingsGroup::Account;
+            $groupTabs = $group->visibleTabs($visibleTabs);
+            $tab = $groupTabs[0] ?? SettingsTab::Profile;
         }
 
         $canManageUsers = $authUser->hasPermission(TenantPermission::SettingsUsers);
@@ -43,9 +54,14 @@ class SettingsController extends Controller
 
         $viewData = [
             'tab' => $tab,
+            'group' => $group,
             'visibleTabs' => $visibleTabs,
+            'visibleGroups' => $visibleGroups,
             'user' => $authUser,
             'company' => $company,
+            'crmDomain' => $company->domainFor(DomainPurpose::Crm),
+            'websiteDomain' => $company->domainFor(DomainPurpose::Website),
+            'canManageDomains' => $authUser->hasPermission(TenantPermission::SettingsCompany),
             'roles' => ($canManageUsers || $canManageRoles)
                 ? $rolesQuery->get()
                 : collect(),

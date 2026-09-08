@@ -26,16 +26,12 @@
         </form>
     @endif
     @if ($lead->whatsAppUrl())
-        <form
-            method="POST"
-            action="{{ route('tenant.leads.activities.store', $lead) }}"
-            class="inline"
-        >
-            @csrf
-            <input type="hidden" name="type" value="whatsapp_message">
-            <input type="hidden" name="redirect_url" value="{{ $lead->whatsAppUrl() }}">
-            <x-ui.action-icon icon="whatsapp" type="submit" :title="__('WhatsApp')" />
-        </form>
+        <x-ui.action-icon
+            icon="whatsapp"
+            type="button"
+            :title="__('WhatsApp')"
+            @click="$dispatch('open-modal', 'send-whatsapp'); $dispatch('prepare-whatsapp', {{ $lead->id }})"
+        />
     @endif
     @unless ($activity['is_completed'] ?? false)
         <x-ui.action-icon

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\TenantStatus;
+use App\Models\PartnerSubscription;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -38,9 +39,36 @@ test('super admins can view companies', function () {
     $this->actingAs($admin)
         ->get(route('tenants.index'))
         ->assertSee('Globex')
-        ->assertSee('Companies')
-        ->assertSee('Platform')
+        ->assertSee('Channel Partners')
+        ->assertSee('Manage all businesses using InSyte.')
+        ->assertSee('Add Channel Partner')
+        ->assertSee('title="Overview"', false)
+        ->assertSee('title="Edit"', false)
         ->assertSee('uiPopover', false);
+});
+
+test('super admins can search channel partners', function () {
+    $admin = User::factory()->superAdmin()->create();
+    Tenant::factory()->create(['name' => 'Globex Realty', 'email' => 'hello@globex.test']);
+    Tenant::factory()->create(['name' => 'Initech Homes', 'email' => 'team@initech.test']);
+
+    $this->actingAs($admin)
+        ->get(route('tenants.index', ['search' => 'Globex']))
+        ->assertOk()
+        ->assertSee('Globex Realty')
+        ->assertDontSee('Initech Homes');
+});
+
+test('super admins can filter channel partners by status', function () {
+    $admin = User::factory()->superAdmin()->create();
+    Tenant::factory()->create(['name' => 'Active Partner', 'status' => TenantStatus::Active]);
+    Tenant::factory()->suspended()->create(['name' => 'Paused Partner']);
+
+    $this->actingAs($admin)
+        ->get(route('tenants.index', ['status' => 'suspended']))
+        ->assertOk()
+        ->assertSee('Paused Partner')
+        ->assertDontSee('Active Partner');
 });
 
 test('super admins can create a company with its own database', function () {
@@ -103,6 +131,33 @@ test('super admins can update a company', function () {
         ->and($tenant->status)->toBe(TenantStatus::Suspended);
 });
 
+test('channel partners list edit opens drawer markup and returns to list after save', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $tenant = Tenant::factory()->create(['name' => 'Globex Realty']);
+
+    $response = $this->actingAs($admin)->get(route('tenants.index'));
+
+    $response->assertOk()
+        ->assertSee('open-edit-partner')
+        ->assertSee('Edit Channel Partner')
+        ->assertSee('data-partner-id="'.$tenant->id.'"', false)
+        ->assertDontSee('@js($tenant->id)')
+        ->assertDontSee('id))"');
+
+    $this->actingAs($admin)
+        ->from(route('tenants.index'))
+        ->put(route('tenants.update', $tenant), [
+            'name' => 'Globex Updated',
+            'email' => 'hello@globex.test',
+            'status' => TenantStatus::Active->value,
+            '_return_to' => 'index',
+            '_editing_tenant' => $tenant->id,
+        ])
+        ->assertRedirect(route('tenants.index'));
+
+    expect($tenant->fresh()->name)->toBe('Globex Updated');
+});
+
 test('super admins can delete a company and its database', function () {
     $admin = User::factory()->superAdmin()->create();
 
@@ -120,4 +175,52 @@ test('super admins can delete a company and its database', function () {
 
     expect(Tenant::query()->find('globex'))->toBeNull()
         ->and($tenant->database()->manager()->databaseExists($databaseName))->toBeFalse();
+});
+
+test('channel partners list edit drawer shows delete when there is no active subscription', function () {
+    $admin = User::factory()->superAdmin()->create();
+    Tenant::factory()->create(['name' => 'No Sub Realty']);
+
+    $this->actingAs($admin)
+        ->get(route('tenants.index'))
+        ->assertOk()
+        ->assertSee('Delete this channel partner and its database?', false);
+});
+
+test('channel partners list edit drawer hides delete when an active subscription exists', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $tenant = Tenant::factory()->create(['name' => 'Subscribed Realty']);
+    PartnerSubscription::factory()->create(['tenant_id' => $tenant->id]);
+
+    $this->actingAs($admin)
+        ->get(route('tenants.index'))
+        ->assertOk()
+        ->assertDontSee('Delete this channel partner and its database?', false);
+});
+
+test('super admins cannot delete a company with an active subscription', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $tenant = Tenant::factory()->create();
+    PartnerSubscription::factory()->create(['tenant_id' => $tenant->id]);
+
+    $this->actingAs($admin)
+        ->from(route('tenants.index'))
+        ->delete(route('tenants.destroy', $tenant))
+        ->assertRedirect(route('tenants.index'))
+        ->assertSessionHasErrors('tenant');
+
+    expect(Tenant::query()->find($tenant->id))->not->toBeNull();
+});
+
+test('super admins can delete a company after its subscription is cancelled', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $tenant = Tenant::factory()->create();
+    PartnerSubscription::factory()->cancelled()->create(['tenant_id' => $tenant->id]);
+
+    $this->actingAs($admin)
+        ->delete(route('tenants.destroy', $tenant))
+        ->assertRedirect(route('tenants.index'))
+        ->assertSessionHasNoErrors();
+
+    expect(Tenant::query()->find($tenant->id))->toBeNull();
 });

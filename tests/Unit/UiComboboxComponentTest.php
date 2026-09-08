@@ -49,6 +49,22 @@ test('combobox component renders hidden input and trigger', function () {
         ->toContain('Active');
 });
 
+test('combobox puts id on the trigger button for label association', function () {
+    $html = Blade::render(<<<'BLADE'
+        <x-ui.combobox
+            id="assigned_to_id"
+            name="assigned_to_id"
+            :options="[['value' => '1', 'label' => 'Jane Doe']]"
+            :searchable="false"
+        />
+    BLADE);
+
+    expect($html)
+        ->toMatch('/<button[^>]*\bid="assigned_to_id"/')
+        ->not->toMatch('/<input[^>]*type="hidden"[^>]*\bid="assigned_to_id"/')
+        ->not->toMatch('/<input[^>]*\bid="assigned_to_id"[^>]*type="hidden"/');
+});
+
 test('combobox component renders search input when searchable', function () {
     $html = Blade::render(<<<'BLADE'
         <x-ui.combobox

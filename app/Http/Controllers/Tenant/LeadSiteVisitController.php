@@ -12,8 +12,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\CompleteScheduledActivityRequest;
 use App\Http\Requests\Tenant\ScheduleSiteVisitRequest;
 use App\Models\Lead;
-use App\Support\LeadDrawerRedirect;
-use App\Support\ReminderBefore;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -28,9 +26,8 @@ class LeadSiteVisitController extends Controller
         $notes = $request->validated('notes');
         $propertyId = (int) $request->validated('property_id');
         $visitType = $request->enum('visit_type', SiteVisitType::class);
-        $reminder = ReminderBefore::fromRequest($request);
 
-        $event = DB::transaction(function () use ($request, $lead, $recordLeadScheduledEvent, $notes, $propertyId, $visitType, $reminder) {
+        $event = DB::transaction(function () use ($request, $lead, $recordLeadScheduledEvent, $notes, $propertyId, $visitType) {
             $lead->update([
                 'upcoming_site_visit_at' => $request->validated('upcoming_site_visit_at'),
                 'status' => $lead->status === LeadStatus::New ? LeadStatus::SiteVisit : $lead->status,
@@ -44,7 +41,6 @@ class LeadSiteVisitController extends Controller
                 $notes,
                 propertyId: $propertyId,
                 visitType: $visitType,
-                reminder: $reminder,
             );
         });
 
@@ -71,7 +67,7 @@ class LeadSiteVisitController extends Controller
             ],
         );
 
-        return LeadDrawerRedirect::to($lead, __('Site visit scheduled.'));
+        return back()->with('status', __('Site visit scheduled.'));
     }
 
     public function complete(

@@ -5,6 +5,7 @@ namespace App\Enums;
 enum LeadActivityType: string
 {
     case LeadCreated = 'lead_created';
+    case LeadAssigned = 'lead_assigned';
     case CallMade = 'call_made';
     case WhatsAppMessage = 'whatsapp_message';
     case FollowUpScheduled = 'follow_up_scheduled';
@@ -26,6 +27,7 @@ enum LeadActivityType: string
     {
         return match ($this) {
             self::LeadCreated => __('Lead Created'),
+            self::LeadAssigned => __('Lead Assigned'),
             self::CallMade => __('Call Made'),
             self::WhatsAppMessage => __('WhatsApp Message'),
             self::FollowUpScheduled => __('Follow-up Scheduled'),

@@ -85,6 +85,7 @@ $shouldFocusOnOpen = $attributes->has('focusable');
     x-init="$watch('show', value => {
         if (value) {
             document.body.classList.add('overflow-y-hidden');
+            window.dispatchEvent(new CustomEvent('crm-overlay-opened'));
         } else {
             document.body.classList.remove('overflow-y-hidden');
         }

@@ -12,19 +12,26 @@ class TaskListing
 {
     /**
      * @return array{
-     *     today: int,
-     *     upcoming: int,
+     *     total: int,
+     *     pending: int,
+     *     in_progress: int,
      *     completed: int,
-     *     all: int,
+     *     cancelled: int,
      * }
      */
     public function statistics(): array
     {
+        $counts = $this->baseQuery()
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
         return [
-            'today' => $this->baseQuery()->get()->filter(fn (LeadTask $task): bool => $this->matchesFilter($task, TaskFilter::Today))->count(),
-            'upcoming' => $this->baseQuery()->get()->filter(fn (LeadTask $task): bool => $this->matchesFilter($task, TaskFilter::Upcoming))->count(),
-            'completed' => $this->baseQuery()->where('status', TaskStatus::Complete)->count(),
-            'all' => $this->baseQuery()->count(),
+            'total' => (int) $counts->sum(),
+            'pending' => (int) $counts->get(TaskStatus::Pending->value, 0),
+            'in_progress' => (int) $counts->get(TaskStatus::InProgress->value, 0),
+            'completed' => (int) $counts->get(TaskStatus::Complete->value, 0),
+            'cancelled' => (int) $counts->get(TaskStatus::Cancelled->value, 0),
         ];
     }
 
@@ -39,6 +46,19 @@ class TaskListing
             ->filter(fn (LeadTask $task): bool => $this->matchesFilter($task, $filter))
             ->filter(fn (LeadTask $task): bool => $this->matchesSearch($task, $search))
             ->sortBy(fn (LeadTask $task): int => $this->sortTimestamp($task, $filter))
+            ->values();
+    }
+
+    /**
+     * Open tasks due today or overdue (used by the dashboard).
+     *
+     * @return Collection<int, LeadTask>
+     */
+    public function openDueToday(): Collection
+    {
+        return $this->baseQuery()
+            ->get()
+            ->filter(fn (LeadTask $task): bool => $this->matchesOpenDueToday($task))
             ->values();
     }
 
@@ -67,21 +87,18 @@ class TaskListing
     private function matchesFilter(LeadTask $task, TaskFilter $filter): bool
     {
         return match ($filter) {
-            TaskFilter::Completed => $task->status === TaskStatus::Complete,
             TaskFilter::All => true,
-            TaskFilter::Today => $this->matchesToday($task),
-            TaskFilter::Upcoming => $this->matchesUpcoming($task),
+            TaskFilter::Pending => $task->status === TaskStatus::Pending,
+            TaskFilter::InProgress => $task->status === TaskStatus::InProgress,
+            TaskFilter::Completed => $task->status === TaskStatus::Complete,
+            TaskFilter::Cancelled => $task->status === TaskStatus::Cancelled,
         };
     }
 
-    private function matchesToday(LeadTask $task): bool
+    private function matchesOpenDueToday(LeadTask $task): bool
     {
-        if ($task->status === TaskStatus::Cancelled) {
+        if ($task->isClosed()) {
             return false;
-        }
-
-        if ($task->status === TaskStatus::Complete) {
-            return $task->completed_at?->isToday() ?? false;
         }
 
         if ($task->due_at === null) {
@@ -89,19 +106,6 @@ class TaskListing
         }
 
         return $task->due_at->lte(now()->endOfDay());
-    }
-
-    private function matchesUpcoming(LeadTask $task): bool
-    {
-        if ($task->isClosed()) {
-            return false;
-        }
-
-        if ($task->due_at === null) {
-            return ! ($task->created_at?->isToday() ?? false);
-        }
-
-        return $task->due_at->gt(now()->endOfDay());
     }
 
     private function sortTimestamp(LeadTask $task, TaskFilter $filter): int
@@ -117,7 +121,7 @@ class TaskListing
         }
 
         return match ($filter) {
-            TaskFilter::Completed, TaskFilter::All => -1 * $timestamp->getTimestamp(),
+            TaskFilter::Completed, TaskFilter::Cancelled, TaskFilter::All => -1 * $timestamp->getTimestamp(),
             default => $timestamp->getTimestamp(),
         };
     }

@@ -89,6 +89,8 @@ class MergeLeads
             'phone',
             'email',
             'source',
+            'sub_source',
+            'source_context',
             'budget',
             'location',
             'property_type',

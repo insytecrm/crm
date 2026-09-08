@@ -112,8 +112,8 @@
 }
 
 .tag-input-field:focus {
-    border-color: #367589;
-    outline: 2px solid #367589;
+    border-color: #34b6ff;
+    outline: 2px solid #34b6ff;
     outline-offset: 0;
 }
 
@@ -206,8 +206,8 @@
 }
 
 .configuration-repeater-input:focus {
-    border-color: #367589;
-    outline: 2px solid #367589;
+    border-color: #34b6ff;
+    outline: 2px solid #34b6ff;
     outline-offset: 0;
 }
 
@@ -234,7 +234,7 @@
     justify-content: center;
     align-self: flex-start;
     border-radius: 0.5rem;
-    border: 1px dashed #367589;
+    border: 1px dashed #34b6ff;
     background-color: rgb(54 117 137 / 0.06);
     padding: 0.5rem 0.875rem;
     font-size: 0.8125rem;
@@ -358,6 +358,14 @@ html.app-density-compact body {
 
 .sidebar-collapsed .sidebar-group-items {
     @apply hidden;
+}
+
+.sidebar-group-items {
+    padding-inline-start: 1.25rem;
+}
+
+.sidebar-group-items .sidebar-link {
+    padding-inline-start: 0.75rem;
 }
 
 .sidebar-collapsed .sidebar-link {

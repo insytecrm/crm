@@ -7,8 +7,12 @@
         'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground' => ! $active,
     ])
 >
-    <span class="flex h-4 w-4 shrink-0 items-center justify-center {{ $active ? '' : 'text-sidebar-foreground/50 group-hover:text-sidebar-accent-foreground' }}">
-        <span class="h-1 w-1 rounded-full bg-current" aria-hidden="true"></span>
+    <span class="flex h-5 w-5 shrink-0 items-center justify-center">
+        @isset($icon)
+            {{ $icon }}
+        @else
+            <span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true"></span>
+        @endisset
     </span>
     <span class="sidebar-label truncate">{{ $slot }}</span>
 </a>

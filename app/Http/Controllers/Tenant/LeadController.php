@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Actions\CreateLead;
 use App\Enums\LeadListingFilter;
+use App\Enums\LeadSource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\BulkDeleteLeadsRequest;
 use App\Http\Requests\Tenant\StoreLeadRequest;
@@ -75,7 +76,15 @@ class LeadController extends Controller
 
     public function update(UpdateLeadRequest $request, Lead $lead): RedirectResponse
     {
-        $lead->update($request->validated());
+        $data = $request->validated();
+        $source = LeadSource::tryFrom($data['source'] ?? '');
+
+        if ($source?->isManual()) {
+            $data['sub_source'] = null;
+            $data['source_context'] = null;
+        }
+
+        $lead->update($data);
 
         return LeadDrawerRedirect::to($lead, __('Lead updated successfully.'));
     }
@@ -114,18 +123,13 @@ class LeadController extends Controller
             'statistics' => $leadStatistics->forTenant(),
             'search' => $search,
             'listFilters' => $listFilters,
-            'sources' => Lead::query()
-                ->whereNotNull('source')
-                ->where('source', '!=', '')
-                ->distinct()
-                ->orderBy('source')
-                ->pluck('source'),
+            'sources' => LeadSource::filterCases(),
             'users' => User::query()->orderBy('name')->get(),
             'bookingProperties' => Property::bookingFormOptions(),
             'leadTablePreferences' => $request->user()->leadTablePreferences($listing),
             'leadTableDefaults' => LeadTablePreferences::defaultsForListing($listing),
             'leadListingKey' => $listing->value,
-            'openModal' => $listing === LeadListingFilter::All && $request->boolean('add') ? 'add-lead' : null,
+            'openModal' => old('_open_modal') ?? ($listing === LeadListingFilter::All && $request->boolean('add') ? 'add-lead' : null),
         ]);
     }
 

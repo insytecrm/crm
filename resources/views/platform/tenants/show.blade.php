@@ -1,51 +1,74 @@
 <x-app-layout :title="$tenant->name . ' | InSyte CRM'">
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-2xl font-bold tracking-tight text-black">{{ $tenant->name }}</h1>
-            <p class="mt-1 text-sm text-slate-500">{{ __('Company details and tenant access') }}</p>
+    <x-platform.partner-shell :tenant="$tenant" :shell="$shell">
+        @if (count($overview['attention']) > 0)
+            <div class="mb-4 space-y-2">
+                @foreach ($overview['attention'] as $item)
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+                        ⚠ {{ $item['message'] }}
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        <div class="grid gap-4 lg:grid-cols-2">
+            <x-platform.panel :title="__('Account Snapshot')" compact>
+                <dl class="space-y-3 text-sm">
+                    @foreach ($overview['account'] as $row)
+                        <div class="flex items-center justify-between gap-4">
+                            <dt class="text-slate-500">{{ $row['label'] }}</dt>
+                            <dd class="font-medium text-black">{{ $row['value'] }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </x-platform.panel>
+
+            <x-platform.panel :title="__('Usage Snapshot')" compact>
+                <dl class="space-y-3 text-sm">
+                    @foreach ($overview['usage'] as $row)
+                        <div>
+                            <div class="mb-1.5 flex items-center justify-between gap-4">
+                                <dt class="text-slate-500">{{ $row['label'] }}</dt>
+                                <dd class="font-medium tabular-nums text-black">
+                                    {{ $row['used_label'] }}@if ($row['limit_label']) / {{ $row['limit_label'] }}@elseif ($row['used_label'] !== '—') / —@endif
+                                </dd>
+                            </div>
+                            <x-platform.usage-bar :percent="$row['percent']" />
+                        </div>
+                    @endforeach
+                </dl>
+            </x-platform.panel>
+
+            <x-platform.panel :title="__('Integration Snapshot')" compact>
+                <dl class="space-y-3 text-sm">
+                    @foreach ($overview['integrations'] as $row)
+                        <div class="flex items-center justify-between gap-4">
+                            <dt class="text-slate-500">{{ $row['label'] }}</dt>
+                            <dd @class([
+                                'font-medium',
+                                'text-emerald-700' => $row['status'] === 'connected',
+                                'text-amber-700' => in_array($row['status'], ['failed', 'needs_attention'], true),
+                                'text-slate-400' => $row['status'] === 'coming_soon',
+                                'text-slate-600' => ! in_array($row['status'], ['connected', 'failed', 'needs_attention', 'coming_soon'], true),
+                            ])>{{ $row['status_label'] }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </x-platform.panel>
+
+            <x-platform.panel :title="__('Recent Activity')" compact>
+                @if (count($overview['recent_activity']) === 0)
+                    <p class="text-sm text-slate-500">{{ __('No recent activity yet.') }}</p>
+                @else
+                    <ul class="space-y-3">
+                        @foreach ($overview['recent_activity'] as $event)
+                            <li class="flex gap-3 text-sm">
+                                <span class="w-16 shrink-0 tabular-nums text-slate-400">{{ $event['time'] }}</span>
+                                <span class="text-black">{{ $event['description'] }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-platform.panel>
         </div>
-
-        <x-ui.button variant="default" :href="route('tenants.edit', $tenant)">
-            {{ __('Edit') }}
-        </x-ui.button>
-    </div>
-
-    <x-auth-session-status class="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700" :status="session('status')" />
-
-    <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-        <dl class="space-y-4 text-sm">
-            <div class="flex flex-col gap-1 sm:flex-row sm:gap-4">
-                <dt class="w-32 shrink-0 font-medium text-slate-500">{{ __('Slug') }}</dt>
-                <dd class="text-black">{{ $tenant->id }}</dd>
-            </div>
-            <div class="flex flex-col gap-1 sm:flex-row sm:gap-4">
-                <dt class="w-32 shrink-0 font-medium text-slate-500">{{ __('Email') }}</dt>
-                <dd class="text-black">{{ $tenant->email ?: '—' }}</dd>
-            </div>
-            <div class="flex flex-col gap-1 sm:flex-row sm:gap-4">
-                <dt class="w-32 shrink-0 font-medium text-slate-500">{{ __('Status') }}</dt>
-                <dd class="capitalize text-black">{{ $tenant->status->value }}</dd>
-            </div>
-            <div class="flex flex-col gap-1 sm:flex-row sm:gap-4">
-                <dt class="w-32 shrink-0 font-medium text-slate-500">{{ __('Database') }}</dt>
-                <dd class="text-black">{{ $tenant->database()->getName() }}</dd>
-            </div>
-            <div class="flex flex-col gap-1 sm:flex-row sm:gap-4">
-                <dt class="w-32 shrink-0 font-medium text-slate-500">{{ __('Login URL') }}</dt>
-                <dd>
-                    <a class="font-medium text-black hover:underline" href="{{ route('tenant.login', ['tenant' => $tenant->id]) }}">
-                        {{ url('/'.$tenant->id.'/login') }}
-                    </a>
-                </dd>
-            </div>
-        </dl>
-    </div>
-
-    <form method="POST" action="{{ route('tenants.destroy', $tenant) }}" class="mt-6" onsubmit="return confirm('Delete this company and its database?');">
-        @csrf
-        @method('DELETE')
-        <x-ui.button type="submit" variant="destructive">
-            {{ __('Delete company') }}
-        </x-ui.button>
-    </form>
+    </x-platform.partner-shell>
 </x-app-layout>

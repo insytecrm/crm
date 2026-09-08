@@ -214,9 +214,11 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                 </svg>
             </x-ui.button>
-            <x-ui.button type="button" variant="soft" @click="$dispatch('open-modal', 'import-leads')">
-                {{ __('Import') }}
-            </x-ui.button>
+            <x-tenant.can :capability="\App\Enums\PlanCapability::CrmImport->value">
+                <x-ui.button type="button" variant="soft" @click="$dispatch('open-modal', 'import-leads')">
+                    {{ __('Import') }}
+                </x-ui.button>
+            </x-tenant.can>
             <x-ui.button type="button" variant="soft" @click="$dispatch('open-modal', 'edit-columns')">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.5-9h15m-15 6h15" />
@@ -253,9 +255,11 @@
                     <x-ui.button type="button" variant="outline" size="sm" @click="openBulkModal('bulk-change-lead-status')">
                         {{ __('Change Status') }}
                     </x-ui.button>
-                    <x-ui.button type="button" variant="outline" size="sm" @click="exportSelected()">
-                        {{ __('Export') }}
-                    </x-ui.button>
+                    <x-tenant.can :capability="\App\Enums\PlanCapability::CrmExport->value">
+                        <x-ui.button type="button" variant="outline" size="sm" @click="exportSelected()">
+                            {{ __('Export') }}
+                        </x-ui.button>
+                    </x-tenant.can>
                     <form
                         method="POST"
                         action="{{ route('tenant.leads.bulk-destroy') }}"
@@ -336,14 +340,14 @@
                                     <x-tenant.lead-link :lead="$lead" />
                                 </td>
                                 <td x-show="columns.phone" x-cloak class="whitespace-nowrap px-4 py-3 align-middle text-sm text-slate-600">{{ $lead->phone ?? '—' }}</td>
-                                <td x-show="columns.source" x-cloak class="whitespace-nowrap px-4 py-3 align-middle text-sm text-slate-600">{{ $lead->source ?? '—' }}</td>
+                                <td x-show="columns.source" x-cloak class="whitespace-nowrap px-4 py-3 align-middle text-sm text-slate-600">{{ $lead->sourceDisplay() ?? '—' }}</td>
                                 <td x-show="columns.requirement" x-cloak class="px-4 py-3 align-middle">
                                     @include('tenant.leads.partials.requirement-card', ['lead' => $lead])
                                 </td>
                                 <td x-show="columns.assigned_to" x-cloak class="whitespace-nowrap px-4 py-3 align-middle text-sm text-slate-600">{{ $lead->assignedTo?->name ?? '—' }}</td>
                                 <td x-show="columns.status" x-cloak class="whitespace-nowrap px-4 py-3 align-middle">
                                     <div class="flex flex-col items-start gap-0.5">
-                                        <x-tenant.status-badge :status="$lead->status" />
+                                        <x-tenant.status-badge :status="$lead->status" :lead="$lead" />
                                         @if ($stage = $lead->statusStageLabel())
                                             <span class="max-w-[9.5rem] truncate text-xs leading-snug text-slate-500" title="{{ $stage }}">{{ $stage }}</span>
                                         @endif
@@ -410,20 +414,4 @@
             @endforeach
         @endpush
     </div>
-
-    @if (session('external_redirect'))
-        <div
-            x-data
-            x-init="
-                const url = @js(session('external_redirect'));
-                if (url.startsWith('tel:')) {
-                    window.location.href = url;
-                } else {
-                    window.open(url, '_blank');
-                }
-            "
-            class="hidden"
-            aria-hidden="true"
-        ></div>
-    @endif
 </x-tenant-layout>

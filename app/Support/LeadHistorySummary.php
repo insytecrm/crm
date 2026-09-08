@@ -383,10 +383,10 @@ class LeadHistorySummary
             'status' => $lead->status->label(),
         ]);
 
-        if (filled($lead->source)) {
+        if (filled($lead->sourceDisplay())) {
             $intro = __(':name was added from :source and is currently in :status', [
                 'name' => $lead->name,
-                'source' => $lead->source,
+                'source' => $lead->sourceDisplay(),
                 'status' => $lead->status->label(),
             ]);
         }

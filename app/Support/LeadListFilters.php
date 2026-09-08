@@ -104,7 +104,10 @@ class LeadListFilters
 
                 return $query->where('location', 'like', "%{$escaped}%");
             })
-            ->when($this->createdFrom !== null, fn (Builder $query): Builder => $query->whereDate('created_at', '>=', $this->createdFrom))
-            ->when($this->createdTo !== null, fn (Builder $query): Builder => $query->whereDate('created_at', '<=', $this->createdTo));
+            ->when($this->createdFrom !== null || $this->createdTo !== null, function (Builder $query): Builder {
+                QueryableDate::constrain($query, 'created_at', $this->createdFrom, $this->createdTo);
+
+                return $query;
+            });
     }
 }

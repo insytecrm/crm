@@ -14,6 +14,7 @@ use App\Http\Requests\Tenant\StoreBookingRequest;
 use App\Models\Booking;
 use App\Models\Lead;
 use App\Models\Property;
+use App\Queries\BookingStatistics;
 use App\Support\DataTable\DataTableViewData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ use Illuminate\View\View;
 
 class BookingController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, BookingStatistics $bookingStatistics): View
     {
         $search = $request->string('search')->trim()->toString();
 
@@ -42,6 +43,7 @@ class BookingController extends Controller
         return view('tenant.bookings.index', array_merge([
             'bookings' => $bookings,
             'search' => $search,
+            'statistics' => $bookingStatistics->forTenant(),
             'leads' => Lead::query()
                 ->whereDoesntHave('bookings')
                 ->orderBy('name')
@@ -119,9 +121,13 @@ class BookingController extends Controller
             ->with('status', __('Booking created.'));
     }
 
-    public function markAgreement(Booking $booking, MarkBookingAgreementRequest $request, LogLeadBookingMilestone $logLeadBookingMilestone): RedirectResponse
+    public function markAgreement(MarkBookingAgreementRequest $request, Booking $booking, LogLeadBookingMilestone $logLeadBookingMilestone): RedirectResponse
     {
-        abort_unless($booking->canMarkAgreement(), 404);
+        if (! $booking->canMarkAgreement()) {
+            return redirect()
+                ->route('tenant.bookings.index')
+                ->with('status', __('This booking already has an agreement.'));
+        }
 
         $booking->update([
             'agreement_date' => $request->validated('agreement_date'),
@@ -137,9 +143,13 @@ class BookingController extends Controller
             ->with('status', __('Agreement marked for booking.'));
     }
 
-    public function storeInvoice(Booking $booking, StoreBookingInvoiceRequest $request, LogLeadBookingMilestone $logLeadBookingMilestone): RedirectResponse
+    public function storeInvoice(StoreBookingInvoiceRequest $request, Booking $booking, LogLeadBookingMilestone $logLeadBookingMilestone): RedirectResponse
     {
-        abort_unless($booking->canCreateInvoice(), 404);
+        if (! $booking->canCreateInvoice()) {
+            return redirect()
+                ->route('tenant.bookings.index')
+                ->with('status', __('This booking cannot be invoiced yet.'));
+        }
 
         $booking->update([
             'invoice_date' => $request->validated('invoice_date'),

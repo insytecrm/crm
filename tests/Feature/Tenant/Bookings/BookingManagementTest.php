@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Lead;
 use App\Models\LeadActivity;
 use App\Models\Property;
+use App\Models\User;
 
 test('bookings index opens create booking modal with form fields', function () {
     createTestTenant();
@@ -16,21 +17,112 @@ test('bookings index opens create booking modal with form fields', function () {
         'project_name' => 'Skyline Towers',
         'configurations' => [
             ['name' => '2 BHK', 'carpet_area_sqft' => 850, 'price' => 9500000, 'unit_count' => 100],
+            ['name' => '3 BHK', 'carpet_area_sqft' => 1100, 'price' => 12000000, 'unit_count' => 80],
         ],
     ]);
 
     $this->get('/acme/bookings')
         ->assertOk()
         ->assertSee('Create Booking')
+        ->assertSee('Total Bookings')
+        ->assertSee('Agreement Done')
+        ->assertSee('Invoice Created')
+        ->assertSee('Booking Value')
+        ->assertSee('Bookings This Month')
         ->assertSee('Search by lead, property, or unit...')
         ->assertSee('Related Lead')
         ->assertSee('Booking Prospect')
         ->assertSee('Select a lead')
         ->assertSee('Select a property')
+        ->assertSee('Select configuration')
+        ->assertSee('2 BHK · 850 sqft')
+        ->assertSee('3 BHK · 1100 sqft')
         ->assertSee('Unit Number')
         ->assertSee('Agreement Value')
         ->assertSee('Booking Date')
-        ->assertSee('Skyline Towers');
+        ->assertSee('Skyline Towers')
+        ->assertSee('name="_open_modal"', false)
+        ->assertSee('value="create-booking"', false)
+        ->assertSee('name="property_id"', false)
+        ->assertSee('name="configuration_index"', false)
+        ->assertSee('configsByProperty', false)
+        ->assertSee('x-ref="configSelect"', false);
+});
+
+test('bookings index shows kpi card values for bookings', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $this->travelTo('2026-09-05 10:00:00');
+
+    $leadOne = Lead::factory()->create();
+    $leadTwo = Lead::factory()->create();
+    $leadThree = Lead::factory()->create();
+    $property = Property::factory()->create();
+
+    Booking::factory()->create([
+        'lead_id' => $leadOne->id,
+        'property_id' => $property->id,
+        'agreement_value' => 1000000,
+        'booking_date' => '2026-09-02',
+        'agreement_date' => '2026-09-03',
+        'invoiced_at' => now(),
+        'invoice_date' => '2026-09-04',
+        'invoice_number' => 'INV-00001',
+    ]);
+
+    Booking::factory()->create([
+        'lead_id' => $leadTwo->id,
+        'property_id' => $property->id,
+        'agreement_value' => 2500000,
+        'booking_date' => '2026-08-15',
+        'agreement_date' => null,
+        'invoiced_at' => null,
+    ]);
+
+    Booking::factory()->create([
+        'lead_id' => $leadThree->id,
+        'property_id' => $property->id,
+        'agreement_value' => 500000,
+        'booking_date' => '2026-09-01',
+        'agreement_date' => '2026-09-04',
+        'invoiced_at' => null,
+    ]);
+
+    $this->get('/acme/bookings')
+        ->assertOk()
+        ->assertSee('Total Bookings')
+        ->assertSee('3', false)
+        ->assertSee('Agreement Done')
+        ->assertSee('1', false)
+        ->assertSee('Invoice Created')
+        ->assertSee('1', false)
+        ->assertSee('₹4,000,000')
+        ->assertSee('Bookings This Month');
+});
+
+test('booking validation errors reopen the create booking modal', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    Lead::factory()->create();
+    Property::factory()->create([
+        'configurations' => [
+            ['name' => '2 BHK', 'carpet_area_sqft' => 850, 'price' => 9500000, 'unit_count' => 100],
+        ],
+    ]);
+
+    $this->from('/acme/bookings')
+        ->post('/acme/bookings', [
+            '_open_modal' => 'create-booking',
+            'unit_number' => '1502',
+        ])
+        ->assertRedirect('/acme/bookings')
+        ->assertSessionHasErrors(['lead_id', 'property_id', 'configuration_index', 'agreement_value', 'booking_date']);
+
+    $this->get('/acme/bookings')
+        ->assertOk()
+        ->assertSee("\$dispatch('open-modal', 'create-booking')", false);
 });
 
 test('bookings index search filters by lead name', function () {
@@ -219,6 +311,43 @@ test('tenant users can mark agreement on a booking with payout details', functio
         ->and(LeadActivity::query()->where('lead_id', $booking->lead_id)->where('type', LeadActivityType::AgreementMarked)->exists())->toBeTrue();
 });
 
+test('marking agreement notifies the lead assignee when someone else marks it', function () {
+    createTestTenant();
+    $admin = actingAsTenantUser();
+
+    $assignee = User::query()->create([
+        'name' => 'Agreement Rep',
+        'email' => 'agreement-rep@acme.test',
+        'password' => 'password',
+        'email_verified_at' => now(),
+        'is_active' => true,
+        'role_id' => $admin->role_id,
+    ]);
+
+    $lead = Lead::factory()->create([
+        'assigned_to_id' => $assignee->id,
+        'created_by_id' => $admin->id,
+    ]);
+
+    $booking = Booking::factory()->create([
+        'lead_id' => $lead->id,
+        'agreement_date' => null,
+        'agreement_value' => 10000000,
+    ]);
+
+    $this->post('/acme/bookings/'.$booking->id.'/agreement', [
+        'agreement_date' => '2026-09-15',
+        'agreement_value' => 9500000,
+        'payout_percent' => 2.5,
+        'payout_amount' => 237500,
+    ])
+        ->assertRedirect(route('tenant.bookings.index', ['tenant' => 'acme'], false))
+        ->assertSessionHas('status');
+
+    expect($assignee->fresh()->notifications)->toHaveCount(1)
+        ->and($booking->fresh()->agreement_date?->toDateString())->toBe('2026-09-15');
+});
+
 test('mark agreement modal shows prefilled agreement value and payout fields', function () {
     createTestTenant();
     actingAsTenantUser();
@@ -241,6 +370,20 @@ test('mark agreement modal shows prefilled agreement value and payout fields', f
         ->assertSee('name="agreement_value"', false)
         ->assertSee('name="payout_percent"', false)
         ->assertSee('name="payout_amount"', false);
+});
+
+test('mark agreement modal posts to the booking agreement route', function () {
+    createTestTenant();
+    actingAsTenantUser();
+
+    $booking = Booking::factory()->create([
+        'agreement_date' => null,
+        'agreement_value' => 8000000,
+    ]);
+
+    $this->get('/acme/bookings')
+        ->assertOk()
+        ->assertSee('/acme/bookings/'.$booking->id.'/agreement', false);
 });
 
 test('create invoice option appears after agreement is marked', function () {
@@ -293,9 +436,12 @@ test('invoice cannot be created before agreement is marked', function () {
 
     $booking = Booking::factory()->create(['agreement_date' => null]);
 
-    $this->post('/acme/bookings/'.$booking->id.'/invoice', [
-        'invoice_date' => '2026-09-20',
-    ])->assertNotFound();
+    $this->from('/acme/bookings')
+        ->post('/acme/bookings/'.$booking->id.'/invoice', [
+            'invoice_date' => '2026-09-20',
+        ])
+        ->assertRedirect(route('tenant.bookings.index', ['tenant' => 'acme'], false))
+        ->assertSessionHas('status', __('This booking cannot be invoiced yet.'));
 });
 
 test('agreement cannot be marked twice', function () {
@@ -304,12 +450,17 @@ test('agreement cannot be marked twice', function () {
 
     $booking = Booking::factory()->create(['agreement_date' => '2026-09-01']);
 
-    $this->post('/acme/bookings/'.$booking->id.'/agreement', [
-        'agreement_date' => '2026-09-15',
-        'agreement_value' => 9000000,
-        'payout_percent' => 2.5,
-        'payout_amount' => 225000,
-    ])->assertNotFound();
+    $this->from('/acme/bookings')
+        ->post('/acme/bookings/'.$booking->id.'/agreement', [
+            'agreement_date' => '2026-09-15',
+            'agreement_value' => 9000000,
+            'payout_percent' => 2.5,
+            'payout_amount' => 225000,
+        ])
+        ->assertRedirect(route('tenant.bookings.index', ['tenant' => 'acme'], false))
+        ->assertSessionHas('status', __('This booking already has an agreement.'));
+
+    expect($booking->fresh()->agreement_date?->toDateString())->toBe('2026-09-01');
 });
 
 test('invoices page lists invoiced bookings', function () {

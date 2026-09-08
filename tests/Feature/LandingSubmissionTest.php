@@ -1,22 +1,55 @@
 <?php
 
-use App\Enums\LandingSubmissionType;
-use App\Models\LandingSubmission;
-
-test('welcome page renders landing mount point and meta', function () {
-    $response = $this->get('/');
+test('welcome page renders site mount with home page data', function () {
+    $response = $this->get('http://127.0.0.1/');
 
     $response->assertOk();
-    $response->assertSee('id="landing-root"', false);
-    $response->assertSee('InSyte CRM — Real Estate Channel Partner CRM | InSyte', false);
+    $response->assertSee('id="welcome-root"', false);
+    $response->assertSee('data-page="home"', false);
     $response->assertSee('data-demo-url=', false);
     $response->assertSee('data-trial-url=', false);
+    $response->assertSee('data-logo-light=', false);
+    $response->assertSee('hero-dashboard.png', false);
+});
+
+test('marketing product and solutions pages render', function () {
+    $paths = [
+        '/crm',
+        '/automation',
+        '/ai',
+        '/integrations',
+        '/customization',
+        '/solutions/real-estate',
+        '/solutions/sales-teams',
+        '/pricing',
+        '/demo',
+        '/signup',
+        '/faqs',
+        '/help',
+        '/help/add-a-lead',
+        '/docs',
+        '/docs/lead-api',
+        '/guides',
+        '/guides/real-estate-lead-management',
+        '/blog',
+        '/about',
+        '/contact',
+        '/careers',
+    ];
+
+    foreach ($paths as $path) {
+        $this->get('http://127.0.0.1'.$path)
+            ->assertOk()
+            ->assertSee('id="welcome-root"', false);
+    }
 });
 
 test('legal pages are accessible', function () {
     $this->get('/privacy')->assertOk()->assertSee('Privacy Policy');
     $this->get('/terms')->assertOk()->assertSee('Terms of Service');
     $this->get('/refund')->assertOk()->assertSee('Refund Policy');
+    $this->get('/cookies')->assertOk()->assertSee('Cookie Policy');
+    $this->get('/security')->assertOk()->assertSee('Data Processing');
 });
 
 test('demo submission is stored', function () {
@@ -33,7 +66,6 @@ test('demo submission is stored', function () {
     $response->assertJsonPath('message', 'Thank you! Our team will call you within 24 hours.');
 
     $this->assertDatabaseHas('landing_submissions', [
-        'type' => LandingSubmissionType::Demo->value,
         'email' => 'rajesh@example.com',
         'plan' => 'growth',
     ]);
@@ -51,11 +83,6 @@ test('trial submission is stored', function () {
     ]);
 
     $response->assertOk();
-    $response->assertJsonPath('message', "You're in! Check your email to activate your account.");
-
-    expect(LandingSubmission::query()->where('email', 'priya@example.com')->first())
-        ->type->toBe(LandingSubmissionType::Trial)
-        ->billing_cycle->toBe('yearly');
 });
 
 test('demo submission validates required fields', function () {

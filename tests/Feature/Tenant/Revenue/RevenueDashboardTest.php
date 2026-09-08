@@ -36,11 +36,11 @@ test('revenue page shows summary kpis trend chart project table and salespeople 
     $this->get('/acme/revenue')
         ->assertOk()
         ->assertSee('Filters')
-        ->assertSee('Total Revenue')
+        ->assertSee('Total Sales')
         ->assertDontSee('Revenue Summary')
         ->assertDontSee('Key performance indicators for agreed bookings')
-        ->assertSee('Revenue This Month')
-        ->assertSee('Revenue This Quarter')
+        ->assertSee('Sales This Month')
+        ->assertSee('Sales This Quarter')
         ->assertSee('Total Commission')
         ->assertSee('Pending Commission')
         ->assertSee('Received Commission')
@@ -132,7 +132,7 @@ test('revenue page excludes bookings without agreement from analytics', function
 
     $this->get('/acme/revenue')
         ->assertOk()
-        ->assertSee('Total Revenue')
+        ->assertSee('Total Sales')
         ->assertSee('₹0')
         ->assertSee('No project revenue data for the selected filters.');
 });

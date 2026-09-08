@@ -10,14 +10,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\BulkAssignLeadsRequest;
 use App\Http\Requests\Tenant\BulkUpdateLeadStatusRequest;
 use App\Models\Lead;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 
 class LeadBulkActionController extends Controller
 {
-    public function assign(BulkAssignLeadsRequest $request): RedirectResponse
+    public function assign(BulkAssignLeadsRequest $request, LogLeadActivity $logLeadActivity): RedirectResponse
     {
         $assignedToId = $request->validated('assigned_to_id');
         $updatedCount = 0;
+        $assignee = $assignedToId !== null
+            ? User::query()->find($assignedToId)
+            : null;
 
         $leads = Lead::query()->whereIn('id', $request->leadIds())->get();
 
@@ -28,6 +32,19 @@ class LeadBulkActionController extends Controller
 
             $lead->update(['assigned_to_id' => $assignedToId]);
             $updatedCount++;
+
+            if ($assignee === null) {
+                continue;
+            }
+
+            $logLeadActivity->handle(
+                $lead,
+                LeadActivityType::LeadAssigned,
+                __('Lead assigned to :name', ['name' => $assignee->name]),
+                metadata: [
+                    'assigned_to_id' => $assignee->id,
+                ],
+            );
         }
 
         $listing = LeadListingFilter::fromRequest($request->string('listing')->toString());

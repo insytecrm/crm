@@ -70,9 +70,6 @@
                         <x-ui.modal.field-label for="site_visit_notes_{{ $lead->id }}" :value="__('Notes')" />
                         <textarea id="site_visit_notes_{{ $lead->id }}" name="notes" rows="3" class="block w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-navy focus:ring-navy" placeholder="{{ __('Add notes (optional)') }}"></textarea>
                     </div>
-                    @include('tenant.partials.reminder-fields', [
-                        'idPrefix' => 'site_visit_reminder_'.$lead->id,
-                    ])
                 </div>
             </x-ui.modal.section>
         </x-ui.modal.body>

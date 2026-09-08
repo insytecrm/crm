@@ -9,7 +9,7 @@ use App\Enums\ScheduledActivityPriority;
 use App\Enums\SiteVisitType;
 use App\Models\Lead;
 use App\Models\LeadScheduledEvent;
-use App\Support\ReminderBefore;
+use App\Models\User;
 use Carbon\CarbonInterface;
 
 class RecordLeadScheduledEvent
@@ -22,7 +22,7 @@ class RecordLeadScheduledEvent
         ScheduledActivityPriority $priority = ScheduledActivityPriority::Normal,
         ?int $propertyId = null,
         ?SiteVisitType $visitType = null,
-        ?ReminderBefore $reminder = null,
+        ?User $user = null,
     ): LeadScheduledEvent {
         $sequenceNumber = (int) LeadScheduledEvent::query()
             ->where('lead_id', $lead->id)
@@ -38,8 +38,7 @@ class RecordLeadScheduledEvent
             'visit_type' => $type === LeadScheduledEventType::SiteVisit ? $visitType : null,
             'notes' => $notes,
             'status' => LeadScheduledEventStatus::Scheduled,
-            'user_id' => auth()->id(),
-            ...ReminderBefore::attributesFor($reminder, $scheduledAt),
+            'user_id' => $user?->id ?? auth()->id(),
         ]);
 
         $this->syncLeadScheduledAt($event, $scheduledAt);
@@ -100,8 +99,6 @@ class RecordLeadScheduledEvent
         CarbonInterface $scheduledAt,
         ?string $notes = null,
         ?ScheduledActivityPriority $priority = null,
-        ?ReminderBefore $reminder = null,
-        bool $reminderProvided = false,
     ): LeadScheduledEvent {
         $updates = [
             'scheduled_at' => $scheduledAt,
@@ -114,13 +111,6 @@ class RecordLeadScheduledEvent
 
         if ($priority !== null) {
             $updates['priority'] = $priority;
-        }
-
-        if ($reminderProvided) {
-            $updates = [...$updates, ...ReminderBefore::attributesFor($reminder, $scheduledAt)];
-        } elseif ($event->reminder_before_seconds !== null) {
-            $updates['remind_at'] = $scheduledAt->copy()->subSeconds($event->reminder_before_seconds);
-            $updates['reminder_dismissed_at'] = null;
         }
 
         $event->update($updates);

@@ -22,7 +22,7 @@ test('super admins can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('tenants.index', absolute: false));
+    $response->assertRedirect(route('platform.dashboard', absolute: false));
 });
 
 test('users can not authenticate with invalid password', function () {
