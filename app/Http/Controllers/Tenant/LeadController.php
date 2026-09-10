@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Actions\CreateLead;
+use App\Actions\RecalculateLeadScore;
 use App\Enums\LeadListingFilter;
 use App\Enums\LeadSource;
 use App\Http\Controllers\Controller;
@@ -74,7 +75,7 @@ class LeadController extends Controller
         return LeadDrawerRedirect::to($lead);
     }
 
-    public function update(UpdateLeadRequest $request, Lead $lead): RedirectResponse
+    public function update(UpdateLeadRequest $request, Lead $lead, RecalculateLeadScore $recalculateLeadScore): RedirectResponse
     {
         $data = $request->validated();
         $source = LeadSource::tryFrom($data['source'] ?? '');
@@ -85,6 +86,7 @@ class LeadController extends Controller
         }
 
         $lead->update($data);
+        $recalculateLeadScore->handle($lead);
 
         return LeadDrawerRedirect::to($lead, __('Lead updated successfully.'));
     }

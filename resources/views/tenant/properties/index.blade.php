@@ -86,10 +86,22 @@
             </form>
         </x-slot:search>
 
-        <x-ui.button variant="default" :href="route('tenant.properties.create')">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-            {{ __('Add Property') }}
-        </x-ui.button>
+        <x-tenant.can :permission="\App\Enums\TenantPermission::PropertiesManage">
+            <x-ui.button type="button" variant="soft" @click="$dispatch('open-modal', 'import-properties')">
+                {{ __('Import') }}
+            </x-ui.button>
+        </x-tenant.can>
+        <x-tenant.can :permission="\App\Enums\TenantPermission::PropertiesView">
+            <x-ui.button variant="soft" :href="route('tenant.properties.export', array_filter(['filter' => $filter->value !== 'all' ? $filter->value : null, 'search' => $search !== '' ? $search : null]))">
+                {{ __('Export') }}
+            </x-ui.button>
+        </x-tenant.can>
+        <x-tenant.can :permission="\App\Enums\TenantPermission::PropertiesManage">
+            <x-ui.button variant="default" :href="route('tenant.properties.create')">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                {{ __('Add Property') }}
+            </x-ui.button>
+        </x-tenant.can>
     </x-tenant.list-toolbar>
 
     @if ($properties->isEmpty())
@@ -97,7 +109,7 @@
             <p class="text-sm text-slate-500">{{ $filter->emptyMessage() }}</p>
         </div>
     @else
-        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             @foreach ($properties as $property)
                 @include('tenant.properties.partials.property-card', ['property' => $property])
             @endforeach
@@ -109,6 +121,8 @@
     @endif
 
     @push('modals')
+        @include('tenant.properties.partials.import-modal')
+
         @foreach ($properties as $property)
             @include('tenant.properties.partials.property-details-modal', ['property' => $property])
             @include('tenant.properties.partials.edit-property-modal', [

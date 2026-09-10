@@ -2,12 +2,14 @@
 
 namespace Database\Factories;
 
+use App\Actions\RecalculateLeadScore;
 use App\Enums\LeadBudget;
 use App\Enums\LeadScheduledEventStatus;
 use App\Enums\LeadScheduledEventType;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\PropertyType;
+use App\Enums\ScheduledActivityOutcome;
 use App\Models\Lead;
 use App\Models\LeadScheduledEvent;
 use App\Models\User;
@@ -45,7 +47,8 @@ class LeadFactory extends Factory
             'configuration' => fake()->randomElement(['1 BHK', '2 BHK', '3 BHK', '4 BHK']),
             'assigned_to_id' => $userId,
             'status' => LeadStatus::New,
-            'lead_score' => fake()->numberBetween(0, 100),
+            'lead_score' => 0,
+            'lead_score_intent' => 0,
             'next_follow_up_at' => fake()->optional()->dateTimeBetween('-1 week', '+2 weeks'),
             'upcoming_site_visit_at' => fake()->optional()->dateTimeBetween('now', '+1 month'),
             'next_action' => fake()->optional()->sentence(),
@@ -81,10 +84,23 @@ class LeadFactory extends Factory
 
     public function priority(): static
     {
-        return $this->state(fn (array $attributes): array => [
-            'status' => LeadStatus::Qualified,
-            'lead_score' => Lead::PRIORITY_SCORE_THRESHOLD,
-        ]);
+        return $this
+            ->state(fn (array $attributes): array => [
+                'status' => LeadStatus::Qualified,
+            ])
+            ->afterCreating(function (Lead $lead): void {
+                LeadScheduledEvent::factory()->create([
+                    'lead_id' => $lead->id,
+                    'type' => LeadScheduledEventType::FollowUp,
+                    'sequence_number' => 1,
+                    'scheduled_at' => now()->subDay(),
+                    'status' => LeadScheduledEventStatus::Completed,
+                    'completed_at' => now()->subDay(),
+                    'completion_outcome' => ScheduledActivityOutcome::Interested->value,
+                ]);
+
+                app(RecalculateLeadScore::class)->handle($lead);
+            });
     }
 
     public function converted(): static

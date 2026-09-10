@@ -104,55 +104,44 @@ class PerformAutomationAction
      */
     private function setPriority(Automation $automation, Lead $lead, User $owner, bool $mark, bool $dryRun): array
     {
-        $threshold = Lead::PRIORITY_SCORE_THRESHOLD;
-        $current = (int) ($lead->lead_score ?? 0);
-        $isPriority = $current >= $threshold;
+        if ($dryRun) {
+            return [
+                'ok' => true,
+                'detail' => $mark
+                    ? __('Would verify this lead meets priority criteria.')
+                    : __('Priority is determined automatically from follow-up and site visit outcomes.'),
+            ];
+        }
+
+        app(RecalculateLeadScore::class)->handle($lead);
+        $lead->refresh();
+
+        $isPriority = $lead->qualifiesForPriority();
 
         if ($mark && $isPriority) {
             return [
                 'ok' => true,
-                'detail' => __('Lead is already marked priority.'),
+                'detail' => __('Lead already qualifies as priority.'),
             ];
         }
 
-        if (! $mark && ! $isPriority) {
+        if ($mark) {
+            return [
+                'ok' => true,
+                'detail' => __('Lead does not meet priority criteria from follow-up and site visit outcomes.'),
+            ];
+        }
+
+        if (! $isPriority) {
             return [
                 'ok' => true,
                 'detail' => __('Lead is not marked priority.'),
             ];
         }
 
-        if ($dryRun) {
-            return [
-                'ok' => true,
-                'detail' => $mark
-                    ? __('Would mark this lead as priority.')
-                    : __('Would remove priority from this lead.'),
-            ];
-        }
-
-        $lead->update([
-            'lead_score' => $mark ? max($current, $threshold) : null,
-        ]);
-
-        $this->logLeadActivity->handle(
-            $lead,
-            LeadActivityType::NoteAdded,
-            $mark ? __('Lead marked as priority') : __('Priority removed from lead'),
-            $owner,
-            [
-                'source' => 'automation',
-                'automation_id' => $automation->id,
-                'lead_score' => $lead->lead_score,
-                'priority' => $mark,
-            ],
-        );
-
         return [
             'ok' => true,
-            'detail' => $mark
-                ? __('Marked lead as priority.')
-                : __('Removed priority from lead.'),
+            'detail' => __('Priority is determined automatically from follow-up and site visit outcomes.'),
         ];
     }
 

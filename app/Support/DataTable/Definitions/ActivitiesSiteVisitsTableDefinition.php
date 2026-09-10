@@ -2,11 +2,9 @@
 
 namespace App\Support\DataTable\Definitions;
 
-use App\Models\LeadScheduledEvent;
 use App\Models\User;
-use App\Support\DataTable\AbstractDataTableDefinition;
 
-class ActivitiesSiteVisitsTableDefinition extends AbstractDataTableDefinition
+class ActivitiesSiteVisitsTableDefinition extends ScheduledEventsTableDefinition
 {
     public function key(): string
     {
@@ -51,16 +49,6 @@ class ActivitiesSiteVisitsTableDefinition extends AbstractDataTableDefinition
             'status' => __('Status'),
             'actions' => __('Actions'),
         ];
-    }
-
-    public function modelClass(): string
-    {
-        return LeadScheduledEvent::class;
-    }
-
-    public function bulkDeleteParameterName(): string
-    {
-        return 'event_ids';
     }
 
     public function authorizeBulkDelete(User $user): bool

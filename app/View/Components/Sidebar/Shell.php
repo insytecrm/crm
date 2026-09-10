@@ -13,6 +13,7 @@ class Shell extends Component
         public ?string $contextBadge = null,
         public ?string $logoutAction = null,
         public ?string $profileHref = null,
+        public bool $fullBleed = false,
     ) {}
 
     public function render(): View

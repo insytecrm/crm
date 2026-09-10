@@ -45,7 +45,11 @@ class LeadListing
         });
 
         if ($filter === LeadListingFilter::Priority) {
-            $query->orderByDesc('lead_score')->latest();
+            $query
+                ->orderByDesc('lead_score_intent')
+                ->orderByDesc('latest_positive_outcome_at')
+                ->orderByDesc('lead_score')
+                ->orderByDesc('id');
         } else {
             $query->latest();
         }

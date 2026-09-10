@@ -1,3 +1,7 @@
+@php
+    $bookingProgress = app(\App\Support\BookingProgress::class)->for($booking);
+@endphp
+
 <tr class="align-middle transition hover:bg-slate-50/60">
     <x-tenant.manageable-table.checkbox-cell :id="$booking->id" />
     <td x-show="isColumnVisible('property')" class="whitespace-nowrap px-4 py-3 align-middle text-sm font-medium text-black">
@@ -29,6 +33,9 @@
     </td>
     <x-tenant.manageable-table.custom-column-cells :record-id="$booking->id" />
     <td x-show="isColumnVisible('actions')" class="whitespace-nowrap px-4 py-3 align-middle text-end">
-        @include('tenant.bookings.partials.booking-actions', ['booking' => $booking])
+        <div class="inline-flex items-center gap-2">
+            <x-tenant.progress-dots :completed="$bookingProgress['completed']" :total="$bookingProgress['total']" />
+            @include('tenant.bookings.partials.booking-actions', ['booking' => $booking])
+        </div>
     </td>
 </tr>

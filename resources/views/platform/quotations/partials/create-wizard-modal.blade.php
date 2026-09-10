@@ -1,6 +1,9 @@
 @php
     $quotationPlans = $quotationPlans ?? [];
     $openQuotationModal = $openQuotationModal ?? false;
+    $leadSearchOptions = $leadSearchOptions ?? [];
+    $selectedLeadId = $selectedLeadId ?? null;
+    $selectedLead = $selectedLead ?? null;
     $defaultTaxRate = $defaultTaxRate ?? \App\Support\Platform\QuotationPricing::DefaultTaxRate;
     $defaultPlanId = old('plan_id', $quotationPlans[0]['id'] ?? null);
     $defaultPlan = collect($quotationPlans)->firstWhere('id', (int) $defaultPlanId) ?? ($quotationPlans[0] ?? null);
@@ -15,12 +18,17 @@
 @push('modals')
     <x-modal name="create-quotation" maxWidth="2xl" :show="$openQuotationModal" focusable>
         <div
+            x-on:preset-quotation-lead.window="selectLead($event.detail)"
             x-data="quotationCreateWizard({
                 step: {{ (int) old('_quotation_wizard_step', 1) }},
-                companyName: @js(old('company_name', '')),
-                ownerName: @js(old('owner_name', '')),
-                email: @js(old('email', '')),
-                phone: @js(old('phone', '')),
+                leadId: @js(old('platform_lead_id', $selectedLeadId)),
+                leadSearch: '',
+                leads: @js($leadSearchOptions),
+                selectedLeadPreset: @js($selectedLead),
+                companyName: @js(old('company_name', $selectedLead['company_name'] ?? '')),
+                ownerName: @js(old('owner_name', $selectedLead['contact_person'] ?? '')),
+                email: @js(old('email', $selectedLead['email'] ?? '')),
+                phone: @js(old('phone', $selectedLead['phone'] ?? '')),
                 planId: @js($defaultPlanId ? (int) $defaultPlanId : null),
                 billingCycle: @js(old('billing_cycle', 'monthly')),
                 trialEnabled: @js(old('trial_enabled', true) ? true : false),
@@ -50,6 +58,11 @@
                 @csrf
                 <input type="hidden" name="_quotation_wizard" value="1">
                 <input type="hidden" name="_quotation_wizard_step" :value="step">
+                <input type="hidden" name="platform_lead_id" :value="leadId">
+                <input type="hidden" name="company_name" :value="companyName">
+                <input type="hidden" name="owner_name" :value="ownerName">
+                <input type="hidden" name="email" :value="email">
+                <input type="hidden" name="phone" :value="phone">
                 <input type="hidden" name="plan_price" :value="planPrice">
                 <input type="hidden" name="discount_amount" :value="discountAmount">
                 <input type="hidden" name="tax_amount" :value="taxAmount">
@@ -74,28 +87,37 @@
                     </div>
 
                     <div x-show="step === 1" x-cloak>
-                        <x-ui.modal.section :title="__('Company')">
-                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-x-4 sm:gap-y-3">
-                                <div class="sm:col-span-2">
-                                    <x-ui.modal.field-label for="quote_company_name" :value="__('Company Name')" required />
-                                    <x-text-input id="quote_company_name" name="company_name" type="text" class="mt-0.5 block w-full" x-model="companyName" x-bind:required="step === 1" />
-                                    <x-input-error class="mt-1" :messages="$errors->get('company_name')" />
-                                </div>
-                                <div class="sm:col-span-2">
-                                    <x-ui.modal.field-label for="quote_owner_name" :value="__('Owner Name')" required />
-                                    <x-text-input id="quote_owner_name" name="owner_name" type="text" class="mt-0.5 block w-full" x-model="ownerName" x-bind:required="step === 1" />
-                                    <x-input-error class="mt-1" :messages="$errors->get('owner_name')" />
-                                </div>
+                        <x-ui.modal.section :title="__('Lead')">
+                            <div class="space-y-3">
                                 <div>
-                                    <x-ui.modal.field-label for="quote_email" :value="__('Email')" required />
-                                    <x-text-input id="quote_email" name="email" type="email" class="mt-0.5 block w-full" x-model="email" x-bind:required="step === 1" />
-                                    <x-input-error class="mt-1" :messages="$errors->get('email')" />
+                                    <x-ui.modal.field-label for="quote_lead_search" :value="__('Select Lead')" required />
+                                    <x-text-input id="quote_lead_search" type="search" class="mt-0.5 block w-full" x-model="leadSearch" placeholder="{{ __('Search lead...') }}" />
+                                    <x-input-error class="mt-1" :messages="$errors->get('platform_lead_id')" />
                                 </div>
-                                <div>
-                                    <x-ui.modal.field-label for="quote_phone" :value="__('Phone')" />
-                                    <x-text-input id="quote_phone" name="phone" type="text" class="mt-0.5 block w-full" x-model="phone" />
-                                    <x-input-error class="mt-1" :messages="$errors->get('phone')" />
+                                <div class="max-h-56 space-y-2 overflow-y-auto">
+                                    <template x-for="lead in filteredLeads()" :key="lead.id">
+                                        <button
+                                            type="button"
+                                            class="flex w-full rounded-xl border p-3 text-left transition-colors"
+                                            :class="Number(leadId) === Number(lead.id) ? 'border-navy bg-navy/5' : 'border-slate-200 hover:border-navy/40'"
+                                            x-on:click="selectLead(lead)"
+                                        >
+                                            <span class="block w-full">
+                                                <span class="block font-semibold text-black" x-text="lead.company_name"></span>
+                                                <span class="mt-0.5 block text-sm text-slate-600" x-text="lead.contact_person"></span>
+                                                <span class="mt-0.5 block text-sm text-slate-500" x-text="lead.email"></span>
+                                                <span class="mt-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600" x-text="lead.stage"></span>
+                                            </span>
+                                        </button>
+                                    </template>
+                                    <p x-show="filteredLeads().length === 0" class="text-sm text-slate-500">{{ __('No leads match your search.') }}</p>
                                 </div>
+                                <template x-if="selectedLeadSummary">
+                                    <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-sm">
+                                        <p class="font-semibold text-black" x-text="selectedLeadSummary.company_name"></p>
+                                        <p class="mt-1 text-slate-600" x-text="selectedLeadSummary.contact_person"></p>
+                                    </div>
+                                </template>
                             </div>
                         </x-ui.modal.section>
                     </div>
@@ -197,7 +219,7 @@
                         <x-ui.modal.section :title="__('Review')">
                             <dl class="space-y-2 text-sm">
                                 <div class="flex justify-between gap-4">
-                                    <dt class="text-slate-500">{{ __('Company') }}</dt>
+                                    <dt class="text-slate-500">{{ __('Lead') }}</dt>
                                     <dd class="text-end font-medium text-black" x-text="companyName || '—'"></dd>
                                 </div>
                                 <div class="flex justify-between gap-4">
@@ -277,6 +299,9 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('quotationCreateWizard', (config) => ({
                 step: Number(config.step || 1),
+                leadId: config.leadId ? Number(config.leadId) : null,
+                leadSearch: '',
+                leads: config.leads || [],
                 companyName: config.companyName || '',
                 ownerName: config.ownerName || '',
                 email: config.email || '',
@@ -293,11 +318,19 @@
                 taxRate: Number(config.taxRate || 0.18),
                 plans: config.plans || [],
                 steps: [
-                    { n: 1, label: @js(__('Company')) },
+                    { n: 1, label: @js(__('Lead')) },
                     { n: 2, label: @js(__('Plan')) },
                     { n: 3, label: @js(__('Pricing')) },
                     { n: 4, label: @js(__('Review')) },
                 ],
+
+                get selectedLeadSummary() {
+                    if (! this.leadId) {
+                        return null;
+                    }
+
+                    return this.leads.find((lead) => Number(lead.id) === Number(this.leadId)) || null;
+                },
 
                 get stepLabel() {
                     return @js(__('Step :step of 4')).replace(':step', String(this.step));
@@ -324,10 +357,36 @@
                 },
 
                 init() {
+                    if (config.selectedLeadPreset) {
+                        this.selectLead(config.selectedLeadPreset);
+                    }
+
                     if (! this.planId && this.plans.length > 0) {
                         this.planId = Number(this.plans[0].id);
                         this.syncPlanPrice();
                     }
+                },
+
+                filteredLeads() {
+                    const query = (this.leadSearch || '').trim().toLowerCase();
+                    if (! query) {
+                        return this.leads;
+                    }
+
+                    return this.leads.filter((lead) => {
+                        return [lead.company_name, lead.contact_person, lead.email, lead.stage]
+                            .join(' ')
+                            .toLowerCase()
+                            .includes(query);
+                    });
+                },
+
+                selectLead(lead) {
+                    this.leadId = Number(lead.id);
+                    this.companyName = lead.company_name || '';
+                    this.ownerName = lead.contact_person || '';
+                    this.email = lead.email || '';
+                    this.phone = lead.phone || '';
                 },
 
                 syncPlanPrice() {
@@ -374,6 +433,12 @@
                 },
 
                 validateStep() {
+                    if (this.step === 1 && ! this.leadId) {
+                        alert(@js(__('Please select a lead to continue.')));
+
+                        return false;
+                    }
+
                     const form = this.$refs.form;
                     if (! form) {
                         return true;

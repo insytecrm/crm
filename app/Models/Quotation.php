@@ -16,6 +16,7 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
 #[Fillable([
     'number',
+    'platform_lead_id',
     'company_name',
     'owner_name',
     'email',
@@ -94,6 +95,14 @@ class Quotation extends Model
     public function getRouteKeyName(): string
     {
         return 'number';
+    }
+
+    /**
+     * @return BelongsTo<PlatformLead, $this>
+     */
+    public function platformLead(): BelongsTo
+    {
+        return $this->belongsTo(PlatformLead::class);
     }
 
     /**

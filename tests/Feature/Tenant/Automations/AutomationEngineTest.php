@@ -5,6 +5,7 @@ use App\Enums\AutomationConditionField;
 use App\Enums\AutomationConditionOperator;
 use App\Enums\AutomationRunStatus;
 use App\Enums\AutomationTrigger;
+use App\Enums\LeadLostReason;
 use App\Enums\LeadStatus;
 use App\Enums\PropertyType;
 use App\Enums\ScheduledActivityPriority;
@@ -249,7 +250,7 @@ test('a closed lead is skipped', function () {
 
     $workflow = Automation::factory()->active()->create([
         'user_id' => $user->id,
-        'trigger' => AutomationTrigger::StatusChanged,
+        'trigger' => AutomationTrigger::FollowUpScheduled,
     ]);
     AutomationAction::factory()->create([
         'automation_id' => $workflow->id,
@@ -270,6 +271,43 @@ test('a closed lead is skipped', function () {
 
     expect(LeadTask::query()->where('title', 'Closed lead task')->exists())->toBeFalse()
         ->and(AutomationRun::query()->where('status', AutomationRunStatus::Skipped)->exists())->toBeTrue();
+});
+
+test('marking a lead lost runs status changed workflows for closed leads', function () {
+    createTestTenant();
+    $user = actingAsTenantUser();
+
+    $lead = Lead::factory()->create([
+        'assigned_to_id' => $user->id,
+        'status' => LeadStatus::Qualified,
+    ]);
+
+    $workflow = Automation::factory()->active()->create([
+        'user_id' => $user->id,
+        'trigger' => AutomationTrigger::StatusChanged,
+    ]);
+    AutomationCondition::factory()->create([
+        'automation_id' => $workflow->id,
+        'field' => AutomationConditionField::Status,
+        'operator' => AutomationConditionOperator::Equals,
+        'value' => ['text' => LeadStatus::Lost->value],
+    ]);
+    AutomationAction::factory()->create([
+        'automation_id' => $workflow->id,
+        'type' => AutomationActionType::AddNote,
+        'config' => ['body' => 'Lost lead follow-up note'],
+    ]);
+
+    $this->from('/acme/leads?lead='.$lead->id)
+        ->post('/acme/leads/'.$lead->id.'/mark-lost', [
+            'lost_reasons' => [LeadLostReason::BudgetMismatch->value],
+            'closing_notes' => 'Too expensive',
+        ])
+        ->assertRedirect();
+
+    expect($lead->fresh()->status)->toBe(LeadStatus::Lost)
+        ->and(LeadNote::query()->where('lead_id', $lead->id)->where('body', 'Lost lead follow-up note')->exists())->toBeTrue()
+        ->and(AutomationRun::query()->where('automation_id', $workflow->id)->where('status', AutomationRunStatus::Succeeded)->exists())->toBeTrue();
 });
 
 test('an unassigned lead does not run live workflows', function () {

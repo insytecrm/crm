@@ -3,6 +3,7 @@
 namespace App\Queries;
 
 use App\Models\Lead;
+use App\Support\DuplicateLeadPrimaryRecommendation;
 use App\Support\LeadContactNormalizer;
 use Illuminate\Support\Collection;
 
@@ -15,9 +16,12 @@ class DuplicateLeadGroups
      *     match_reasons: list<string>,
      * }>
      */
+    public function __construct(private DuplicateLeadPrimaryRecommendation $duplicateLeadPrimaryRecommendation) {}
+
     public function all(): Collection
     {
         $leads = Lead::query()
+            ->withCount('activities')
             ->with([
                 'assignedTo',
                 'scheduledEvents.property',
@@ -109,9 +113,12 @@ class DuplicateLeadGroups
             ->map(function (Collection $group, int $index): array {
                 $matchReasons = $this->matchReasons($group);
 
+                $sortedLeads = $group->sortBy('name')->values();
+
                 return [
                     'key' => 'group-'.$index,
-                    'leads' => $group->sortBy('name')->values(),
+                    'leads' => $sortedLeads,
+                    'recommended_primary_id' => $this->duplicateLeadPrimaryRecommendation->forGroup($sortedLeads),
                     'match_reasons' => $matchReasons,
                 ];
             })

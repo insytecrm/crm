@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\PropertyPortal;
 use App\Http\Controllers\Tenant\ActivityController;
+use App\Http\Controllers\Tenant\ActivityDueNotificationController;
 use App\Http\Controllers\Tenant\AuthenticatedSessionController;
 use App\Http\Controllers\Tenant\AutomationController;
 use App\Http\Controllers\Tenant\AutomationWorkflowController;
@@ -38,6 +39,9 @@ use App\Http\Controllers\Tenant\MarkLeadLostController;
 use App\Http\Controllers\Tenant\MessageTemplateController;
 use App\Http\Controllers\Tenant\PayoutController;
 use App\Http\Controllers\Tenant\PropertyController;
+use App\Http\Controllers\Tenant\PropertyExportController;
+use App\Http\Controllers\Tenant\PropertyImportController;
+use App\Http\Controllers\Tenant\PropertyImportSampleController;
 use App\Http\Controllers\Tenant\PropertyMicrositeCmsController;
 use App\Http\Controllers\Tenant\PropertyMicrositeController;
 use App\Http\Controllers\Tenant\ReportAnalyticsController;
@@ -60,6 +64,7 @@ use App\Http\Controllers\Tenant\TablePreferencesController;
 use App\Http\Controllers\Tenant\TaskController;
 use App\Http\Controllers\Tenant\TeamChatController;
 use App\Http\Controllers\Tenant\TeamPerformanceController;
+use App\Http\Controllers\Tenant\WhatsAppWebController;
 use App\Http\Middleware\EnforceTenantPlanAccess;
 use App\Http\Middleware\EnsureVerifiedDomainPurpose;
 use App\Http\Middleware\PreventAccessByPausedSubscription;
@@ -243,6 +248,11 @@ Route::middleware([
         Route::post('team-chat/messages', [TeamChatController::class, 'store'])->name('tenant.team-chat.messages.store');
         Route::get('team-chat/messages/{message}/attachments/{attachment}/download', [TeamChatController::class, 'downloadAttachment'])->name('tenant.team-chat.attachments.download');
 
+        Route::get('activity-notifications', [ActivityDueNotificationController::class, 'index'])->name('tenant.activity-notifications.index');
+        Route::post('activity-notifications/dismiss-popup', [ActivityDueNotificationController::class, 'dismissPopup'])->name('tenant.activity-notifications.dismiss-popup');
+        Route::post('activity-notifications/read-all', [ActivityDueNotificationController::class, 'markAllRead'])->name('tenant.activity-notifications.read-all');
+        Route::post('activity-notifications/{notification}/read', [ActivityDueNotificationController::class, 'markRead'])->name('tenant.activity-notifications.read');
+
         Route::get('activities', [ActivityController::class, 'index'])->name('tenant.activities.index');
 
         Route::patch('table-preferences/{tableKey}', [TablePreferencesController::class, 'update'])->name('tenant.table-preferences.update');
@@ -253,6 +263,8 @@ Route::middleware([
         Route::patch('tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tenant.tasks.status.update');
         Route::post('tasks/{task}/complete', [TaskController::class, 'complete'])->name('tenant.tasks.complete');
 
+        Route::get('whatsapp-web', [WhatsAppWebController::class, 'index'])->name('tenant.whatsapp-web.index');
+
         Route::get('follow-ups', [FollowUpController::class, 'index'])->name('tenant.follow-ups.index');
         Route::get('site-visits', [SiteVisitController::class, 'index'])->name('tenant.site-visits.index');
         Route::patch('scheduled-events/{scheduledEvent}/reschedule', [LeadScheduledEventController::class, 'reschedule'])->name('tenant.scheduled-events.reschedule');
@@ -261,6 +273,9 @@ Route::middleware([
 
         Route::get('properties', [PropertyController::class, 'index'])->name('tenant.properties.index');
         Route::get('properties/create', [PropertyController::class, 'create'])->name('tenant.properties.create');
+        Route::get('properties-export', PropertyExportController::class)->name('tenant.properties.export');
+        Route::get('properties-import/sample', PropertyImportSampleController::class)->name('tenant.properties.import.sample');
+        Route::post('properties-import', PropertyImportController::class)->name('tenant.properties.import');
         Route::post('properties', [PropertyController::class, 'store'])->name('tenant.properties.store');
         Route::patch('properties/{property}', [PropertyController::class, 'update'])->name('tenant.properties.update');
         Route::patch('properties/{property}/status', [PropertyController::class, 'updateStatus'])->name('tenant.properties.status.update');

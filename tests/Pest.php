@@ -95,6 +95,27 @@ function actingAsTenantUser(?User $user = null): User
     return $user;
 }
 
+/**
+ * @param  list<string>  $headers
+ * @param  list<list<string>>  $rows
+ */
+function csvFixture(array $headers, array $rows): string
+{
+    $handle = fopen('php://temp', 'r+');
+
+    fputcsv($handle, $headers);
+
+    foreach ($rows as $row) {
+        fputcsv($handle, $row);
+    }
+
+    rewind($handle);
+    $csv = stream_get_contents($handle) ?: '';
+    fclose($handle);
+
+    return $csv;
+}
+
 function scheduleFollowUpForLead(Lead $lead, array $overrides = []): LeadScheduledEvent
 {
     return LeadScheduledEvent::factory()->create(array_merge([

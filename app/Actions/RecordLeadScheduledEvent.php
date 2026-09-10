@@ -103,6 +103,7 @@ class RecordLeadScheduledEvent
         $updates = [
             'scheduled_at' => $scheduledAt,
             'rescheduled_at' => now(),
+            'reminder_dismissed_at' => null,
         ];
 
         if ($notes !== null) {

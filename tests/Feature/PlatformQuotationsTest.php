@@ -7,6 +7,7 @@ use App\Enums\SubscriptionStatus;
 use App\Models\BillingInvoice;
 use App\Models\PartnerSubscription;
 use App\Models\Plan;
+use App\Models\PlatformLead;
 use App\Models\Quotation;
 use App\Models\Tenant;
 use App\Models\User;
@@ -54,11 +55,19 @@ test('non super admins cannot view quotations', function () {
 test('super admins can create a draft quotation from the popup modal', function () {
     $admin = User::factory()->superAdmin()->create();
     $plan = Plan::query()->where('key', 'growth')->firstOrFail();
+    $lead = PlatformLead::factory()->create([
+        'company_name' => 'Modal Realty',
+        'contact_person' => 'Modal Owner',
+        'email' => 'owner@modalrealty.test',
+        'phone' => '9888888888',
+        'owner_id' => $admin->id,
+    ]);
     $pricing = QuotationPricing::calculate(4999, 0);
 
     $this->actingAs($admin)
         ->from(route('tenants.index'))
         ->post(route('platform.quotations.modal.store'), [
+            'platform_lead_id' => $lead->id,
             'company_name' => 'Modal Realty',
             'owner_name' => 'Modal Owner',
             'email' => 'owner@modalrealty.test',
@@ -86,6 +95,13 @@ test('super admins can create a draft quotation from the popup modal', function 
 test('super admins can create a draft quotation for a prospect through the wizard', function () {
     $admin = User::factory()->superAdmin()->create();
     $plan = Plan::query()->where('key', 'growth')->firstOrFail();
+    $lead = PlatformLead::factory()->create([
+        'company_name' => 'ABC Realty',
+        'contact_person' => 'Rahul Sharma',
+        'email' => 'rahul@abcrealty.com',
+        'phone' => '9999999999',
+        'owner_id' => $admin->id,
+    ]);
     $plan->update([
         'price_monthly' => 4999,
         'price_annual' => 49990,
@@ -95,6 +111,7 @@ test('super admins can create a draft quotation for a prospect through the wizar
 
     $this->actingAs($admin)
         ->post(route('platform.quotations.wizard.prospect.store'), [
+            'platform_lead_id' => $lead->id,
             'company_name' => 'ABC Realty',
             'owner_name' => 'Rahul Sharma',
             'email' => 'rahul@abcrealty.com',

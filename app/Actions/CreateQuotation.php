@@ -11,8 +11,13 @@ use Illuminate\Support\Carbon;
 
 class CreateQuotation
 {
+    public function __construct(
+        private SyncPlatformLeadFromQuotation $syncLead,
+    ) {}
+
     /**
      * @param  array{
+     *     platform_lead_id?: int|null,
      *     company_name: string,
      *     owner_name: string,
      *     email: string,
@@ -47,8 +52,9 @@ class CreateQuotation
             ? Carbon::parse($data['valid_until'])->toDateString()
             : now()->addDays(7)->toDateString();
 
-        return Quotation::query()->create([
+        $quotation = Quotation::query()->create([
             'number' => Quotation::nextNumber(),
+            'platform_lead_id' => $data['platform_lead_id'] ?? null,
             'company_name' => $data['company_name'],
             'owner_name' => $data['owner_name'],
             'email' => $data['email'],
@@ -65,5 +71,9 @@ class CreateQuotation
             'valid_until' => $validUntil,
             'status' => QuotationStatus::Draft,
         ]);
+
+        $this->syncLead->afterCreated($quotation);
+
+        return $quotation;
     }
 }

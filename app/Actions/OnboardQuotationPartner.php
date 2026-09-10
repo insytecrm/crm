@@ -14,6 +14,7 @@ class OnboardQuotationPartner
     public function __construct(
         private CreateTenant $createTenant,
         private CreateSubscriptionFromQuotation $createSubscriptionFromQuotation,
+        private SyncPlatformLeadFromQuotation $syncLead,
     ) {}
 
     /**
@@ -69,6 +70,8 @@ class OnboardQuotationPartner
         ]);
 
         $subscription = $this->createSubscriptionFromQuotation->handle($quotation->refresh());
+
+        $this->syncLead->afterOnboarded($quotation->refresh(), $tenant->getTenantKey());
 
         return [
             'quotation' => $quotation->refresh(),

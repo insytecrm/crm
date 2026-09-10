@@ -17,6 +17,7 @@ use App\Http\Requests\Platform\AcceptQuotationRequest;
 use App\Http\Requests\Platform\OnboardQuotationRequest;
 use App\Http\Requests\Platform\UpdateQuotationRequest;
 use App\Models\Plan;
+use App\Models\PlatformLead;
 use App\Models\Quotation;
 use App\Support\Platform\BillingMoney;
 use App\Support\Platform\QuotationPricing;
@@ -86,6 +87,7 @@ class QuotationController extends Controller
                 ['value' => QuotationStatus::Expired->value, 'label' => QuotationStatus::Expired->label()],
             ],
             'quotationPlans' => $this->quotationPlans(),
+            'leadSearchOptions' => PlatformLead::quotationSelectOptions(),
             'openQuotationModal' => $request->boolean('quote') || old('_quotation_wizard') === '1',
             'defaultTaxRate' => QuotationPricing::DefaultTaxRate,
         ]);
@@ -94,7 +96,7 @@ class QuotationController extends Controller
     public function show(Quotation $quotation, ExpireQuotations $expireQuotations): View
     {
         $expireQuotations->handle();
-        $quotation->refresh()->load(['tenant', 'plan', 'subscription']);
+        $quotation->refresh()->load(['tenant', 'plan', 'subscription', 'platformLead']);
 
         return view('platform.quotations.show', [
             'quotation' => $quotation,
@@ -138,7 +140,7 @@ class QuotationController extends Controller
         $action->handle($quotation);
 
         return redirect()
-            ->route('platform.quotations.show', $quotation)
+            ->back()
             ->with('status', __('Quotation sent.'));
     }
 

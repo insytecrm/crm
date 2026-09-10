@@ -114,6 +114,24 @@ enum AutomationTrigger: string
         return true;
     }
 
+    /**
+     * Triggers that fire because a lead was closed (or after booking) must still match.
+     */
+    public function runsForClosedLeads(): bool
+    {
+        return match ($this) {
+            self::StatusChanged,
+            self::LeadMarkedLost,
+            self::LeadConverted,
+            self::BookingCreated,
+            self::BookingUpdated,
+            self::BookingCancelled,
+            self::AgreementMarked,
+            self::BookingCreatedDaysAgo => true,
+            default => false,
+        };
+    }
+
     public function pickerSection(): string
     {
         return match ($this) {

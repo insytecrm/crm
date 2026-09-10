@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\CompleteScheduledActivityRequest;
 use App\Http\Requests\Tenant\ScheduleSiteVisitRequest;
 use App\Models\Lead;
+use App\Support\LeadDrawerRedirect;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -67,7 +68,7 @@ class LeadSiteVisitController extends Controller
             ],
         );
 
-        return back()->with('status', __('Site visit scheduled.'));
+        return LeadDrawerRedirect::to($lead, __('Site visit scheduled.'));
     }
 
     public function complete(
@@ -109,6 +110,6 @@ class LeadSiteVisitController extends Controller
             metadata: $metadata,
         );
 
-        return back()->with('status', __('Site visit marked complete.'));
+        return LeadDrawerRedirect::to($lead, __('Site visit marked complete.'));
     }
 }

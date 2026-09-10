@@ -28,7 +28,7 @@
                     icon="call"
                     type="submit"
                     :size="$iconSize"
-                    :title="__('Call')"
+                    :title="__('Call lead')"
                 />
             </form>
         </span>
@@ -49,7 +49,7 @@
             icon="follow-up"
             type="button"
             :size="$iconSize"
-            :title="__('Follow-up')"
+            :title="__('Schedule follow-up')"
             @click="$dispatch('open-modal', 'follow-up-{{ $lead->id }}')"
         />
     </span>
@@ -58,7 +58,7 @@
             icon="site-visit"
             type="button"
             :size="$iconSize"
-            :title="__('Site Visit')"
+            :title="__('Schedule site visit')"
             @click="$dispatch('open-modal', 'site-visit-{{ $lead->id }}')"
         />
     </span>
@@ -69,7 +69,7 @@
                     icon="booking"
                     type="button"
                     :size="$iconSize"
-                    :title="__('Create Booking')"
+                    :title="__('Convert & book unit')"
                     @click.stop="$dispatch('open-modal', 'create-booking-{{ $lead->id }}')"
                 />
             @else
@@ -77,7 +77,7 @@
                     icon="booking"
                     type="button"
                     :size="$iconSize"
-                    :title="__('Create Booking')"
+                    :title="__('Convert & book unit')"
                     @click.stop="$dispatch('open-modal', 'create-booking')"
                 />
             @endif
@@ -98,7 +98,7 @@
                 type="button"
                 :size="$iconSize"
                 :title="__('Edit')"
-                @click="$dispatch('open-modal', 'edit-lead-{{ $lead->id }}')"
+                @click="$dispatch('open-lead', {{ $lead->id }})"
             />
         @endif
     @endif

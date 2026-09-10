@@ -8,6 +8,10 @@ use Illuminate\Validation\ValidationException;
 
 class AcceptQuotation
 {
+    public function __construct(
+        private SyncPlatformLeadFromQuotation $syncLead,
+    ) {}
+
     public function handle(Quotation $quotation, ?string $acceptedByName = null): Quotation
     {
         if (! $quotation->canMarkAccepted()) {
@@ -31,6 +35,9 @@ class AcceptQuotation
             'expired_at' => null,
         ]);
 
-        return $quotation->refresh();
+        $quotation = $quotation->refresh();
+        $this->syncLead->afterAccepted($quotation);
+
+        return $quotation;
     }
 }

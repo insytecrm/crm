@@ -25,10 +25,18 @@
         @endif
 
         @if ($quotation->canSend())
-            <form method="POST" action="{{ route('platform.quotations.send', $quotation) }}" class="inline">
-                @csrf
-                <x-ui.action-icon icon="play" type="submit" :title="__('Send')" />
-            </form>
+            <x-ui.action-icon
+                icon="play"
+                type="button"
+                :title="__('Send')"
+                @click="$dispatch('open-send-quotation-list', {
+                    sendUrl: @js(route('platform.quotations.send', $quotation)),
+                    company: @js($quotation->companyDisplayName()),
+                    email: @js($quotation->email ?: '—'),
+                    number: @js($quotation->number),
+                    amount: @js($quotation->amountLabel()),
+                })"
+            />
         @endif
 
         <x-ui.action-icon

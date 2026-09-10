@@ -1,4 +1,8 @@
-@php($inPlace = $inPlace ?? false)
+@php
+    $inPlace = $inPlace ?? false;
+    $nextStepHint = app(\App\Support\LeadNextStepHint::class)->for($lead);
+    $openTaskCount = $lead->tasks->reject(fn ($task) => $task->isClosed())->count();
+@endphp
 
 <div class="flex h-full min-h-0 flex-col overflow-hidden" x-data="{ editing: @js($errors->any()) }">
     {{-- View mode --}}
@@ -29,6 +33,12 @@
                         <span class="break-all">{{ $lead->email }}</span>
                     @endif
                 </div>
+                @if ($nextStepHint)
+                    <p class="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 ring-1 ring-sky-100">
+                        <span class="text-sky-600">{{ __('Next') }}:</span>
+                        <span class="truncate">{{ $nextStepHint }}</span>
+                    </p>
+                @endif
             </div>
 
             <div class="shrink-0 self-start">
@@ -44,7 +54,12 @@
                 <x-ui.tabs.tab-list class="w-max min-w-full flex-nowrap">
                     <x-ui.tabs.tab-trigger value="details" class="shrink-0">{{ __('Details') }}</x-ui.tabs.tab-trigger>
                     <x-ui.tabs.tab-trigger value="timeline" class="shrink-0">{{ __('Activity') }}</x-ui.tabs.tab-trigger>
-                    <x-ui.tabs.tab-trigger value="tasks" class="shrink-0">{{ __('Tasks') }}</x-ui.tabs.tab-trigger>
+                    <x-ui.tabs.tab-trigger value="tasks" class="inline-flex shrink-0 items-center gap-1.5">
+                        {{ __('Tasks') }}
+                        @if ($openTaskCount > 0)
+                            <span class="inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-navy px-1 text-[10px] font-bold leading-none text-white">{{ $openTaskCount }}</span>
+                        @endif
+                    </x-ui.tabs.tab-trigger>
                     <x-ui.tabs.tab-trigger value="documents" class="shrink-0">{{ __('Documents') }}</x-ui.tabs.tab-trigger>
                     <x-ui.tabs.tab-trigger value="notes" class="shrink-0">{{ __('Notes') }}</x-ui.tabs.tab-trigger>
                     <x-ui.tabs.tab-trigger value="history" class="shrink-0">{{ __('History') }}</x-ui.tabs.tab-trigger>
@@ -290,9 +305,9 @@
         <div class="flex flex-wrap gap-2">
             @unless ($lead->status->isClosed())
                 @unless ($lead->hasBooking())
-                    <x-ui.button type="button" variant="success" class="bg-emerald-600 text-white hover:bg-emerald-700" @click="$dispatch('open-modal', 'create-booking')">{{ __('Create Booking') }}</x-ui.button>
+                    <x-ui.button type="button" variant="success" class="bg-emerald-600 text-white hover:bg-emerald-700" title="{{ __('Converts lead and opens booking') }}" @click="$dispatch('open-modal', 'create-booking')">{{ __('Create Booking') }}</x-ui.button>
                 @endunless
-                <x-ui.button type="button" variant="destructive" class="bg-red-600 text-white hover:bg-red-700" @click="$dispatch('open-modal', 'mark-lost-{{ $lead->id }}')">{{ __('Mark Lost') }}</x-ui.button>
+                <x-ui.button type="button" variant="destructive" class="bg-red-600 text-white hover:bg-red-700" title="{{ __('Closes lead with lost reasons') }}" @click="$dispatch('open-modal', 'mark-lost-{{ $lead->id }}')">{{ __('Mark Lost') }}</x-ui.button>
             @endunless
         </div>
     </div>

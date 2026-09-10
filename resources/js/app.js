@@ -17,6 +17,7 @@ import './datetime-pickers-loader';
 import { registerLeadTablePreferencesStore } from './lead-table-preferences';
 import { registerTablePreferencesStore, registerManageableDataTable } from './manageable-data-table';
 import { registerPipelineChart } from './pipeline-chart';
+import { registerActivityDueNotifications } from './activity-due-notifications';
 
 window.Alpine = Alpine;
 
@@ -24,6 +25,7 @@ document.addEventListener('alpine:init', () => {
     registerLeadTablePreferencesStore(Alpine, window.leadTablePreferencesConfig ?? {});
     registerManageableDataTable(Alpine);
     registerPipelineChart(Alpine);
+    registerActivityDueNotifications(Alpine);
 
     if (window.manageableDataTableConfigs) {
         Object.entries(window.manageableDataTableConfigs).forEach(([tableKey, config]) => {

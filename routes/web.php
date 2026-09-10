@@ -12,6 +12,7 @@ use App\Http\Controllers\Platform\ChannelPartnerWizardController;
 use App\Http\Controllers\Platform\DashboardController;
 use App\Http\Controllers\Platform\PlanController;
 use App\Http\Controllers\Platform\PlanWizardController;
+use App\Http\Controllers\Platform\PlatformLeadController;
 use App\Http\Controllers\Platform\QuotationController;
 use App\Http\Controllers\Platform\QuotationWizardController;
 use App\Http\Controllers\Platform\RevenueOverviewController;
@@ -78,6 +79,15 @@ Route::prefix('platform')->group(function () {
 
     Route::middleware(['auth', 'superadmin'])->group(function () {
         Route::get('/dashboard', DashboardController::class)->name('platform.dashboard');
+
+        Route::get('/leads', [PlatformLeadController::class, 'index'])->name('platform.leads');
+        Route::get('/leads/create', [PlatformLeadController::class, 'create'])->name('platform.leads.create');
+        Route::post('/leads', [PlatformLeadController::class, 'store'])->name('platform.leads.store');
+        Route::get('/leads/{lead}', [PlatformLeadController::class, 'show'])->name('platform.leads.show');
+        Route::patch('/leads/{lead}', [PlatformLeadController::class, 'update'])->name('platform.leads.update');
+        Route::patch('/leads/{lead}/stage', [PlatformLeadController::class, 'updateStage'])->name('platform.leads.stage.update');
+        Route::post('/leads/{lead}/notes', [PlatformLeadController::class, 'storeNote'])->name('platform.leads.notes.store');
+        Route::patch('/leads/{lead}/next-action', [PlatformLeadController::class, 'updateNextAction'])->name('platform.leads.next-action.update');
 
         Route::get('/plans', [PlanController::class, 'index'])->name('platform.plans');
         Route::get('/plans/create', [PlanWizardController::class, 'create'])->name('platform.plans.create');

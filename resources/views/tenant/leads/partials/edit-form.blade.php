@@ -102,10 +102,6 @@
                 <x-auth.icon-input id="edit_configuration_{{ $lead->id }}" name="configuration" :value="old('configuration', $lead->configuration)" />
             </div>
             <div>
-                <x-input-label for="edit_lead_score_{{ $lead->id }}" :value="__('Lead Score')" />
-                <x-auth.icon-input id="edit_lead_score_{{ $lead->id }}" type="number" name="lead_score" :value="old('lead_score', $lead->lead_score)" min="0" max="100" />
-            </div>
-            <div>
                 <x-input-label for="edit_assigned_to_id_{{ $lead->id }}" :value="__('Assigned To')" />
                 <x-ui.combobox
                     name="assigned_to_id"

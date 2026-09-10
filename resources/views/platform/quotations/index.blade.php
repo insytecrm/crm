@@ -93,4 +93,5 @@
     </x-platform.panel>
 
     @include('platform.quotations.partials.create-wizard-modal')
+    @include('platform.quotations.partials.send-dialog-list')
 </x-app-layout>

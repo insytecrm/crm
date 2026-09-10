@@ -9,6 +9,10 @@
         </h1>
     </div>
 
+    @isset($setupProgress)
+        @include('tenant.dashboard.partials.setup-progress-strip', ['setupProgress' => $setupProgress])
+    @endisset
+
     <div class="flex gap-2">
         <x-tenant.stat-card
             comfortable

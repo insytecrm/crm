@@ -125,11 +125,17 @@
                 </header>
 
                 <main class="min-h-0 flex-1 overflow-hidden">
-                    <x-ui.scroll-area class="h-full" fade>
-                        <div class="px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 lg:px-8 lg:pb-8 lg:pt-3">
+                    @if ($fullBleed)
+                        <div class="h-full min-h-0">
                             {{ $slot }}
                         </div>
-                    </x-ui.scroll-area>
+                    @else
+                        <x-ui.scroll-area class="h-full" fade>
+                            <div class="px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 lg:px-8 lg:pb-8 lg:pt-3">
+                                {{ $slot }}
+                            </div>
+                        </x-ui.scroll-area>
+                    @endif
                 </main>
             </div>
         </div>

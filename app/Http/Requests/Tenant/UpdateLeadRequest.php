@@ -66,7 +66,6 @@ class UpdateLeadRequest extends FormRequest
             'property_type' => ['nullable', Rule::enum(PropertyType::class)],
             'configuration' => ['nullable', 'string', 'max:255'],
             'assigned_to_id' => ['nullable', 'exists:users,id'],
-            'lead_score' => ['nullable', 'integer', 'min:0', 'max:100'],
             'next_action' => ['nullable', 'string', 'max:255'],
         ];
     }

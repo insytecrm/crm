@@ -30,7 +30,7 @@
         <x-ui.button variant="outline" :href="$shell['workspace_url']" target="_blank">
             {{ __('Access Workspace') }}
         </x-ui.button>
-        <x-ui.button variant="default" :href="route('tenants.edit', $tenant)">
+        <x-ui.button type="button" variant="default" x-on:click="$dispatch('open-edit-partner', @js((string) $tenant->id))">
             {{ __('Edit') }}
         </x-ui.button>
         <x-ui.popover side="bottom" align="end" width="52" content-class="p-1" close-on-content-click>
@@ -86,3 +86,7 @@
 <x-auth-session-status class="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700" :status="session('status')" />
 
 {{ $slot }}
+
+@include('platform.tenants.partials.edit-drawers', ['tenants' => collect([$tenant])])
+
+@include('platform.tenants.partials.edit-drawers', ['tenants' => collect([$tenant])])

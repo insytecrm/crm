@@ -7,6 +7,7 @@
 <x-sidebar.shell
     :title="$title ?? null"
     :logout-action="route('tenant.logout')"
+    :full-bleed="$fullBleed ?? false"
 >
     <x-slot:actions>
         <x-sidebar.header-actions />
@@ -35,6 +36,7 @@
         <x-sidebar.group
             :href="route('tenant.leads.index')"
             :active="request()->routeIs('tenant.leads.index', 'tenant.leads.priority.*', 'tenant.leads.unassigned.*', 'tenant.leads.converted.*', 'tenant.leads.lost.*', 'tenant.leads.duplicates.*')"
+            :indicator="data_get($navIndicators, 'unassigned_leads', 0) > 0 ? data_get($navIndicators, 'unassigned_leads') : null"
         >
             <x-slot:icon>
                 <x-sidebar.nav-icon name="leads" />
@@ -79,6 +81,7 @@
         <x-sidebar.group
             :href="route('tenant.activities.index')"
             :active="request()->routeIs('tenant.activities.*', 'tenant.follow-ups.*', 'tenant.site-visits.*')"
+            :indicator="data_get($navIndicators, 'overdue_activities', 0) > 0 ? data_get($navIndicators, 'overdue_activities') : null"
         >
             <x-slot:icon>
                 <x-sidebar.nav-icon name="activities" />
@@ -109,6 +112,15 @@
                 <x-sidebar.nav-icon name="tasks" />
             </x-slot:icon>
             {{ __('Tasks') }}
+        </x-sidebar.link>
+        </x-tenant.can>
+
+        <x-tenant.can :permission="TenantPermission::LeadsView" :feature="PlanFeature::WhatsApp->value">
+        <x-sidebar.link :href="route('tenant.whatsapp-web.index')" :active="request()->routeIs('tenant.whatsapp-web.*')">
+            <x-slot:icon>
+                <x-sidebar.nav-icon name="whatsapp" />
+            </x-slot:icon>
+            {{ __('WhatsApp Web') }}
         </x-sidebar.link>
         </x-tenant.can>
 

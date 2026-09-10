@@ -8,6 +8,10 @@ use Illuminate\Validation\ValidationException;
 
 class SendQuotation
 {
+    public function __construct(
+        private SyncPlatformLeadFromQuotation $syncLead,
+    ) {}
+
     public function handle(Quotation $quotation): Quotation
     {
         if (! $quotation->canSend()) {
@@ -21,6 +25,9 @@ class SendQuotation
             'sent_at' => $quotation->sent_at ?? now(),
         ]);
 
-        return $quotation->refresh();
+        $quotation = $quotation->refresh();
+        $this->syncLead->afterSent($quotation);
+
+        return $quotation;
     }
 }

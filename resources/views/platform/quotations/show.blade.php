@@ -103,6 +103,18 @@
         </x-platform.panel>
     @endif
 
+    @if ($quotation->platformLead)
+        <x-platform.panel class="mb-4" :title="__('Related Lead')" compact>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <p class="font-semibold text-black">{{ $quotation->platformLead->company_name }}</p>
+                    <p class="mt-1 text-sm text-slate-600">{{ $quotation->platformLead->contact_person }} · {{ $quotation->platformLead->stage->label() }}</p>
+                </div>
+                <x-ui.button variant="outline" size="sm" :href="route('platform.leads.show', $quotation->platformLead)">{{ __('View Lead') }}</x-ui.button>
+            </div>
+        </x-platform.panel>
+    @endif
+
     <div class="grid gap-4 lg:grid-cols-2">
         <x-platform.panel :title="__('Quotation Summary')" compact>
             <dl class="space-y-3 text-sm">

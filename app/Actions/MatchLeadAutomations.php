@@ -14,7 +14,11 @@ class MatchLeadAutomations
      */
     public function handle(Lead $lead, AutomationTrigger $trigger): Collection
     {
-        if ($lead->assigned_to_id === null || $lead->isClosed()) {
+        if ($lead->assigned_to_id === null) {
+            return collect();
+        }
+
+        if ($lead->isClosed() && ! $trigger->runsForClosedLeads()) {
             return collect();
         }
 

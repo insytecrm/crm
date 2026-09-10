@@ -18,6 +18,7 @@ class StoreQuotationWizardProspectRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'platform_lead_id' => ['required', 'integer', 'exists:platform_leads,id'],
             'company_name' => ['required', 'string', 'max:255'],
             'owner_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],

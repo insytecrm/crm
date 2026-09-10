@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\CompleteScheduledActivityRequest;
 use App\Http\Requests\Tenant\ScheduleFollowUpRequest;
 use App\Models\Lead;
+use App\Support\LeadDrawerRedirect;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -63,7 +64,7 @@ class LeadFollowUpController extends Controller
             ],
         );
 
-        return back()->with('status', __('Follow-up scheduled.'));
+        return LeadDrawerRedirect::to($lead, __('Scheduled. Shows in My Day.'));
     }
 
     public function complete(
@@ -105,6 +106,6 @@ class LeadFollowUpController extends Controller
             metadata: $metadata,
         );
 
-        return back()->with('status', __('Follow-up marked complete.'));
+        return LeadDrawerRedirect::to($lead, __('Follow-up completed.'));
     }
 }

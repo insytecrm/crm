@@ -73,21 +73,6 @@
                 this.message = this.selectedTemplate?.preview || '';
             },
 
-            composeUrl() {
-                if (! this.whatsappDigits || this.message.trim() === '') {
-                    return null;
-                }
-
-                return 'https://web.whatsapp.com/send?phone=' + this.whatsappDigits + '&text=' + encodeURIComponent(this.message);
-            },
-
-            openWhatsApp() {
-                const url = this.composeUrl();
-
-                if (url) {
-                    window.open(url, '_blank', 'noopener,noreferrer');
-                }
-            },
         }));
     });
 </script>
@@ -102,7 +87,7 @@
     <x-modal name="send-whatsapp" maxWidth="lg" focusable>
         <x-ui.modal.header
             :title="__('Send WhatsApp')"
-            :description="__('Choose a template or write your own message, then open WhatsApp Web.')"
+            :description="__('Choose a template or write your own message, then open in InSyte WhatsApp Web.')"
             modal-name="send-whatsapp"
         >
             <x-slot:icon>
@@ -162,7 +147,6 @@
                     type="submit"
                     class="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#20bd5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
                     :disabled="! canSend"
-                    @click="openWhatsApp()"
                 >
                     {{ __('Send message') }}
                 </button>

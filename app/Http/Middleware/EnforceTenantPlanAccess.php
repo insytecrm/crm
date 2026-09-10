@@ -22,6 +22,7 @@ class EnforceTenantPlanAccess
         'tenant.follow-ups' => 'crm',
         'tenant.site-visits' => 'crm',
         'tenant.tasks' => 'crm',
+        'tenant.whatsapp-web' => 'whatsapp',
         'tenant.scheduled-events' => 'crm',
         'tenant.properties.microsite' => 'microsites',
         'tenant.properties' => 'properties',

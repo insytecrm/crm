@@ -9,6 +9,7 @@ enum ScheduledActivityOutcome: string
     case Interested = 'interested';
     case NotInterested = 'not_interested';
     case CallbackRequested = 'callback_requested';
+    case ReadyToVisit = 'ready_to_visit';
     case WrongNumber = 'wrong_number';
 
     /**
@@ -22,6 +23,7 @@ enum ScheduledActivityOutcome: string
             self::Interested,
             self::NotInterested,
             self::CallbackRequested,
+            self::ReadyToVisit,
             self::WrongNumber,
         ];
     }
@@ -34,6 +36,7 @@ enum ScheduledActivityOutcome: string
             self::Interested => __('Interested'),
             self::NotInterested => __('Not interested'),
             self::CallbackRequested => __('Callback requested'),
+            self::ReadyToVisit => __('Ready to visit'),
             self::WrongNumber => __('Wrong number'),
         };
     }

@@ -6,6 +6,7 @@ use App\Enums\PropertyFilter;
 use App\Models\Property;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\LazyCollection;
 
 class PropertyListing
 {
@@ -41,6 +42,16 @@ class PropertyListing
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
+    }
+
+    /**
+     * @return LazyCollection<int, Property>
+     */
+    public function exportCursor(PropertyFilter $filter, string $search = ''): LazyCollection
+    {
+        return $this->baseQuery($filter, $search)
+            ->orderBy('id')
+            ->cursor();
     }
 
     /**

@@ -23,11 +23,26 @@ class LeadDrawerRedirect
         $previous = url()->previous();
         $path = parse_url($previous, PHP_URL_PATH) ?? '';
 
+        if (! self::shouldReopenDrawer($path, $previous)) {
+            return $previous;
+        }
+
         if (preg_match('#/leads/\d+#', $path) === 1) {
             $previous = route('tenant.leads.index');
         }
 
         return self::appendLeadQuery($previous, $lead->id);
+    }
+
+    private static function shouldReopenDrawer(string $path, string $url): bool
+    {
+        if (preg_match('#/leads/?$#', $path) === 1) {
+            return true;
+        }
+
+        parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $query);
+
+        return isset($query['lead']);
     }
 
     public static function appendLeadQuery(string $url, int $leadId): string

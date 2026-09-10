@@ -30,7 +30,8 @@ test('tenant users can view priority leads list', function () {
     Lead::factory()->priority()->create(['name' => 'Priority Lead']);
     Lead::factory()->create([
         'name' => 'Regular Lead',
-        'lead_score' => 10,
+        'lead_score' => 0,
+        'lead_score_intent' => 0,
         'next_follow_up_at' => null,
         'upcoming_site_visit_at' => null,
     ]);

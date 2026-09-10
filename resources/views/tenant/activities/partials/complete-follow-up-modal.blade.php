@@ -8,6 +8,9 @@
 
 @php
     $properties = $properties ?? \App\Models\Property::bookingFormOptions();
+    $workflowPreferences = auth()->check() ? \App\Support\UserWorkflowPreferences::for() : null;
+    $defaultContactMethod = old('contact_method', $workflowPreferences?->get('contact_method'));
+    $defaultOutcome = old('outcome', $workflowPreferences?->get('outcome'));
 @endphp
 
 <x-modal :name="$modalName" maxWidth="lg">
@@ -51,6 +54,7 @@
                         <x-ui.form-select
                             id="contact_method_{{ $eventId }}"
                             name="contact_method"
+                            :value="$defaultContactMethod"
                             :options="collect(\App\Enums\ScheduledActivityContactMethod::options())->map(fn ($method) => ['value' => $method->value, 'label' => $method->label()])->all()"
                             :placeholder="__('Select contact method')"
                             required
@@ -61,6 +65,7 @@
                         <x-ui.form-select
                             id="outcome_{{ $eventId }}"
                             name="outcome"
+                            :value="$defaultOutcome"
                             :options="collect(\App\Enums\ScheduledActivityOutcome::options())->map(fn ($outcome) => ['value' => $outcome->value, 'label' => $outcome->label()])->all()"
                             :placeholder="__('Select outcome')"
                             required

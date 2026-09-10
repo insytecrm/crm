@@ -2,7 +2,7 @@
 
 <div
     @class([
-        'group flex h-full w-full flex-col rounded-xl border bg-white p-3 shadow-sm transition',
+        'group flex h-full w-full flex-col rounded-xl border bg-white p-4 shadow-sm transition',
         'border-slate-100 hover:border-navy/20 hover:shadow' => $property->isActive(),
         'border-slate-200 opacity-70' => ! $property->isActive(),
     ])
@@ -13,8 +13,8 @@
             @click="$dispatch('open-modal', 'property-details-{{ $property->id }}')"
             class="min-w-0 flex-1 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
         >
-            <h3 class="truncate text-sm font-bold text-black">{{ $property->project_name }}</h3>
-            <p class="mt-0.5 truncate text-xs text-slate-500">{{ $property->developer_name ?? '—' }}</p>
+            <h3 class="line-clamp-2 text-sm font-bold leading-snug text-black">{{ $property->project_name }}</h3>
+            <p class="mt-1 line-clamp-1 text-xs text-slate-500">{{ $property->developer_name ?? '—' }}</p>
         </button>
 
         <div class="flex shrink-0 items-center gap-2">
@@ -58,7 +58,7 @@
         @click="$dispatch('open-modal', 'property-details-{{ $property->id }}')"
         class="mt-2 space-y-1.5 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
     >
-        <p class="truncate text-xs text-slate-600">{{ $property->project_location ?? '—' }}</p>
+        <p class="line-clamp-2 text-xs leading-relaxed text-slate-600">{{ $property->project_location ?? '—' }}</p>
         <div class="flex flex-wrap gap-1">
             <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
                 {{ $property->property_type?->label() ?? '—' }}

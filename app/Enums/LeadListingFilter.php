@@ -82,7 +82,7 @@ enum LeadListingFilter: string
     {
         return match ($this) {
             self::All => __('Manage and track your sales pipeline'),
-            self::Priority => __('High-score and urgent leads that need attention now'),
+            self::Priority => __('Leads showing strong buying intent from follow-ups and site visits'),
             self::New => __('Leads with a new status'),
             self::FollowUpDue => __('Leads that need follow-up now'),
             self::SiteVisitsScheduled => __('Leads with upcoming site visits'),

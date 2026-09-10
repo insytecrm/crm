@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Actions\LogLeadActivity;
+use App\Actions\RecalculateLeadScore;
 use App\Enums\LeadActivityType;
 use App\Enums\LeadStatus;
 use App\Http\Controllers\Controller;
@@ -14,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 
 class LeadStatusController extends Controller
 {
-    public function update(UpdateLeadStatusRequest $request, Lead $lead, LogLeadActivity $logLeadActivity): JsonResponse|RedirectResponse
+    public function update(UpdateLeadStatusRequest $request, Lead $lead, LogLeadActivity $logLeadActivity, RecalculateLeadScore $recalculateLeadScore): JsonResponse|RedirectResponse
     {
         $previousStatus = $lead->status;
         $newStatus = $request->enum('status', LeadStatus::class);
@@ -46,6 +47,8 @@ class LeadStatusController extends Controller
                 'to' => $newStatus->value,
             ],
         );
+
+        $recalculateLeadScore->handle($lead);
 
         if ($this->wantsStatusJson($request)) {
             return response()->json([

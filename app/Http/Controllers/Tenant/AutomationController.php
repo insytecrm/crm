@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
-use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class AutomationController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(): RedirectResponse
     {
-        return view('tenant.automations.index');
+        return redirect()->route('tenant.automations.workflows');
     }
 }

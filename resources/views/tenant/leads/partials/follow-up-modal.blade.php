@@ -1,3 +1,7 @@
+@php
+    $defaultFollowUpAt = app(\App\Support\UserWorkflowPreferences::class)->followUpAtValue(old('next_follow_up_at'));
+@endphp
+
 <x-modal :name="'follow-up-'.$lead->id" maxWidth="lg">
     <x-ui.modal.header
         :title="__('Schedule Follow-up')"
@@ -24,6 +28,7 @@
                         <x-ui.datetime-picker
                             id="next_follow_up_at_{{ $lead->id }}"
                             name="next_follow_up_at"
+                            :value="$defaultFollowUpAt"
                             required
                         />
                     </div>

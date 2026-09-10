@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTenantRequest;
 use App\Http\Requests\UpdateTenantRequest;
 use App\Models\Plan;
+use App\Models\PlatformLead;
 use App\Models\Tenant;
 use App\Support\Platform\ChannelPartnerListing;
 use App\Support\Platform\QuotationPricing;
@@ -40,6 +41,7 @@ class TenantController extends Controller
                 ])
                 ->all(),
             'openQuotationModal' => $request->boolean('quote') || old('_quotation_wizard') === '1',
+            'leadSearchOptions' => PlatformLead::quotationSelectOptions(),
             'defaultTaxRate' => QuotationPricing::DefaultTaxRate,
         ]));
     }

@@ -13,7 +13,10 @@ use InvalidArgumentException;
 
 class MergeLeads
 {
-    public function __construct(private LogLeadActivity $logLeadActivity) {}
+    public function __construct(
+        private LogLeadActivity $logLeadActivity,
+        private RecalculateLeadScore $recalculateLeadScore,
+    ) {}
 
     /**
      * @param  list<int>  $duplicateLeadIds
@@ -60,6 +63,8 @@ class MergeLeads
                     'merged_lead_ids' => $duplicateLeads->pluck('id')->all(),
                 ],
             );
+
+            $this->recalculateLeadScore->handle($primaryLead->fresh());
         });
 
         return $primaryLead->fresh([
@@ -74,12 +79,30 @@ class MergeLeads
         $duplicateLead->tasks()->update(['lead_id' => $primaryLead->id]);
         $duplicateLead->notes()->update(['lead_id' => $primaryLead->id]);
         $duplicateLead->documents()->update(['lead_id' => $primaryLead->id]);
-        $duplicateLead->scheduledEvents()->update(['lead_id' => $primaryLead->id]);
+        $this->moveScheduledEvents($primaryLead, $duplicateLead);
 
         if ($primaryLead->hasBooking()) {
             $duplicateLead->bookings()->update(['lead_id' => null]);
         } else {
             $duplicateLead->bookings()->update(['lead_id' => $primaryLead->id]);
+        }
+    }
+
+    private function moveScheduledEvents(Lead $primaryLead, Lead $duplicateLead): void
+    {
+        foreach (LeadScheduledEventType::cases() as $type) {
+            $maxSequence = (int) LeadScheduledEvent::query()
+                ->where('lead_id', $primaryLead->id)
+                ->where('type', $type)
+                ->max('sequence_number');
+
+            LeadScheduledEvent::query()
+                ->where('lead_id', $duplicateLead->id)
+                ->where('type', $type)
+                ->update([
+                    'lead_id' => $primaryLead->id,
+                    'sequence_number' => DB::raw('sequence_number + '.$maxSequence),
+                ]);
         }
     }
 
@@ -105,11 +128,6 @@ class MergeLeads
             }
         }
 
-        $primaryLead->lead_score = max(
-            (int) $primaryLead->lead_score,
-            (int) $duplicateLead->lead_score,
-        );
-
         if ($duplicateLead->last_activity_at !== null) {
             $primaryLastActivity = $primaryLead->last_activity_at;
 
@@ -128,6 +146,10 @@ class MergeLeads
                 ->orderBy('scheduled_at')
                 ->orderBy('id')
                 ->get();
+
+            foreach ($events as $index => $event) {
+                $event->update(['sequence_number' => 1_000_000 + $index]);
+            }
 
             foreach ($events as $index => $event) {
                 $event->update(['sequence_number' => $index + 1]);

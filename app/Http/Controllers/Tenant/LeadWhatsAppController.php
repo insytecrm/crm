@@ -61,12 +61,26 @@ class LeadWhatsAppController extends Controller
                 ->findOrFail($request->integer('template_id'))
             : null;
 
+        $message = (string) $request->validated('message');
+
         $sendLeadWhatsAppMessage->handle(
             $lead,
             $request->user(),
-            $request->validated('message'),
+            $message,
             $template,
         );
+
+        $digits = $lead->whatsAppDigits();
+
+        if ($digits !== null && $digits !== '') {
+            return redirect()
+                ->route('tenant.whatsapp-web.index', [
+                    'tenant' => tenant('id'),
+                    'phone' => $digits,
+                    'message' => $message,
+                ])
+                ->with('status', __('WhatsApp opened with your message.'));
+        }
 
         return LeadDrawerRedirect::to($lead, __('WhatsApp opened with your message.'));
     }

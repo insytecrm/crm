@@ -10,5 +10,8 @@
     <span class="shrink-0">
         {{ $icon }}
     </span>
-    <span class="sidebar-label truncate">{{ $slot }}</span>
+    <span class="sidebar-label min-w-0 flex-1 truncate">{{ $slot }}</span>
+    @if ($indicator)
+        <x-sidebar.indicator :count="$indicator" class="sidebar-label" />
+    @endif
 </a>

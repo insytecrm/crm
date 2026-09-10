@@ -11,6 +11,13 @@
             {{ __('Dashboard') }}
         </x-sidebar.link>
 
+        <x-sidebar.link :href="route('platform.leads')" :active="request()->routeIs('platform.leads*')">
+            <x-slot:icon>
+                <x-sidebar.nav-icon name="leads" />
+            </x-slot:icon>
+            {{ __('Leads') }}
+        </x-sidebar.link>
+
         <x-sidebar.link :href="route('tenants.index')" :active="request()->routeIs('tenants.*')">
             <x-slot:icon>
                 <x-sidebar.nav-icon name="partners" />

@@ -14,14 +14,12 @@ test('tenant sidebar shows automations workflows and templates submenu links', f
         ->assertSee(route('tenant.automations.templates', ['tenant' => 'acme'], false));
 });
 
-test('tenant users can view automations home', function () {
+test('tenant users are redirected from automations home to workflows', function () {
     createTestTenant();
     actingAsTenantUser();
 
     $this->get('/acme/automations')
-        ->assertOk()
-        ->assertSee('Automations')
-        ->assertSee('Coming soon');
+        ->assertRedirect(route('tenant.automations.workflows', ['tenant' => 'acme']));
 });
 
 test('tenant users can view automations workflows submenu', function () {

@@ -22,6 +22,7 @@ class CompleteFollowUpScheduledEvent
     public function __construct(
         private RecordLeadScheduledEvent $recordLeadScheduledEvent,
         private LogLeadActivity $logLeadActivity,
+        private RecalculateLeadScore $recalculateLeadScore,
     ) {}
 
     public function handle(
@@ -118,6 +119,8 @@ class CompleteFollowUpScheduledEvent
                 ),
                 ScheduledActivityNextStep::None => $lead->update(['next_action' => null]),
             };
+
+            $this->recalculateLeadScore->handle($lead->fresh());
 
             return $completedEvent->fresh();
         });

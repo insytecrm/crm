@@ -11,6 +11,7 @@ class Link extends Component
     public function __construct(
         public string $href,
         public bool $active = false,
+        public ?int $indicator = null,
     ) {}
 
     public function render(): View|Closure|string

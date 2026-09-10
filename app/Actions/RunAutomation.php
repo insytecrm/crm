@@ -68,7 +68,7 @@ class RunAutomation
             );
         }
 
-        if ($lead->isClosed()) {
+        if ($lead->isClosed() && ! ($automation->trigger?->runsForClosedLeads() ?? false)) {
             return $this->outcome(
                 AutomationRunStatus::Skipped,
                 __('This workflow skipped a closed lead.'),

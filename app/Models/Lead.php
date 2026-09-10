@@ -12,6 +12,7 @@ use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\PropertyType;
 use App\Models\Scopes\LeadVisibilityScope;
+use App\Support\LeadScoring;
 use App\Support\LeadSourcePath;
 use Database\Factories\LeadFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -38,6 +39,9 @@ use Illuminate\Support\Collection;
     'assigned_to_id',
     'status',
     'lead_score',
+    'lead_score_intent',
+    'latest_positive_outcome_at',
+    'latest_positive_outcome',
     'next_follow_up_at',
     'upcoming_site_visit_at',
     'next_action',
@@ -52,8 +56,6 @@ class Lead extends Model
 {
     /** @use HasFactory<LeadFactory> */
     use HasFactory, SoftDeletes;
-
-    public const PRIORITY_SCORE_THRESHOLD = 70;
 
     protected static function booted(): void
     {
@@ -71,6 +73,8 @@ class Lead extends Model
             'budget' => FlexibleEnumCast::class.':'.LeadBudget::class,
             'property_type' => FlexibleEnumCast::class.':'.PropertyType::class,
             'lead_score' => 'integer',
+            'lead_score_intent' => 'integer',
+            'latest_positive_outcome_at' => 'datetime',
             'next_follow_up_at' => 'datetime',
             'upcoming_site_visit_at' => 'datetime',
             'last_activity_at' => 'datetime',
@@ -365,22 +369,16 @@ class Lead extends Model
      */
     public function scopePriority(Builder $query): Builder
     {
-        $now = now();
-        $endOfDay = $now->copy()->endOfDay();
-
         return $query
             ->whereNotIn('status', [LeadStatus::Converted, LeadStatus::Lost])
-            ->where(function (Builder $query) use ($now, $endOfDay): void {
-                $query->where('lead_score', '>=', self::PRIORITY_SCORE_THRESHOLD)
-                    ->orWhere(function (Builder $query) use ($now): void {
-                        $query->whereNotNull('next_follow_up_at')
-                            ->where('next_follow_up_at', '<=', $now);
-                    })
-                    ->orWhere(function (Builder $query) use ($endOfDay): void {
-                        $query->whereNotNull('upcoming_site_visit_at')
-                            ->where('upcoming_site_visit_at', '<=', $endOfDay);
-                    });
-            });
+            ->where('lead_score_intent', '>', 0)
+            ->whereNotNull('latest_positive_outcome_at')
+            ->where('latest_positive_outcome_at', '>=', now()->subDays(LeadScoring::INTENT_LOOKBACK_DAYS));
+    }
+
+    public function qualifiesForPriority(): bool
+    {
+        return LeadScoring::qualifiesForPriority($this);
     }
 
     /**

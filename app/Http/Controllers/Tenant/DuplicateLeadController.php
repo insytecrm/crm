@@ -31,8 +31,14 @@ class DuplicateLeadController extends Controller
             duplicateLeadIds: $validated['duplicate_lead_ids'],
         );
 
+        $mergedCount = count($validated['duplicate_lead_ids']);
+
         return redirect()
             ->route('tenant.leads.duplicates.index')
-            ->with('status', __('Duplicate leads merged successfully.'));
+            ->with('status', trans_choice(
+                ':count duplicate merged.|:count duplicates merged.',
+                $mergedCount,
+                ['count' => $mergedCount],
+            ));
     }
 }

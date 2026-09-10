@@ -37,7 +37,7 @@ test('lead list whatsapp button opens the template popup', function () {
         ->assertSee('Message')
         ->assertSee('Send message')
         ->assertSee('name="message"', false)
-        ->assertSee('openWhatsApp', false)
+        ->assertDontSee('window.open', false)
         ->assertDontSee('name="type" value="whatsapp_message"', false);
 });
 
@@ -108,9 +108,12 @@ test('sending a whatsapp template logs the message and opens whatsapp web', func
             'template_id' => $template->id,
             'message' => $message,
         ])
-        ->assertRedirect(route('tenant.leads.index', ['tenant' => 'acme', 'lead' => $lead->id]))
-        ->assertSessionHas('status', 'WhatsApp opened with your message.')
-        ->assertSessionMissing('external_redirect');
+        ->assertRedirect(route('tenant.whatsapp-web.index', [
+            'tenant' => 'acme',
+            'phone' => '919000000000',
+            'message' => $message,
+        ]))
+        ->assertSessionHas('status', 'WhatsApp opened with your message.');
 
     $this->assertDatabaseHas('lead_activities', [
         'lead_id' => $lead->id,
@@ -181,7 +184,11 @@ test('a custom whatsapp message can be sent without a template', function () {
         ->post('/acme/leads/'.$lead->id.'/whatsapp', [
             'message' => $message,
         ])
-        ->assertRedirect(route('tenant.leads.index', ['tenant' => 'acme', 'lead' => $lead->id]))
+        ->assertRedirect(route('tenant.whatsapp-web.index', [
+            'tenant' => 'acme',
+            'phone' => '919000000000',
+            'message' => $message,
+        ]))
         ->assertSessionHas('status', 'WhatsApp opened with your message.');
 
     $this->assertDatabaseHas('lead_activities', [

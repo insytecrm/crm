@@ -21,6 +21,7 @@ use App\Http\Requests\Tenant\CompleteFollowUpScheduledEventRequest;
 use App\Http\Requests\Tenant\CompleteSiteVisitScheduledEventRequest;
 use App\Http\Requests\Tenant\RescheduleScheduledActivityRequest;
 use App\Models\LeadScheduledEvent;
+use App\Support\UserWorkflowPreferences;
 use Illuminate\Http\RedirectResponse;
 
 class LeadScheduledEventController extends Controller
@@ -109,6 +110,10 @@ class LeadScheduledEventController extends Controller
                 ? $request->enum('next_visit_type', SiteVisitType::class)
                 : null,
         );
+
+        $preferences = UserWorkflowPreferences::for($request->user());
+        $preferences->remember('contact_method', $request->input('contact_method'));
+        $preferences->remember('outcome', $request->input('outcome'));
 
         return back()->with('status', __('Follow-up completed.'));
     }

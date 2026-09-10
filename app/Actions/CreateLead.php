@@ -19,6 +19,7 @@ class CreateLead
         private RecordLeadScheduledEvent $recordLeadScheduledEvent,
         private AssertPlanLimit $assertPlanLimit,
         private ApplyLeadRouting $applyLeadRouting,
+        private RecalculateLeadScore $recalculateLeadScore,
     ) {}
 
     /**
@@ -59,7 +60,7 @@ class CreateLead
 
             $this->scheduleInitialContact($lead, $user);
 
-            return $lead->fresh();
+            return $this->recalculateLeadScore->handle($lead->fresh());
         });
     }
 

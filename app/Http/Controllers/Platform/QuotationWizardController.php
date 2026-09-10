@@ -138,7 +138,7 @@ class QuotationWizardController extends Controller
         $quotation = $createQuotation->handle($request->validated());
 
         return redirect()
-            ->route('platform.quotations.show', $quotation)
+            ->back()
             ->with('status', __('Quotation created.'));
     }
 

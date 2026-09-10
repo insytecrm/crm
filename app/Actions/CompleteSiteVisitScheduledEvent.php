@@ -20,6 +20,7 @@ class CompleteSiteVisitScheduledEvent
     public function __construct(
         private RecordLeadScheduledEvent $recordLeadScheduledEvent,
         private LogLeadActivity $logLeadActivity,
+        private RecalculateLeadScore $recalculateLeadScore,
     ) {}
 
     /**
@@ -125,6 +126,8 @@ class CompleteSiteVisitScheduledEvent
                 SiteVisitNextStep::CreateBooking => $openBooking = $this->markCreateBooking($lead),
                 SiteVisitNextStep::None => $lead->update(['next_action' => null]),
             };
+
+            $this->recalculateLeadScore->handle($lead->fresh());
 
             return [
                 'event' => $completedEvent->fresh(),

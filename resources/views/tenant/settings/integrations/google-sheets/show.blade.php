@@ -1,5 +1,7 @@
 @php
     use App\Enums\GoogleSheetConnectionStatus;
+
+    $sheetProgress = app(\App\Support\GoogleSheetSetupProgress::class)->for($connection);
 @endphp
 
 <x-tenant-layout :title="$connection->name . ' | Google Sheets | InSyte CRM'">
@@ -28,14 +30,17 @@
     <div class="space-y-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="text-base font-semibold text-black">{{ __('Configuration') }}</h2>
-            <span @class([
-                'rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1',
-                'bg-emerald-50 text-emerald-700 ring-emerald-100' => $connection->status === GoogleSheetConnectionStatus::Connected,
-                'bg-amber-50 text-amber-700 ring-amber-100' => in_array($connection->status, [GoogleSheetConnectionStatus::Verified, GoogleSheetConnectionStatus::Paused], true),
-                'bg-slate-50 text-slate-600 ring-slate-100' => $connection->status === GoogleSheetConnectionStatus::Draft,
-            ])>
-                {{ $connection->status->label() }}
-            </span>
+            <div class="flex items-center gap-2">
+                <x-tenant.progress-dots :completed="$sheetProgress['step']" :total="$sheetProgress['total']" />
+                <span @class([
+                    'rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1',
+                    'bg-emerald-50 text-emerald-700 ring-emerald-100' => $connection->status === GoogleSheetConnectionStatus::Connected,
+                    'bg-amber-50 text-amber-700 ring-amber-100' => in_array($connection->status, [GoogleSheetConnectionStatus::Verified, GoogleSheetConnectionStatus::Paused], true),
+                    'bg-slate-50 text-slate-600 ring-slate-100' => $connection->status === GoogleSheetConnectionStatus::Draft,
+                ])>
+                    {{ $connection->status->label() }}
+                </span>
+            </div>
         </div>
 
         <div>

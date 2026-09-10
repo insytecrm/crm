@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Actions\LogLeadActivity;
 use App\Actions\LogLeadBookingMilestone;
+use App\Actions\RecalculateLeadScore;
 use App\Enums\LeadActivityType;
 use App\Enums\LeadClosingReason;
 use App\Enums\LeadStatus;
@@ -51,7 +52,7 @@ class BookingController extends Controller
             'properties' => Property::bookingFormOptions(),
             'defaultLeadId' => $request->filled('lead') ? $request->integer('lead') : null,
             'openCreateModal' => $request->boolean('create'),
-            'openModal' => old('_open_modal') ?? ($request->boolean('create') ? 'create-booking' : null),
+            'openModal' => old('_open_modal') ?? session('open_modal') ?? ($request->boolean('create') ? 'create-booking' : null),
         ], DataTableViewData::for($request->user(), 'bookings', $bookings)));
     }
 
@@ -63,7 +64,7 @@ class BookingController extends Controller
         ]));
     }
 
-    public function store(StoreBookingRequest $request, LogLeadActivity $logLeadActivity): RedirectResponse
+    public function store(StoreBookingRequest $request, LogLeadActivity $logLeadActivity, RecalculateLeadScore $recalculateLeadScore): RedirectResponse
     {
         $configuration = $request->configuration();
 
@@ -116,9 +117,12 @@ class BookingController extends Controller
             metadata: ['booking_id' => $booking->id],
         );
 
+        $recalculateLeadScore->handle($lead);
+
         return redirect()
             ->route('tenant.bookings.index')
-            ->with('status', __('Booking created.'));
+            ->with('status', __('Booking created. Lead converted.'))
+            ->with('open_modal', 'booking-'.$booking->id);
     }
 
     public function markAgreement(MarkBookingAgreementRequest $request, Booking $booking, LogLeadBookingMilestone $logLeadBookingMilestone): RedirectResponse
@@ -140,7 +144,8 @@ class BookingController extends Controller
 
         return redirect()
             ->route('tenant.bookings.index')
-            ->with('status', __('Agreement marked for booking.'));
+            ->with('status', __('Done. Create invoice when ready.'))
+            ->with('open_modal', 'create-invoice-'.$booking->id);
     }
 
     public function storeInvoice(StoreBookingInvoiceRequest $request, Booking $booking, LogLeadBookingMilestone $logLeadBookingMilestone): RedirectResponse
@@ -161,6 +166,7 @@ class BookingController extends Controller
 
         return redirect()
             ->route('tenant.bookings.index')
-            ->with('status', __('Invoice created for booking.'));
+            ->with('status', __('Invoice created.'))
+            ->with('open_modal', 'booking-'.$booking->id);
     }
 }

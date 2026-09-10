@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Actions\LogLeadActivity;
+use App\Actions\RecalculateLeadScore;
 use App\Enums\LeadActivityType;
 use App\Enums\LeadListingFilter;
 use App\Enums\LeadStatus;
@@ -58,7 +59,7 @@ class LeadBulkActionController extends Controller
             ));
     }
 
-    public function updateStatus(BulkUpdateLeadStatusRequest $request, LogLeadActivity $logLeadActivity): RedirectResponse
+    public function updateStatus(BulkUpdateLeadStatusRequest $request, LogLeadActivity $logLeadActivity, RecalculateLeadScore $recalculateLeadScore): RedirectResponse
     {
         $newStatus = $request->enum('status', LeadStatus::class);
         $updatedCount = 0;
@@ -86,6 +87,8 @@ class LeadBulkActionController extends Controller
                     'to' => $newStatus->value,
                 ],
             );
+
+            $recalculateLeadScore->handle($lead);
 
             $updatedCount++;
         }

@@ -7,6 +7,7 @@ use App\Queries\DashboardKpis;
 use App\Queries\DashboardMyDay;
 use App\Queries\DashboardPipeline;
 use App\Queries\DashboardTodaysTasks;
+use App\Queries\TenantSetupProgress;
 use App\Support\DashboardPeriodFilter;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -22,6 +23,7 @@ class DashboardController extends Controller
         DashboardPipeline $dashboardPipeline,
         DashboardMyDay $dashboardMyDay,
         DashboardTodaysTasks $dashboardTodaysTasks,
+        TenantSetupProgress $tenantSetupProgress,
     ): View {
         $periodFilter = DashboardPeriodFilter::fromRequest($request);
 
@@ -31,6 +33,7 @@ class DashboardController extends Controller
             'pipeline' => $dashboardPipeline->forTenant($periodFilter),
             'myDayActivities' => $dashboardMyDay->forTenant(),
             'todaysTasks' => $dashboardTodaysTasks->forTenant(),
+            'setupProgress' => $tenantSetupProgress->forUser($request->user()),
         ]);
     }
 }

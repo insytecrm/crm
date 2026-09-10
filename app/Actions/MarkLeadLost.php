@@ -11,7 +11,10 @@ use App\Models\User;
 
 class MarkLeadLost
 {
-    public function __construct(private LogLeadActivity $logLeadActivity) {}
+    public function __construct(
+        private LogLeadActivity $logLeadActivity,
+        private RecalculateLeadScore $recalculateLeadScore,
+    ) {}
 
     /**
      * @param  list<LeadLostReason>  $lostReasons
@@ -19,6 +22,8 @@ class MarkLeadLost
     public function handle(Lead $lead, array $lostReasons, string $closingNotes, ?User $user = null): Lead
     {
         $user ??= auth()->user();
+
+        $previousStatus = $lead->status;
 
         $lead->update([
             'status' => LeadStatus::Lost,
@@ -38,6 +43,8 @@ class MarkLeadLost
             __('Lead marked lost: :reasons', ['reasons' => $reasonLabels]),
             $user,
             [
+                'from' => $previousStatus->value,
+                'to' => LeadStatus::Lost->value,
                 'lost_reasons' => array_map(fn (LeadLostReason $reason): string => $reason->value, $lostReasons),
                 'closing_notes' => $closingNotes,
                 'closing_reason' => LeadClosingReason::Lost->value,
@@ -45,6 +52,6 @@ class MarkLeadLost
             ],
         );
 
-        return $lead->fresh();
+        return $this->recalculateLeadScore->handle($lead->fresh());
     }
 }

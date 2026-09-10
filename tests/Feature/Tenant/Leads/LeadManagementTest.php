@@ -161,7 +161,6 @@ test('tenant users can update a lead from the drawer', function () {
             'property_type' => $lead->property_type?->value,
             'configuration' => $lead->configuration,
             'assigned_to_id' => $lead->assigned_to_id,
-            'lead_score' => $lead->lead_score,
             'next_action' => $lead->next_action,
         ])
         ->assertRedirect(route('tenant.leads.index', ['tenant' => 'acme', 'lead' => $lead->id]))

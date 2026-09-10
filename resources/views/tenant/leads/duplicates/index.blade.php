@@ -50,8 +50,8 @@
                         action="{{ route('tenant.leads.duplicates.merge') }}"
                         class="divide-y divide-slate-100"
                         x-data="{
-                            primaryLeadId: @js($group['leads']->first()->id),
-                            selectedDuplicates: @js($group['leads']->skip(1)->pluck('id')->values()),
+                            primaryLeadId: @js($group['recommended_primary_id']),
+                            selectedDuplicates: @js($group['leads']->where('id', '!=', $group['recommended_primary_id'])->pluck('id')->values()),
                             toggleDuplicate(id) {
                                 if (this.selectedDuplicates.includes(id)) {
                                     this.selectedDuplicates = this.selectedDuplicates.filter((item) => item !== id);
@@ -112,7 +112,7 @@
                                                 <button
                                                     type="button"
                                                     class="font-medium text-black hover:underline"
-                                                    @click="$dispatch('open-lead-drawer', { leadId: {{ $lead->id }} })"
+                                                    @click="$dispatch('open-lead', {{ $lead->id }})"
                                                 >
                                                     {{ $lead->name }}
                                                 </button>
