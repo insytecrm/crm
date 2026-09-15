@@ -12,9 +12,10 @@ class PlatformLeadStatistics
      *     total: int,
      *     new_leads: int,
      *     demos: int,
-     *     quotations: int,
-     *     onboarding: int,
-     *     client_live: int,
+     *     trials: int,
+     *     quoted: int,
+     *     paid: int,
+     *     live: int,
      * }
      */
     public function summary(): array
@@ -22,17 +23,12 @@ class PlatformLeadStatistics
         return [
             'total' => PlatformLead::query()->count(),
             'new_leads' => PlatformLead::query()->where('stage', PlatformLeadStage::NewLead)->count(),
-            'demos' => PlatformLead::query()->whereIn('stage', [
-                PlatformLeadStage::DemoScheduled,
-                PlatformLeadStage::DemoCompleted,
-            ])->count(),
-            'quotations' => PlatformLead::query()->whereIn('stage', [
-                PlatformLeadStage::QuotationSent,
-                PlatformLeadStage::QuotationAccepted,
-            ])->count(),
-            'onboarding' => PlatformLead::query()->where('stage', PlatformLeadStage::Onboarding)->count(),
-            'client_live' => PlatformLead::query()->whereIn('stage', [
-                PlatformLeadStage::ClientLive,
+            'demos' => PlatformLead::query()->where('stage', PlatformLeadStage::Demo)->count(),
+            'trials' => PlatformLead::query()->where('stage', PlatformLeadStage::Trial)->count(),
+            'quoted' => PlatformLead::query()->where('stage', PlatformLeadStage::Quoted)->count(),
+            'paid' => PlatformLead::query()->where('stage', PlatformLeadStage::Paid)->count(),
+            'live' => PlatformLead::query()->whereIn('stage', [
+                PlatformLeadStage::Live,
                 PlatformLeadStage::Retention,
             ])->count(),
         ];

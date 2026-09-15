@@ -44,14 +44,8 @@
                             <x-ui.popover.item :href="route('platform.plans.show', $plan)">{{ __('View') }}</x-ui.popover.item>
                             <x-ui.popover.item :href="route('platform.plans.edit', $plan)">{{ __('Edit') }}</x-ui.popover.item>
                             <x-ui.popover.item :href="route('platform.plans.duplicate', $plan)">{{ __('Duplicate') }}</x-ui.popover.item>
-                            @if (! $plan->isArchived())
-                                <form method="POST" action="{{ route('platform.plans.archive', $plan) }}" onsubmit="return confirm(@js(__('Archive :name? Existing Channel Partners stay on this plan.', ['name' => $plan->name])))">
-                                    @csrf
-                                    <button type="submit" class="flex w-full items-center rounded-md px-2 py-1.5 text-sm font-medium text-rose-600 hover:bg-rose-50">
-                                        {{ __('Archive') }}
-                                    </button>
-                                </form>
-                            @endif
+                            @include('platform.plans.partials.archive-action', ['plan' => $plan, 'variant' => 'menu'])
+                            @include('platform.plans.partials.delete-action', ['plan' => $plan, 'variant' => 'menu'])
                         </x-ui.popover>
                     </div>
 
@@ -69,6 +63,10 @@
                         <div class="flex justify-between gap-3">
                             <dt class="text-slate-500">{{ __('Active Partners') }}</dt>
                             <dd class="font-medium text-black">{{ number_format($plan->partners_count) }}</dd>
+                        </div>
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-slate-500">{{ __('Ongoing Subscriptions') }}</dt>
+                            <dd class="font-medium text-black">{{ number_format($plan->ongoing_subscriptions_count) }}</dd>
                         </div>
                         <div class="flex justify-between gap-3">
                             <dt class="text-slate-500">{{ __('Status') }}</dt>

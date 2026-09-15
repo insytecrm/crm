@@ -22,6 +22,34 @@ test('super admins can view leads index', function () {
         ->assertSee('add-platform-lead');
 });
 
+test('leads index renders action modals with window listeners', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $lead = PlatformLead::factory()->create();
+
+    $this->actingAs($admin)
+        ->get(route('platform.leads'))
+        ->assertOk()
+        ->assertSee($lead->company_name)
+        ->assertSee('x-on:open-partner-workflow.window', false)
+        ->assertSee('x-on:preset-quotation-lead.window', false)
+        ->assertSee('x-on:open-lead-note.window', false)
+        ->assertSee('open-partner-workflow', false)
+        ->assertSee('open-lead-note', false);
+
+    $html = $this->actingAs($admin)->get(route('platform.leads'))->getContent();
+
+    expect($html)
+        ->toContain('open-partner-workflow')
+        ->toContain('partner-workflow')
+        ->toContain('preset-quotation-lead')
+        ->toContain('JSON.parse')
+        ->toContain('name="email" x-bind:value="adminEmail"')
+        ->toContain('type="email" x-model="adminEmail" required="required"')
+        ->not->toContain('@js($lead')
+        ->not->toContain('x-on:click="$dispatch(&#039;open-partner-workflow')
+        ->not->toMatch('/JSON\.parse\([^)]+\)\'\)/');
+});
+
 test('add lead entry opens the modal on the leads list', function () {
     $admin = User::factory()->superAdmin()->create();
 
@@ -140,7 +168,7 @@ test('creating a quotation from a lead links it and advances the stage', functio
         'contact_person' => 'Modal Owner',
         'email' => 'owner@modalrealty.test',
         'phone' => '9888888888',
-        'stage' => PlatformLeadStage::DemoCompleted,
+        'stage' => PlatformLeadStage::Demo,
     ]);
     $pricing = QuotationPricing::calculate(4999, 0);
 
@@ -153,8 +181,6 @@ test('creating a quotation from a lead links it and advances the stage', functio
             'phone' => $lead->phone,
             'plan_id' => $plan->id,
             'billing_cycle' => BillingCycle::Monthly->value,
-            'trial_enabled' => 1,
-            'trial_days' => 7,
             'plan_price' => $pricing['plan_price'],
             'discount_amount' => $pricing['discount_amount'],
             'tax_amount' => $pricing['tax_amount'],
@@ -167,7 +193,7 @@ test('creating a quotation from a lead links it and advances the stage', functio
 
     expect($quotation)->not->toBeNull()
         ->and($quotation->status)->toBe(QuotationStatus::Draft)
-        ->and($lead->refresh()->stage)->toBe(PlatformLeadStage::QuotationSent);
+        ->and($lead->refresh()->stage)->toBe(PlatformLeadStage::Demo);
 
     $this->actingAs($admin)
         ->get(route('platform.quotations.show', $quotation))

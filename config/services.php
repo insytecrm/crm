@@ -53,4 +53,10 @@ return [
         // Long-lived Page access token used to verify pages and fetch Lead Ads (agency / system user)
         'page_access_token' => env('META_PAGE_ACCESS_TOKEN'),
     ],
+
+    'recaptcha' => [
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+        'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+        'enabled' => env('RECAPTCHA_ENABLED', false),
+    ],
 ];

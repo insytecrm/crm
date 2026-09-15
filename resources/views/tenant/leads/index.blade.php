@@ -74,6 +74,16 @@
             get someSelected() {
                 return this.selected.length > 0 && this.selected.length < this.leadIds.length;
             },
+            shouldIgnoreLeadRowClick(event) {
+                return Boolean(event.target.closest('a, button, input, select, textarea, label, form, [data-ignore-lead-row-click]'));
+            },
+            openLeadFromRow(event, id) {
+                if (this.shouldIgnoreLeadRowClick(event)) {
+                    return;
+                }
+
+                this.$dispatch('open-lead', id);
+            },
         }"
     >
         <x-auth-session-status class="mb-3 rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700" :status="session('status')" />
@@ -325,7 +335,7 @@
                                 class="cursor-pointer align-middle transition hover:bg-slate-50"
                                 @mouseenter="$dispatch('prefetch-lead', {{ $lead->id }})"
                                 @pointerdown="$dispatch('prefetch-lead', {{ $lead->id }})"
-                                @click="$dispatch('open-lead', {{ $lead->id }})"
+                                @click="openLeadFromRow($event, {{ $lead->id }})"
                             >
                                 <td class="whitespace-nowrap px-4 py-3 align-middle" @click.stop>
                                     <input

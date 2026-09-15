@@ -92,6 +92,17 @@
         :data-table-required-columns="$dataTableRequiredColumns"
     />
 
+    @php
+        use App\Enums\PlanCapability;
+        use App\Models\UtilityMailSetting;
+        use App\Support\Platform\TenantPlanAccess;
+
+        $utilityMailSetting = UtilityMailSetting::current();
+        $askEmailCredentials = $utilityMailSetting?->isConfigured()
+            && $utilityMailSetting->asksBeforeSending()
+            && app(TenantPlanAccess::class)->hasCapability(PlanCapability::UtilitiesEmail);
+    @endphp
+
     @include('tenant.settings.partials.user-form-modal', [
         'modalName' => 'create-settings-user',
         'title' => __('Add User'),
@@ -99,6 +110,7 @@
         'method' => 'POST',
         'settingsUser' => null,
         'roles' => $roles,
+        'askEmailCredentials' => $askEmailCredentials,
     ])
 
     @foreach ($users as $settingsUser)

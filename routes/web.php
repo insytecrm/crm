@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\FacebookOAuthController;
 use App\Http\Controllers\Landing\LandingSubmissionController;
 use App\Http\Controllers\Platform\BillingAdjustmentController;
+use App\Http\Controllers\Platform\BillingInvoiceBulkActionController;
 use App\Http\Controllers\Platform\BillingInvoiceController;
 use App\Http\Controllers\Platform\BillingPaymentController;
 use App\Http\Controllers\Platform\BillingSubscriptionController;
@@ -12,12 +13,16 @@ use App\Http\Controllers\Platform\ChannelPartnerWizardController;
 use App\Http\Controllers\Platform\DashboardController;
 use App\Http\Controllers\Platform\PlanController;
 use App\Http\Controllers\Platform\PlanWizardController;
+use App\Http\Controllers\Platform\PlatformLeadBulkActionController;
 use App\Http\Controllers\Platform\PlatformLeadController;
+use App\Http\Controllers\Platform\PlatformSettingsController;
+use App\Http\Controllers\Platform\QuotationBulkActionController;
 use App\Http\Controllers\Platform\QuotationController;
 use App\Http\Controllers\Platform\QuotationWizardController;
 use App\Http\Controllers\Platform\RevenueOverviewController;
 use App\Http\Controllers\Platform\StubPageController;
 use App\Http\Controllers\Platform\TenantController;
+use App\Http\Controllers\Platform\UtilitiesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Site\SitePageController;
 use Illuminate\Support\Facades\Route;
@@ -88,6 +93,11 @@ Route::prefix('platform')->group(function () {
         Route::patch('/leads/{lead}/stage', [PlatformLeadController::class, 'updateStage'])->name('platform.leads.stage.update');
         Route::post('/leads/{lead}/notes', [PlatformLeadController::class, 'storeNote'])->name('platform.leads.notes.store');
         Route::patch('/leads/{lead}/next-action', [PlatformLeadController::class, 'updateNextAction'])->name('platform.leads.next-action.update');
+        Route::post('/leads/{lead}/start-trial', [PlatformLeadController::class, 'startTrial'])->name('platform.leads.start-trial');
+        Route::post('/leads/{lead}/end-trial', [PlatformLeadController::class, 'endTrial'])->name('platform.leads.end-trial');
+        Route::post('/leads/{lead}/onboard', [PlatformLeadController::class, 'onboard'])->name('platform.leads.onboard');
+        Route::post('/leads/{lead}/activate-subscription', [PlatformLeadController::class, 'activateSubscription'])->name('platform.leads.activate-subscription');
+        Route::delete('/leads/bulk', [PlatformLeadBulkActionController::class, 'destroy'])->name('platform.leads.bulk-destroy');
 
         Route::get('/plans', [PlanController::class, 'index'])->name('platform.plans');
         Route::get('/plans/create', [PlanWizardController::class, 'create'])->name('platform.plans.create');
@@ -109,6 +119,7 @@ Route::prefix('platform')->group(function () {
         Route::get('/plans/{plan}/edit', [PlanController::class, 'edit'])->name('platform.plans.edit');
         Route::put('/plans/{plan}', [PlanController::class, 'update'])->name('platform.plans.update');
         Route::post('/plans/{plan}/archive', [PlanController::class, 'archive'])->name('platform.plans.archive');
+        Route::delete('/plans/{plan}', [PlanController::class, 'destroy'])->name('platform.plans.destroy');
         Route::get('/plans/{plan}/duplicate', [PlanController::class, 'duplicate'])->name('platform.plans.duplicate');
         Route::post('/plans/{plan}/duplicate', [PlanController::class, 'storeDuplicate'])->name('platform.plans.duplicate.store');
 
@@ -125,6 +136,8 @@ Route::prefix('platform')->group(function () {
         Route::post('/revenue/subscriptions/{subscription}/discount', [BillingSubscriptionController::class, 'applyDiscount'])->name('platform.revenue.subscriptions.discount');
 
         Route::get('/revenue/invoices', [BillingInvoiceController::class, 'index'])->name('platform.revenue.invoices');
+        Route::post('/revenue/invoices/bulk/mark-paid', [BillingInvoiceBulkActionController::class, 'markPaid'])->name('platform.revenue.invoices.bulk-mark-paid');
+        Route::delete('/revenue/invoices/bulk', [BillingInvoiceBulkActionController::class, 'destroy'])->name('platform.revenue.invoices.bulk-destroy');
         Route::get('/revenue/invoices/{invoice}', [BillingInvoiceController::class, 'show'])->name('platform.revenue.invoices.show');
         Route::get('/revenue/invoices/{invoice}/download', [BillingInvoiceController::class, 'download'])->name('platform.revenue.invoices.download');
         Route::post('/revenue/invoices/{invoice}/send', [BillingInvoiceController::class, 'send'])->name('platform.revenue.invoices.send');
@@ -138,6 +151,8 @@ Route::prefix('platform')->group(function () {
         Route::get('/revenue/adjustments', [BillingAdjustmentController::class, 'index'])->name('platform.revenue.adjustments');
         Route::get('/revenue/adjustments/discounts', [BillingAdjustmentController::class, 'discounts'])->name('platform.revenue.adjustments.discounts');
         Route::get('/revenue/adjustments/refunds', [BillingAdjustmentController::class, 'refunds'])->name('platform.revenue.adjustments.refunds');
+
+        Route::delete('/quotations/bulk', [QuotationBulkActionController::class, 'destroy'])->name('platform.quotations.bulk-destroy');
 
         Route::get('/quotations', [QuotationController::class, 'index'])->name('platform.quotations');
         Route::get('/quotations/create', [QuotationWizardController::class, 'create'])->name('platform.quotations.create');
@@ -158,14 +173,18 @@ Route::prefix('platform')->group(function () {
         Route::post('/quotations/{quotation}/reject', [QuotationController::class, 'reject'])->name('platform.quotations.reject');
         Route::post('/quotations/{quotation}/duplicate', [QuotationController::class, 'duplicate'])->name('platform.quotations.duplicate');
         Route::get('/quotations/{quotation}/download', [QuotationController::class, 'download'])->name('platform.quotations.download');
-        Route::get('/quotations/{quotation}/onboard', [QuotationController::class, 'onboardForm'])->name('platform.quotations.onboard');
-        Route::post('/quotations/{quotation}/onboard', [QuotationController::class, 'onboard'])->name('platform.quotations.onboard.store');
-        Route::post('/quotations/{quotation}/create-subscription', [QuotationController::class, 'createSubscription'])->name('platform.quotations.create-subscription');
 
         Route::get('/integrations', StubPageController::class)->name('platform.integrations');
         Route::get('/analytics', StubPageController::class)->name('platform.analytics');
-        Route::get('/utilities', StubPageController::class)->name('platform.utilities');
-        Route::get('/settings', StubPageController::class)->name('platform.settings');
+        Route::get('/utilities', [UtilitiesController::class, 'show'])->name('platform.utilities');
+        Route::put('/utilities/mail', [UtilitiesController::class, 'updateMailSetting'])->name('platform.utilities.mail.update');
+        Route::put('/utilities/templates/{template}', [UtilitiesController::class, 'updateTemplate'])->name('platform.utilities.templates.update');
+        Route::post('/utilities/test', [UtilitiesController::class, 'sendTest'])->name('platform.utilities.test');
+        Route::get('/settings', [PlatformSettingsController::class, 'index'])->name('platform.settings');
+        Route::patch('/settings/profile', [PlatformSettingsController::class, 'updateProfile'])->name('platform.settings.profile.update');
+        Route::put('/settings/password', [PlatformSettingsController::class, 'updatePassword'])->name('platform.settings.password.update');
+        Route::post('/settings/users', [PlatformSettingsController::class, 'storeUser'])->name('platform.settings.users.store');
+        Route::delete('/settings/users/{user}', [PlatformSettingsController::class, 'destroyUser'])->name('platform.settings.users.destroy');
 
         Route::get('tenants/create', [ChannelPartnerWizardController::class, 'company'])->name('tenants.create');
         Route::post('tenants/wizard', [ChannelPartnerWizardController::class, 'store'])->name('tenants.wizard.store');

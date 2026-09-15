@@ -10,6 +10,7 @@ enum SubscriptionStatus: string
     case Cancelled = 'cancelled';
     case Paused = 'paused';
     case Suspended = 'suspended';
+    case TrialEnded = 'trial_ended';
 
     public function label(): string
     {
@@ -20,6 +21,7 @@ enum SubscriptionStatus: string
             self::Cancelled => __('Cancelled'),
             self::Paused => __('Paused'),
             self::Suspended => __('Suspended'),
+            self::TrialEnded => __('Trial Ended'),
         };
     }
 }

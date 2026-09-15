@@ -68,7 +68,7 @@ class UpdatePlatformLeadStage
             );
         }
 
-        if ($stage === PlatformLeadStage::DemoScheduled && isset($extras['demo_date'])) {
+        if ($stage === PlatformLeadStage::Demo && isset($extras['demo_date'])) {
             $this->logActivity->handle(
                 $lead,
                 PlatformLeadActivityType::DemoScheduled,

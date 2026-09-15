@@ -97,7 +97,7 @@
         ],
         [
             'name' => __('Email'),
-            'description' => __('Sync email conversations with lead records.'),
+            'description' => __('Connect your Gmail to email leads from your own inbox.'),
             'badge' => __('Communication'),
             'badge_classes' => 'bg-emerald-50 text-emerald-700 ring-emerald-100',
             'icon_bg' => 'bg-red-50',
@@ -113,6 +113,20 @@
         ],
     ];
 
+    $workspaceToolCards = [
+        [
+            'key' => 'utilities',
+            'name' => __('Utilities'),
+            'description' => __('Configure SMTP and templates for team login credentials and CRM notices.'),
+            'badge' => __('Workspace'),
+            'badge_classes' => 'bg-sky-50 text-sky-700 ring-sky-100',
+            'icon_bg' => 'bg-sky-50',
+            'href' => route('tenant.settings.integrations.utilities'),
+            'logo' => 'utilities',
+            'capability' => 'utilities.email',
+        ],
+    ];
+
     $planAccess = app(TenantPlanAccess::class);
     $visibleLeadCaptureCards = array_values(array_filter(
         $leadCaptureCards,
@@ -120,6 +134,10 @@
     ));
     $visiblePortalCards = array_values(array_filter(
         $portalCards,
+        fn (array $card): bool => $planAccess->hasCapability($card['capability']),
+    ));
+    $visibleWorkspaceToolCards = array_values(array_filter(
+        $workspaceToolCards,
         fn (array $card): bool => $planAccess->hasCapability($card['capability']),
     ));
 @endphp
@@ -167,6 +185,21 @@
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             @foreach ($visiblePortalCards as $card)
+                @include('tenant.settings.partials.integration-card', ['card' => $card, 'available' => true])
+            @endforeach
+        </div>
+    </section>
+@endif
+
+@if ($visibleWorkspaceToolCards !== [])
+    <section class="mt-8 space-y-4">
+        <div>
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400">{{ __('Workspace tools') }}</h3>
+            <p class="mt-1 text-sm text-slate-500">{{ __('Admin SMTP and CRM utility email templates.') }}</p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            @foreach ($visibleWorkspaceToolCards as $card)
                 @include('tenant.settings.partials.integration-card', ['card' => $card, 'available' => true])
             @endforeach
         </div>

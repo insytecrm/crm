@@ -37,6 +37,8 @@ use App\Http\Controllers\Tenant\LeadTaskController;
 use App\Http\Controllers\Tenant\LeadWhatsAppController;
 use App\Http\Controllers\Tenant\MarkLeadLostController;
 use App\Http\Controllers\Tenant\MessageTemplateController;
+use App\Http\Controllers\Tenant\NewPasswordController;
+use App\Http\Controllers\Tenant\PasswordResetLinkController;
 use App\Http\Controllers\Tenant\PayoutController;
 use App\Http\Controllers\Tenant\PropertyController;
 use App\Http\Controllers\Tenant\PropertyExportController;
@@ -59,11 +61,13 @@ use App\Http\Controllers\Tenant\SettingsLeadApiController;
 use App\Http\Controllers\Tenant\SettingsPortalWebhookController;
 use App\Http\Controllers\Tenant\SettingsRoleController;
 use App\Http\Controllers\Tenant\SettingsUserController;
+use App\Http\Controllers\Tenant\SettingsUtilitiesController;
 use App\Http\Controllers\Tenant\SiteVisitController;
 use App\Http\Controllers\Tenant\TablePreferencesController;
 use App\Http\Controllers\Tenant\TaskController;
 use App\Http\Controllers\Tenant\TeamChatController;
 use App\Http\Controllers\Tenant\TeamPerformanceController;
+use App\Http\Controllers\Tenant\WhatsAppTriggerController;
 use App\Http\Controllers\Tenant\WhatsAppWebController;
 use App\Http\Middleware\EnforceTenantPlanAccess;
 use App\Http\Middleware\EnsureVerifiedDomainPurpose;
@@ -87,6 +91,18 @@ Route::middleware([
             ->name('tenant.login');
 
         Route::post('login', [AuthenticatedSessionController::class, 'store']);
+
+        Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
+            ->name('tenant.password.request');
+
+        Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+            ->name('tenant.password.email');
+
+        Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
+            ->name('tenant.password.reset');
+
+        Route::post('reset-password', [NewPasswordController::class, 'store'])
+            ->name('tenant.password.store');
     });
 
     Route::get('projects/{slug}', [PropertyMicrositeController::class, 'show'])
@@ -264,6 +280,7 @@ Route::middleware([
         Route::post('tasks/{task}/complete', [TaskController::class, 'complete'])->name('tenant.tasks.complete');
 
         Route::get('whatsapp-web', [WhatsAppWebController::class, 'index'])->name('tenant.whatsapp-web.index');
+        Route::get('whatsapp-triggers', [WhatsAppTriggerController::class, 'index'])->name('tenant.whatsapp-triggers.index');
 
         Route::get('follow-ups', [FollowUpController::class, 'index'])->name('tenant.follow-ups.index');
         Route::get('site-visits', [SiteVisitController::class, 'index'])->name('tenant.site-visits.index');
@@ -331,6 +348,18 @@ Route::middleware([
         Route::get('settings/integrations/facebook', [SettingsFacebookController::class, 'show'])
             ->middleware('permission:integrations.view')
             ->name('tenant.settings.integrations.facebook.show');
+        Route::get('settings/integrations/utilities', [SettingsUtilitiesController::class, 'show'])
+            ->middleware('permission:integrations.view')
+            ->name('tenant.settings.integrations.utilities');
+        Route::put('settings/integrations/utilities/mail', [SettingsUtilitiesController::class, 'updateMailSetting'])
+            ->middleware('permission:integrations.manage')
+            ->name('tenant.settings.integrations.utilities.mail.update');
+        Route::put('settings/integrations/utilities/templates/{template}', [SettingsUtilitiesController::class, 'updateTemplate'])
+            ->middleware('permission:integrations.manage')
+            ->name('tenant.settings.integrations.utilities.templates.update');
+        Route::post('settings/integrations/utilities/test', [SettingsUtilitiesController::class, 'sendTest'])
+            ->middleware('permission:integrations.manage')
+            ->name('tenant.settings.integrations.utilities.test');
         Route::post('settings/integrations/facebook', [SettingsFacebookController::class, 'store'])
             ->middleware('permission:integrations.manage')
             ->name('tenant.settings.integrations.facebook.store');

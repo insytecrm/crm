@@ -19,7 +19,8 @@ test('super admins can view the platform dashboard with real partner data', func
         ->assertSee('Active Trials')
         ->assertSee('Active Users')
         ->assertSee('Needs Attention')
-        ->assertSee('Suspended Partners')
+        ->assertSee('Trials')
+        ->assertSee('Unpaid')
         ->assertSee('Revenue')
         ->assertSee('MRR')
         ->assertSee('Channel Partner Overview')
@@ -41,8 +42,7 @@ test('platform dashboard shows all clear when nothing needs attention', function
     $this->actingAs($admin)
         ->get(route('platform.dashboard'))
         ->assertOk()
-        ->assertSee('All clear across InSyte.')
-        ->assertDontSee('Suspended Partners');
+        ->assertSee('All clear across InSyte.');
 });
 
 test('platform dashboard active users kpi counts users across channel partners', function () {

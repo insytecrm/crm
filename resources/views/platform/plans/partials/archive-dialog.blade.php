@@ -11,10 +11,7 @@
         <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" @click.outside="open = false">
             <h2 class="text-lg font-semibold text-black">{{ __('Archive :name?', ['name' => $plan->name]) }}</h2>
             <p class="mt-2 text-sm text-slate-500">
-                {{ __('This plan will no longer be available for new Channel Partners.') }}
-            </p>
-            <p class="mt-2 text-sm text-slate-500">
-                {{ __('Existing Channel Partners using this plan will remain on their current subscription.') }}
+                {{ __('This plan will no longer be available for new Channel Partners. You can archive it only when no ongoing subscriptions remain.') }}
             </p>
             <div class="mt-6 flex justify-end gap-2">
                 <x-ui.button type="button" variant="outline" @click="open = false">{{ __('Cancel') }}</x-ui.button>

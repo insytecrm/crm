@@ -3,6 +3,7 @@
 namespace App\Support\Platform;
 
 use App\Contracts\PlatformDashboardData;
+use App\Enums\BillingCycle;
 use App\Enums\BillingInvoiceStatus;
 use App\Enums\BillingPaymentStatus;
 use App\Enums\SubscriptionStatus;
@@ -36,13 +37,15 @@ class EloquentPlatformDashboardData implements PlatformDashboardData
         $previousMonthEnd = $now->copy()->subMonthNoOverflow()->endOfMonth();
 
         $monthlyRevenue = (int) BillingInvoice::query()
-            ->whereBetween('issued_at', [$monthStart, $monthEnd])
-            ->where('status', '!=', BillingInvoiceStatus::Cancelled)
+            ->whereBetween('paid_at', [$monthStart, $monthEnd])
+            ->where('status', BillingInvoiceStatus::Paid)
             ->sum('total');
         $previousMonthlyRevenue = (int) BillingInvoice::query()
-            ->whereBetween('issued_at', [$previousMonthStart, $previousMonthEnd])
-            ->where('status', '!=', BillingInvoiceStatus::Cancelled)
+            ->whereBetween('paid_at', [$previousMonthStart, $previousMonthEnd])
+            ->where('status', BillingInvoiceStatus::Paid)
             ->sum('total');
+
+        $mrr = $this->calculateMrr();
         $trialCount = PartnerSubscription::query()->where('status', SubscriptionStatus::Trial)->count();
         $pastDueCount = PartnerSubscription::query()->where('status', SubscriptionStatus::PastDue)->count();
 
@@ -90,10 +93,10 @@ class EloquentPlatformDashboardData implements PlatformDashboardData
             ],
             'attention' => $this->attentionItems($suspended, $pastDueCount),
             'revenue' => [
-                'mrr' => $monthlyRevenue > 0 ? BillingMoney::format($monthlyRevenue) : '—',
-                'arr' => $monthlyRevenue > 0 ? BillingMoney::format($monthlyRevenue * 12) : '—',
-                'arpu' => ($monthlyRevenue > 0 && $active > 0)
-                    ? BillingMoney::format((int) round($monthlyRevenue / $active))
+                'mrr' => $mrr > 0 ? BillingMoney::format($mrr) : '—',
+                'arr' => $mrr > 0 ? BillingMoney::format($mrr * 12) : '—',
+                'arpu' => ($mrr > 0 && $active > 0)
+                    ? BillingMoney::format((int) round($mrr / $active))
                     : '—',
                 'href' => route('platform.revenue'),
                 'months' => $this->revenueMonths($now),
@@ -152,6 +155,20 @@ class EloquentPlatformDashboardData implements PlatformDashboardData
                 'this_week' => [],
             ],
         ];
+    }
+
+    private function calculateMrr(): int
+    {
+        return (int) PartnerSubscription::query()
+            ->where('status', SubscriptionStatus::Active)
+            ->get(['amount', 'billing_cycle'])
+            ->sum(function (PartnerSubscription $subscription): int {
+                $amount = (int) $subscription->amount;
+
+                return $subscription->billing_cycle === BillingCycle::Annual
+                    ? (int) round($amount / 12)
+                    : $amount;
+            });
     }
 
     /**
@@ -258,8 +275,8 @@ class EloquentPlatformDashboardData implements PlatformDashboardData
             $points[] = [
                 'label' => $month->format('M'),
                 'revenue' => (int) BillingInvoice::query()
-                    ->whereBetween('issued_at', [$start, $end])
-                    ->where('status', '!=', BillingInvoiceStatus::Cancelled)
+                    ->whereBetween('paid_at', [$start, $end])
+                    ->where('status', BillingInvoiceStatus::Paid)
                     ->sum('total'),
             ];
         }

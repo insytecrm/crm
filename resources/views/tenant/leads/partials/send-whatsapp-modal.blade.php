@@ -1,45 +1,43 @@
 <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('leadWhatsAppSender', (config) => ({
+    (function() {
+        var storeConfig = {
+            leadName: '',
+            phone: '',
+            message: '',
             templates: [],
             selectedId: '',
-            message: '',
-            leadName: '',
-            hasPhone: true,
-            whatsappDigits: '',
             loading: false,
             error: null,
 
-            get selectedTemplate() {
-                return this.templates.find((template) => String(template.id) === String(this.selectedId)) ?? null;
+            get url() {
+                var digits = this.phone.replace(/\D+/g, '');
+                return 'https://web.whatsapp.com/send?phone=' + digits + '&text=' + encodeURIComponent(this.message);
             },
 
-            get sendUrl() {
-                return config.sendUrlTemplate.replace('__ID__', String(this.leadId || ''));
+            get selectedTemplate() {
+                var self = this;
+                return this.templates.find(function(t) { return String(t.id) === String(self.selectedId); }) || null;
             },
 
             get canSend() {
-                return ! this.loading
-                    && this.hasPhone
-                    && this.whatsappDigits
-                    && this.message.trim() !== '';
+                return !this.loading && this.phone && this.message.trim() !== '';
             },
 
-            leadId: null,
+            applyTemplate: function() {
+                this.message = this.selectedTemplate ? this.selectedTemplate.preview : '';
+            },
 
-            async open(leadId) {
-                this.leadId = leadId;
+            open: async function(leadId, showUrl) {
                 this.loading = true;
                 this.error = null;
                 this.templates = [];
                 this.selectedId = '';
                 this.message = '';
                 this.leadName = '';
-                this.hasPhone = true;
-                this.whatsappDigits = '';
+                this.phone = '';
 
                 try {
-                    const response = await fetch(config.showUrlTemplate.replace('__ID__', String(leadId)), {
+                    var response = await fetch(showUrl.replace('__ID__', String(leadId)), {
                         headers: {
                             Accept: 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
@@ -47,47 +45,43 @@
                         credentials: 'same-origin',
                     });
 
-                    const data = await response.json().catch(() => ({}));
+                    var data = await response.json().catch(function() { return {}; });
 
-                    if (! response.ok) {
-                        this.error = data.message || @json(__('Could not load WhatsApp templates.'));
+                    if (!response.ok) {
+                        this.error = data.message || @json(__('Could not load WhatsApp data.'));
                         this.loading = false;
-
                         return;
                     }
 
                     this.leadName = data.lead_name || '';
-                    this.hasPhone = data.has_phone !== false;
-                    this.whatsappDigits = data.whatsapp_digits || '';
+                    this.phone = data.whatsapp_digits || '';
                     this.templates = data.templates || [];
                     this.selectedId = this.templates[0]?.id ?? '';
                     this.applyTemplate();
-                } catch {
-                    this.error = @json(__('Could not load WhatsApp templates.'));
+                } catch (e) {
+                    this.error = @json(__('Could not load WhatsApp data.'));
                 } finally {
                     this.loading = false;
                 }
-            },
+            }
+        };
 
-            applyTemplate() {
-                this.message = this.selectedTemplate?.preview || '';
-            },
-
-        }));
-    });
+        if (window.Alpine) {
+            Alpine.store('tenantWhatsApp', storeConfig);
+        } else {
+            document.addEventListener('alpine:init', function() {
+                Alpine.store('tenantWhatsApp', storeConfig);
+            });
+        }
+    })();
 </script>
 
-<div
-    x-data="leadWhatsAppSender({
-        showUrlTemplate: @js(route('tenant.leads.whatsapp.show', ['lead' => '__ID__'])),
-        sendUrlTemplate: @js(route('tenant.leads.whatsapp.store', ['lead' => '__ID__'])),
-    })"
-    @prepare-whatsapp.window="open($event.detail)"
->
+<div x-data="{ showUrl: @js(route('tenant.leads.whatsapp.show', ['lead' => '__ID__'])) }"
+     x-on:prepare-whatsapp.window="$store.tenantWhatsApp.open($event.detail, showUrl); $dispatch('open-modal', 'send-whatsapp')">
     <x-modal name="send-whatsapp" maxWidth="lg" focusable>
         <x-ui.modal.header
             :title="__('Send WhatsApp')"
-            :description="__('Choose a template or write your own message, then open in InSyte WhatsApp Web.')"
+            :description="__('Choose a template or write your own message, then click send to open WhatsApp Web.')"
             modal-name="send-whatsapp"
         >
             <x-slot:icon>
@@ -97,60 +91,57 @@
             </x-slot:icon>
         </x-ui.modal.header>
 
-        <form method="POST" :action="sendUrl">
-            @csrf
+        <x-ui.modal.body>
+            <p class="text-sm text-slate-500" x-show="$store.tenantWhatsApp.leadName" x-cloak>
+                {{ __('Message for') }} <span class="font-semibold text-black" x-text="$store.tenantWhatsApp.leadName"></span>
+            </p>
 
-            <x-ui.modal.body>
-                <p class="text-sm text-slate-500" x-show="leadName" x-cloak>
-                    {{ __('Message for') }} <span class="font-semibold text-black" x-text="leadName"></span>
-                </p>
+            <p class="text-sm text-red-600" x-show="$store.tenantWhatsApp.error" x-text="$store.tenantWhatsApp.error" x-cloak></p>
+            <p class="text-sm text-slate-500" x-show="$store.tenantWhatsApp.loading" x-cloak>{{ __('Loading…') }}</p>
 
-                <p class="text-sm text-red-600" x-show="error" x-text="error" x-cloak></p>
-                <p class="text-sm text-slate-500" x-show="loading" x-cloak>{{ __('Loading…') }}</p>
-
-                <div class="flex flex-col gap-4" x-show="! loading" x-cloak>
-                    <div>
-                        <x-ui.modal.field-label for="whatsapp_template_id" :value="__('Select template')" />
-                        <select
-                            id="whatsapp_template_id"
-                            name="template_id"
-                            x-model="selectedId"
-                            @change="applyTemplate()"
-                            class="mt-1 block w-full rounded-lg border-slate-200 text-sm text-black shadow-sm focus:border-navy focus:ring-navy"
-                        >
-                            <option value="">{{ __('Custom message') }}</option>
-                            <template x-for="template in templates" :key="template.id">
-                                <option :value="template.id" x-text="template.name"></option>
-                            </template>
-                        </select>
-                    </div>
-
-                    <div>
-                        <x-ui.modal.field-label for="whatsapp_message" :value="__('Message')" required />
-                        <textarea
-                            id="whatsapp_message"
-                            name="message"
-                            x-model="message"
-                            rows="7"
-                            maxlength="5000"
-                            required
-                            class="mt-1 block min-h-32 w-full rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50/80 to-white px-3 py-3 text-sm leading-relaxed text-slate-700 shadow-sm whitespace-pre-wrap focus:border-navy focus:ring-navy"
-                            placeholder="{{ __('Write the message that will be sent.') }}"
-                        ></textarea>
-                    </div>
+            <div class="flex flex-col gap-4" x-show="!$store.tenantWhatsApp.loading && !$store.tenantWhatsApp.error" x-cloak>
+                <div x-show="$store.tenantWhatsApp.templates.length > 0">
+                    <x-ui.modal.field-label for="whatsapp_template_id" :value="__('Select template')" />
+                    <select
+                        id="whatsapp_template_id"
+                        x-model="$store.tenantWhatsApp.selectedId"
+                        @change="$store.tenantWhatsApp.applyTemplate()"
+                        class="mt-1 block w-full rounded-lg border-slate-200 text-sm text-black shadow-sm focus:border-navy focus:ring-navy"
+                    >
+                        <option value="">{{ __('Custom message') }}</option>
+                        <template x-for="template in $store.tenantWhatsApp.templates" :key="template.id">
+                            <option :value="template.id" x-text="template.name"></option>
+                        </template>
+                    </select>
                 </div>
-            </x-ui.modal.body>
 
-            <x-ui.modal.footer>
-                <x-ui.modal.cancel-button modal-name="send-whatsapp" />
-                <button
-                    type="submit"
-                    class="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#20bd5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-                    :disabled="! canSend"
-                >
-                    {{ __('Send message') }}
-                </button>
-            </x-ui.modal.footer>
-        </form>
+                <div>
+                    <x-ui.modal.field-label for="whatsapp_message" :value="__('Message')" required />
+                    <textarea
+                        id="whatsapp_message"
+                        x-model="$store.tenantWhatsApp.message"
+                        rows="7"
+                        maxlength="5000"
+                        required
+                        class="mt-1 block min-h-32 w-full rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50/80 to-white px-3 py-3 text-sm leading-relaxed text-slate-700 shadow-sm whitespace-pre-wrap focus:border-navy focus:ring-navy"
+                        placeholder="{{ __('Write the message that will be sent.') }}"
+                    ></textarea>
+                </div>
+            </div>
+        </x-ui.modal.body>
+
+        <x-ui.modal.footer>
+            <x-ui.modal.cancel-button modal-name="send-whatsapp" />
+            <a
+                x-bind:href="$store.tenantWhatsApp.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                @click="setTimeout(() => $dispatch('close-modal', 'send-whatsapp'), 100)"
+                x-bind:class="{ 'pointer-events-none opacity-50': !$store.tenantWhatsApp.canSend }"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#20bd5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2"
+            >
+                {{ __('Send message') }}
+            </a>
+        </x-ui.modal.footer>
     </x-modal>
 </div>

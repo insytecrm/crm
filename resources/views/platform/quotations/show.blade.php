@@ -80,19 +80,24 @@
         </x-platform.panel>
 
         <x-platform.panel class="mb-4" :title="__('Next Action')" compact>
-            @if ($quotation->canStartOnboarding())
-                <p class="text-sm text-slate-600">{{ __('Quotation accepted. Start onboarding to create the client workspace and hand over login credentials.') }}</p>
-                <div class="mt-4">
-                    <x-ui.button variant="default" :href="route('platform.quotations.onboard', $quotation)">{{ __('Start Onboarding') }}</x-ui.button>
+            @php
+                $pendingInvoice = $quotation->invoices()->where('status', \App\Enums\BillingInvoiceStatus::Pending)->latest('id')->first();
+                $paidInvoice = $quotation->invoices()->where('status', \App\Enums\BillingInvoiceStatus::Paid)->latest('id')->first();
+                $lead = $quotation->platformLead;
+            @endphp
+
+            @if ($quotation->isAccepted() && $pendingInvoice)
+                <p class="text-sm text-slate-600">{{ __('Quotation accepted. Collect payment before onboarding the client workspace.') }}</p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <x-ui.button variant="default" :href="route('platform.revenue.invoices.show', $pendingInvoice)">{{ __('View Invoice') }}</x-ui.button>
                 </div>
-            @elseif ($quotation->canCreateSubscription())
-                <p class="text-sm text-slate-600">{{ __('Quotation accepted. Continue to subscription and billing.') }}</p>
-                <form method="POST" action="{{ route('platform.quotations.create-subscription', $quotation) }}" class="mt-4">
-                    @csrf
-                    <x-ui.button type="submit" variant="default">{{ __('Create Subscription') }}</x-ui.button>
-                </form>
+            @elseif ($paidInvoice && $lead?->canOnboard())
+                <p class="text-sm text-slate-600">{{ __('Invoice paid. Onboard the client from the linked lead.') }}</p>
+                <div class="mt-4">
+                    <x-ui.button variant="default" :href="route('platform.leads.show', $lead)">{{ __('Open Lead to Onboard') }}</x-ui.button>
+                </div>
             @elseif ($quotation->subscription)
-                <p class="text-sm text-slate-600">{{ __('Client onboarded. Subscription and first invoice are ready.') }}</p>
+                <p class="text-sm text-slate-600">{{ __('Client onboarded and subscription is active.') }}</p>
                 <div class="mt-4 flex flex-wrap gap-2">
                     @if ($quotation->tenant)
                         <x-ui.button variant="outline" :href="route('tenants.show', $quotation->tenant)">{{ __('Open Channel Partner') }}</x-ui.button>

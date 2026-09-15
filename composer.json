@@ -10,6 +10,7 @@
         "google/apiclient": "^1.1",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
+        "razorpay/razorpay": "^2.9",
         "stancl/tenancy": "^3.10"
     },
     "require-dev": {

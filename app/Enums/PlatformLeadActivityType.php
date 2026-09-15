@@ -12,7 +12,13 @@ enum PlatformLeadActivityType: string
     case QuotationCreated = 'quotation_created';
     case QuotationSent = 'quotation_sent';
     case QuotationAccepted = 'quotation_accepted';
+    case TrialStarted = 'trial_started';
+    case TrialEnded = 'trial_ended';
     case AccountLinked = 'account_linked';
+    case Onboarded = 'onboarded';
+    case SubscriptionActivated = 'subscription_activated';
+    case InvoicePaid = 'invoice_paid';
+    case MovedToRetention = 'moved_to_retention';
     case NextActionUpdated = 'next_action_updated';
 
     public function label(): string
@@ -26,7 +32,13 @@ enum PlatformLeadActivityType: string
             self::QuotationCreated => __('Quotation created'),
             self::QuotationSent => __('Quotation sent'),
             self::QuotationAccepted => __('Quotation accepted'),
+            self::TrialStarted => __('Trial started'),
+            self::TrialEnded => __('Trial ended'),
             self::AccountLinked => __('Account linked'),
+            self::Onboarded => __('Onboarded'),
+            self::SubscriptionActivated => __('Subscription activated'),
+            self::InvoicePaid => __('Invoice paid'),
+            self::MovedToRetention => __('Moved to retention'),
             self::NextActionUpdated => __('Next action updated'),
         };
     }

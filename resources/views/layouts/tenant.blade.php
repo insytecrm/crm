@@ -116,12 +116,25 @@
         </x-tenant.can>
 
         <x-tenant.can :permission="TenantPermission::LeadsView" :feature="PlanFeature::WhatsApp->value">
-        <x-sidebar.link :href="route('tenant.whatsapp-web.index')" :active="request()->routeIs('tenant.whatsapp-web.*')">
+        <x-sidebar.group
+            href="https://web.whatsapp.com/"
+            target="_blank"
+            :active="request()->routeIs('tenant.whatsapp-triggers.*')"
+        >
             <x-slot:icon>
                 <x-sidebar.nav-icon name="whatsapp" />
             </x-slot:icon>
-            {{ __('WhatsApp Web') }}
-        </x-sidebar.link>
+            {{ __('WhatsApp') }}
+
+            <x-slot:submenu>
+                <x-sidebar.sublink :href="route('tenant.whatsapp-triggers.index')" :active="request()->routeIs('tenant.whatsapp-triggers.*')">
+                    <x-slot:icon>
+                        <x-sidebar.nav-icon name="automations" />
+                    </x-slot:icon>
+                    {{ __('Triggers') }}
+                </x-sidebar.sublink>
+            </x-slot:submenu>
+        </x-sidebar.group>
         </x-tenant.can>
 
         <x-sidebar.separator />

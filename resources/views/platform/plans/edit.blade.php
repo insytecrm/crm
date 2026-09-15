@@ -55,13 +55,9 @@
                 </div>
             </div>
             <label class="mt-4 flex items-center gap-3 text-sm font-medium text-black">
-                <input type="checkbox" name="trial_enabled" value="1" class="rounded border-slate-300 text-navy focus:ring-navy" x-model="trial" @checked(old('trial_enabled', $plan->trial_enabled))>
-                {{ __('Enable free trial') }}
+                <input type="checkbox" name="trial_enabled" value="1" class="rounded border-slate-300 text-navy focus:ring-navy" @checked(old('trial_enabled', $plan->trial_enabled))>
+                {{ __('Allow this plan for trials (duration set when starting trial on a lead)') }}
             </label>
-            <div class="mt-3" x-show="trial" x-cloak>
-                <x-input-label for="trial_days" :value="__('Trial Duration (days)')" />
-                <x-text-input id="trial_days" name="trial_days" type="number" min="1" max="90" class="mt-1 block w-32" :value="old('trial_days', $plan->trial_days)" />
-            </div>
         </x-platform.panel>
 
         <div id="features">

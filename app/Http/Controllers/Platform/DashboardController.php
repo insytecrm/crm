@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Platform;
 
 use App\Contracts\PlatformDashboardData;
 use App\Http\Controllers\Controller;
+use App\Queries\PlatformDashboardMyDay;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -11,7 +12,7 @@ class DashboardController extends Controller
     /**
      * Display the platform dashboard.
      */
-    public function __invoke(PlatformDashboardData $dashboardData): View
+    public function __invoke(PlatformDashboardData $dashboardData, PlatformDashboardMyDay $platformDashboardMyDay): View
     {
         $hour = now()->hour;
 
@@ -26,6 +27,8 @@ class DashboardController extends Controller
             'userName' => auth()->user()->name,
             'contextDate' => now()->timezone(config('app.timezone'))->format('l, M j · g:i A'),
             'dashboard' => $dashboardData->get(),
+            'myDayItems' => $platformDashboardMyDay->items(),
+            'myDayCounts' => $platformDashboardMyDay->counts(),
         ]);
     }
 }

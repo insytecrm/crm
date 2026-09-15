@@ -41,12 +41,39 @@ class SeedDefaultPlans
     private function seedPlans(): void
     {
         foreach ($this->plans() as $attributes) {
-            if (Plan::query()->where('key', $attributes['key'])->exists()) {
+            $existing = Plan::query()->where('key', $attributes['key'])->first();
+
+            if ($existing === null) {
+                $this->createPlan->handle($attributes, $attributes['key']);
+
                 continue;
             }
 
-            $this->createPlan->handle($attributes, $attributes['key']);
+            $this->syncUtilitiesEmailCapability($existing, $attributes['capabilities'] ?? []);
         }
+    }
+
+    /**
+     * @param  list<string>  $desiredCapabilities
+     */
+    private function syncUtilitiesEmailCapability(Plan $plan, array $desiredCapabilities): void
+    {
+        if (! in_array(PlanCapability::UtilitiesEmail->value, $desiredCapabilities, true)) {
+            return;
+        }
+
+        $current = is_array($plan->capabilities) ? $plan->capabilities : [];
+
+        if (in_array(PlanCapability::UtilitiesEmail->value, $current, true)) {
+            return;
+        }
+
+        $plan->update([
+            'capabilities' => array_values(array_unique([
+                ...$current,
+                PlanCapability::UtilitiesEmail->value,
+            ])),
+        ]);
     }
 
     /**
@@ -132,6 +159,7 @@ class SeedDefaultPlans
                     PlanCapability::IntegrationApi->value,
                     PlanCapability::IntegrationGoogleSheets->value,
                     PlanCapability::IntegrationFacebook->value,
+                    PlanCapability::UtilitiesEmail->value,
                 ],
                 'limits' => $this->limitValues([
                     PlanLimitKey::Users->value => 15,

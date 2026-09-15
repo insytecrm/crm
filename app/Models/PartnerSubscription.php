@@ -124,6 +124,21 @@ class PartnerSubscription extends Model
             ->where('next_billing_at', '>=', now());
     }
 
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeTrialsEndingSoon(Builder $query, ?Carbon $within = null): Builder
+    {
+        $within ??= now()->addDays(7);
+
+        return $query
+            ->where('status', SubscriptionStatus::Trial)
+            ->whereNotNull('trial_ends_at')
+            ->where('trial_ends_at', '<=', $within)
+            ->where('trial_ends_at', '>=', now());
+    }
+
     public function isExpiringSoon(?Carbon $within = null): bool
     {
         $within ??= now()->addDays(7);

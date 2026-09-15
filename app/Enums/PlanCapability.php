@@ -44,6 +44,7 @@ enum PlanCapability: string
     case IntegrationWhatsApp = 'integration.whatsapp';
     case IntegrationEmail = 'integration.email';
     case IntegrationCalendar = 'integration.calendar';
+    case UtilitiesEmail = 'utilities.email';
 
     public function label(): string
     {
@@ -84,6 +85,7 @@ enum PlanCapability: string
             self::IntegrationWhatsApp => __('WhatsApp Business'),
             self::IntegrationEmail => __('Email'),
             self::IntegrationCalendar => __('Calendar'),
+            self::UtilitiesEmail => __('Utilities email'),
         };
     }
 
@@ -94,7 +96,7 @@ enum PlanCapability: string
             self::AiChat, self::AiSearchLeads, self::AiListToday, self::AiScheduleFollowUp, self::AiScheduleSiteVisit, self::AiCompleteActivities, self::AiTasks, self::AiAddNote, self::AiTabLeadInsights, self::AiTabContent, self::AiTabTaskAssistant, self::AiTabReports => PlanFeature::InsyteAi,
             self::AutomationsActionCreateTask, self::AutomationsActionAddNote, self::AutomationsActionChangeStatus, self::AutomationsActionScheduleFollowUp, self::AutomationsActionSendWhatsApp, self::AutomationsActionSendEmail, self::AutomationsTemplates => PlanFeature::Automations,
             self::ReportsAnalytics, self::ReportsExport, self::ReportsPrint => PlanFeature::Reports,
-            self::IntegrationApi, self::IntegrationGoogleSheets, self::IntegrationFacebook, self::IntegrationNinetyNineAcres, self::IntegrationHousing, self::IntegrationMagicBricks, self::IntegrationNoBroker, self::IntegrationWhatsApp, self::IntegrationEmail, self::IntegrationCalendar => PlanFeature::Integrations,
+            self::IntegrationApi, self::IntegrationGoogleSheets, self::IntegrationFacebook, self::IntegrationNinetyNineAcres, self::IntegrationHousing, self::IntegrationMagicBricks, self::IntegrationNoBroker, self::IntegrationWhatsApp, self::IntegrationEmail, self::IntegrationCalendar, self::UtilitiesEmail => PlanFeature::Integrations,
         };
     }
 

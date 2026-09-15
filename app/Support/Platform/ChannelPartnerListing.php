@@ -3,6 +3,7 @@
 namespace App\Support\Platform;
 
 use App\Contracts\PlatformPlanCatalog;
+use App\Enums\AccountStatus;
 use App\Enums\SubscriptionStatus;
 use App\Enums\TenantStatus;
 use App\Models\PartnerSubscription;
@@ -14,12 +15,15 @@ use Throwable;
 
 class ChannelPartnerListing
 {
-    public function __construct(private PlatformPlanCatalog $plans) {}
+    public function __construct(
+        private PlatformPlanCatalog $plans,
+        private ResolvePartnerAccountStatus $resolvePartnerAccountStatus,
+    ) {}
 
     /**
      * @return array{
      *     tenants: LengthAwarePaginator,
-     *     statistics: array{total: int, active: int, trial: int, past_due: int, suspended: int},
+     *     statistics: array{total: int, active: int, trial: int, inactive: int, cancelled: int, trial_ended: int, past_due: int, suspended: int},
      *     filters: array{search: string, status: string|null}
      * }
      */
@@ -27,8 +31,19 @@ class ChannelPartnerListing
     {
         $search = trim((string) $request->string('search'));
         $status = $request->string('status')->toString() ?: null;
+        $suspendedTenantIds = Tenant::query()
+            ->where('status', TenantStatus::Suspended)
+            ->pluck('id');
+        $latestSubscriptions = PartnerSubscription::query()
+            ->whereIn('id', PartnerSubscription::query()
+                ->selectRaw('MAX(id)')
+                ->groupBy('tenant_id'))
+            ->get(['tenant_id', 'status']);
+        $accountSubscriptions = $latestSubscriptions
+            ->reject(fn (PartnerSubscription $subscription): bool => $suspendedTenantIds->contains($subscription->tenant_id));
 
         $query = Tenant::query()
+            ->with('partnerSubscriptions')
             ->latest()
             ->orderByDesc('id');
 
@@ -41,14 +56,26 @@ class ChannelPartnerListing
             });
         }
 
-        if ($status === TenantStatus::Active->value || $status === TenantStatus::Suspended->value) {
-            $query->where('status', $status);
-        } elseif (in_array($status, ['trial', 'past_due'], true)) {
-            $tenantIds = PartnerSubscription::query()
-                ->where('status', $status === 'trial' ? SubscriptionStatus::Trial : SubscriptionStatus::PastDue)
-                ->pluck('tenant_id');
+        if ($status === AccountStatus::Suspended->value) {
+            $query->whereIn('id', $suspendedTenantIds);
+        } elseif ($status !== null) {
+            $subscriptionStatuses = match ($status) {
+                AccountStatus::Active->value => [SubscriptionStatus::Active, SubscriptionStatus::PastDue],
+                AccountStatus::Trial->value => [SubscriptionStatus::Trial],
+                AccountStatus::Inactive->value => [SubscriptionStatus::Paused],
+                AccountStatus::Cancelled->value => [SubscriptionStatus::Cancelled],
+                AccountStatus::TrialEnded->value => [SubscriptionStatus::TrialEnded],
+                'past_due' => [SubscriptionStatus::PastDue],
+                default => [],
+            };
 
-            $query->whereIn('id', $tenantIds);
+            if ($subscriptionStatuses !== []) {
+                $query
+                    ->where('status', TenantStatus::Active)
+                    ->whereIn('id', $accountSubscriptions
+                        ->whereIn('status', $subscriptionStatuses)
+                        ->pluck('tenant_id'));
+            }
         }
 
         /** @var LengthAwarePaginator<int, Tenant> $tenants */
@@ -64,11 +91,14 @@ class ChannelPartnerListing
         $tenants->getCollection()->transform(function (Tenant $tenant) use ($tenantIdsWithActiveSubscription): Tenant {
             $planKey = $tenant->getAttribute('plan_key');
             $plan = $this->plans->find(is_string($planKey) ? $planKey : null);
+            $account = $this->resolvePartnerAccountStatus->forTenant($tenant);
 
             $tenant->setAttribute('users_count', $this->activeUsersCount($tenant));
             $tenant->setAttribute('plan_label', $plan['label'] ?? '—');
             $tenant->setAttribute('users_limit', $plan['limits']['users'] ?? null);
             $tenant->setAttribute('last_active_label', $tenant->updated_at?->diffForHumans() ?? '—');
+            $tenant->setAttribute('account_status', $account['status']?->value);
+            $tenant->setAttribute('account_status_shows_due', $account['show_due']);
             $tenant->setAttribute(
                 'can_be_deleted',
                 ! in_array($tenant->id, $tenantIdsWithActiveSubscription, true),
@@ -81,10 +111,13 @@ class ChannelPartnerListing
             'tenants' => $tenants,
             'statistics' => [
                 'total' => Tenant::query()->count(),
-                'active' => Tenant::query()->where('status', TenantStatus::Active)->count(),
-                'trial' => PartnerSubscription::query()->where('status', SubscriptionStatus::Trial)->pluck('tenant_id')->unique()->count(),
-                'past_due' => PartnerSubscription::query()->where('status', SubscriptionStatus::PastDue)->pluck('tenant_id')->unique()->count(),
-                'suspended' => Tenant::query()->where('status', TenantStatus::Suspended)->count(),
+                'active' => $accountSubscriptions->whereIn('status', [SubscriptionStatus::Active, SubscriptionStatus::PastDue])->count(),
+                'trial' => $accountSubscriptions->where('status', SubscriptionStatus::Trial)->count(),
+                'inactive' => $accountSubscriptions->where('status', SubscriptionStatus::Paused)->count(),
+                'cancelled' => $accountSubscriptions->where('status', SubscriptionStatus::Cancelled)->count(),
+                'trial_ended' => $accountSubscriptions->where('status', SubscriptionStatus::TrialEnded)->count(),
+                'past_due' => $accountSubscriptions->where('status', SubscriptionStatus::PastDue)->count(),
+                'suspended' => $suspendedTenantIds->count(),
             ],
             'filters' => [
                 'search' => $search,

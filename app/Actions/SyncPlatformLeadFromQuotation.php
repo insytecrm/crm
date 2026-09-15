@@ -2,9 +2,11 @@
 
 namespace App\Actions;
 
+use App\Enums\BillingInvoiceStatus;
 use App\Enums\PlatformLeadActivityType;
 use App\Enums\PlatformLeadStage;
 use App\Enums\QuotationStatus;
+use App\Models\BillingInvoice;
 use App\Models\PlatformLead;
 use App\Models\Quotation;
 
@@ -27,10 +29,6 @@ class SyncPlatformLeadFromQuotation
             PlatformLeadActivityType::QuotationCreated,
             __('Quotation :number created', ['number' => '#'.$quotation->number]),
         );
-
-        if ($lead->stage->orderIndex() < PlatformLeadStage::QuotationSent->orderIndex()) {
-            $this->updateStage->handle($lead, PlatformLeadStage::QuotationSent);
-        }
     }
 
     public function afterSent(Quotation $quotation): void
@@ -46,8 +44,8 @@ class SyncPlatformLeadFromQuotation
             __('Quotation :number sent', ['number' => '#'.$quotation->number]),
         );
 
-        if ($lead->stage->orderIndex() < PlatformLeadStage::QuotationSent->orderIndex()) {
-            $this->updateStage->handle($lead, PlatformLeadStage::QuotationSent);
+        if ($lead->stage->orderIndex() < PlatformLeadStage::Quoted->orderIndex()) {
+            $this->updateStage->handle($lead, PlatformLeadStage::Quoted);
         }
     }
 
@@ -64,31 +62,49 @@ class SyncPlatformLeadFromQuotation
             __('Quotation :number accepted', ['number' => '#'.$quotation->number]),
         );
 
-        if ($lead->stage->orderIndex() < PlatformLeadStage::QuotationAccepted->orderIndex()) {
-            $this->updateStage->handle($lead, PlatformLeadStage::QuotationAccepted);
+        if ($lead->stage->orderIndex() < PlatformLeadStage::Quoted->orderIndex()) {
+            $this->updateStage->handle($lead, PlatformLeadStage::Quoted);
         }
     }
 
-    public function afterOnboarded(Quotation $quotation, string $tenantId): void
+    public function afterInvoicePaid(PlatformLead $lead): void
     {
-        $lead = $quotation->platformLead;
-        if ($lead === null) {
-            return;
+        if ($lead->stage->orderIndex() < PlatformLeadStage::Paid->orderIndex()) {
+            $this->updateStage->handle($lead, PlatformLeadStage::Paid);
         }
-
-        $lead->update(['tenant_id' => $tenantId]);
 
         $this->logActivity->handle(
             $lead,
-            PlatformLeadActivityType::AccountLinked,
-            __('Channel Partner account linked'),
-            null,
-            ['tenant_id' => $tenantId],
+            PlatformLeadActivityType::InvoicePaid,
+            __('Invoice paid'),
         );
 
-        if ($lead->stage->orderIndex() < PlatformLeadStage::Onboarding->orderIndex()) {
-            $this->updateStage->handle($lead, PlatformLeadStage::Onboarding);
+        $this->maybeMoveToRetention($lead->refresh());
+    }
+
+    private function maybeMoveToRetention(PlatformLead $lead): void
+    {
+        $paidCount = BillingInvoice::query()
+            ->where('status', BillingInvoiceStatus::Paid)
+            ->where(function ($query) use ($lead): void {
+                $query->whereHas('quotation', fn ($builder) => $builder->where('platform_lead_id', $lead->id));
+
+                if ($lead->tenant_id !== null && $lead->tenant_id !== '') {
+                    $query->orWhere('tenant_id', $lead->tenant_id);
+                }
+            })
+            ->count();
+
+        if ($paidCount < 2 || $lead->stage === PlatformLeadStage::Retention) {
+            return;
         }
+
+        $this->updateStage->handle($lead, PlatformLeadStage::Retention);
+        $this->logActivity->handle(
+            $lead,
+            PlatformLeadActivityType::MovedToRetention,
+            __('Second invoice paid — moved to retention'),
+        );
     }
 
     public function resolveLeadForQuotation(array $data): ?PlatformLead
@@ -108,14 +124,15 @@ class SyncPlatformLeadFromQuotation
             'owner_name' => $lead->contact_person,
             'email' => $lead->email,
             'phone' => $lead->phone,
+            'rera_number' => $lead->rera_number,
+            'gst_number' => $lead->gst_number,
         ];
     }
 
     public function shouldAdvanceOnStatus(QuotationStatus $status): ?PlatformLeadStage
     {
         return match ($status) {
-            QuotationStatus::Sent => PlatformLeadStage::QuotationSent,
-            QuotationStatus::Accepted => PlatformLeadStage::QuotationAccepted,
+            QuotationStatus::Sent, QuotationStatus::Accepted => PlatformLeadStage::Quoted,
             default => null,
         };
     }

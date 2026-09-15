@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Actions\ArchivePlan;
+use App\Actions\DeletePlan;
 use App\Actions\DuplicatePlan;
 use App\Actions\UpdatePlan;
 use App\Actions\UpdatePlanPackPresets;
@@ -33,6 +34,8 @@ class PlanController extends Controller
             ->get()
             ->map(function (Plan $plan): Plan {
                 $plan->setAttribute('partners_count', $plan->activePartnersCount());
+                $plan->setAttribute('ongoing_subscriptions_count', $plan->ongoingSubscriptionsCount());
+                $plan->setAttribute('quotations_count', $plan->quotations()->count());
 
                 return $plan;
             });
@@ -118,7 +121,16 @@ class PlanController extends Controller
 
         return redirect()
             ->route('platform.plans')
-            ->with('status', __('Plan archived. Existing Channel Partners stay on their current subscription.'));
+            ->with('status', __('Plan archived. It is no longer available for new Channel Partners.'));
+    }
+
+    public function destroy(Plan $plan, DeletePlan $deletePlan): RedirectResponse
+    {
+        $deletePlan->handle($plan);
+
+        return redirect()
+            ->route('platform.plans')
+            ->with('status', __('Plan deleted.'));
     }
 
     public function duplicate(Plan $plan): View
@@ -173,6 +185,9 @@ class PlanController extends Controller
                 ])
                 ->all(),
             'partners_count' => $plan->activePartnersCount(),
+            'ongoing_subscriptions_count' => $plan->ongoingSubscriptionsCount(),
+            'can_archive' => $plan->canArchive(),
+            'can_delete' => $plan->canDelete(),
         ];
     }
 

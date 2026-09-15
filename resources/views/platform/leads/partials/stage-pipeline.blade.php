@@ -41,11 +41,11 @@
     </ol>
 </div>
 
-@if ($lead->stage === PlatformLeadStage::DemoScheduled)
+@if ($lead->stage === PlatformLeadStage::Demo)
     <form method="POST" action="{{ route('platform.leads.stage.update', $lead) }}" class="mt-4 flex flex-wrap items-end gap-3">
         @csrf
         @method('PATCH')
-        <input type="hidden" name="stage" value="{{ PlatformLeadStage::DemoScheduled->value }}">
+        <input type="hidden" name="stage" value="{{ PlatformLeadStage::Demo->value }}">
         <div>
             <x-input-label for="demo_date" :value="__('Demo Date')" />
             <x-text-input id="demo_date" name="demo_date" type="date" class="mt-1 block w-full" :value="old('demo_date', $lead->demo_date?->toDateString())" required />

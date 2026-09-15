@@ -16,9 +16,16 @@
     <div class="min-w-0">
         <h1 class="text-2xl font-bold tracking-tight text-black">{{ $shell['name'] }}</h1>
         <p class="mt-1 text-sm text-slate-500">
-            <x-platform.status-badge :status="$shell['status']" class="align-middle" />
+            @if ($shell['status'])
+                <x-platform.status-badge :status="$shell['status']" class="align-middle" />
+                @if ($shell['show_due'] ?? false)
+                    <span class="text-xs font-semibold text-orange-600">({{ __('Due') }})</span>
+                @endif
+            @endif
             <span class="mx-1.5 text-slate-300">·</span>
             <span>{{ $shell['plan_label'] }}</span>
+            <span class="mx-1.5 text-slate-300">·</span>
+            <span class="font-mono text-xs text-slate-400">{{ $shell['tenant_db_id'] }}</span>
         </p>
         <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
             <span>{{ __('Owner') }}: <span class="font-medium text-black">{{ $shell['owner_name'] ?: '—' }}</span></span>
@@ -27,10 +34,54 @@
     </div>
 
     <div class="flex shrink-0 flex-wrap items-center gap-2">
+        @foreach ($shell['header_actions'] ?? [] as $action)
+            @if ($action['modal_event'] && ($shell['lead'] ?? null))
+                @php
+                    $lead = $shell['lead'];
+                    $acceptedQuotation = $lead->acceptedQuotation();
+                    $workflowPayload = [
+                        'mode' => $action['modal_event'],
+                        'leadId' => $lead->id,
+                        'company_name' => $lead->company_name,
+                        'contact_person' => $lead->contact_person,
+                        'email' => $lead->email,
+                        'phone' => $lead->phone,
+                        'rera_number' => $lead->rera_number,
+                        'gst_number' => $lead->gst_number,
+                        'quotation' => $acceptedQuotation ? [
+                            'number' => $acceptedQuotation->number,
+                            'plan' => $acceptedQuotation->plan?->name,
+                            'billing_cycle' => $acceptedQuotation->billing_cycle?->label(),
+                            'total' => $acceptedQuotation->totalLabel(),
+                        ] : null,
+                    ];
+                @endphp
+                @php
+                    $workflowClick = "\$dispatch('open-partner-workflow', ".Illuminate\Support\Js::from($workflowPayload).")";
+                @endphp
+                <x-ui.button
+                    type="button"
+                    :variant="$action['variant']"
+                    x-on:click="{!! $workflowClick !!}"
+                >
+                    {{ $action['label'] }}
+                </x-ui.button>
+            @elseif (! empty($action['href']) && ! ($action['disabled'] ?? false))
+                <form method="POST" action="{{ $action['href'] }}" class="inline" @if ($action['confirm']) onsubmit="return confirm(@js($action['confirm']))" @endif>
+                    @csrf
+                    <x-ui.button type="submit" :variant="$action['variant']">{{ $action['label'] }}</x-ui.button>
+                </form>
+            @endif
+        @endforeach
         <x-ui.button variant="outline" :href="$shell['workspace_url']" target="_blank">
             {{ __('Access Workspace') }}
         </x-ui.button>
-        <x-ui.button type="button" variant="default" x-on:click="$dispatch('open-edit-partner', @js((string) $tenant->id))">
+        <x-ui.button
+            type="button"
+            variant="default"
+            data-partner-id="{{ $tenant->id }}"
+            x-on:click="$dispatch('open-edit-partner', $el.dataset.partnerId)"
+        >
             {{ __('Edit') }}
         </x-ui.button>
         <x-ui.popover side="bottom" align="end" width="52" content-class="p-1" close-on-content-click>
@@ -88,5 +139,8 @@
 {{ $slot }}
 
 @include('platform.tenants.partials.edit-drawers', ['tenants' => collect([$tenant])])
-
-@include('platform.tenants.partials.edit-drawers', ['tenants' => collect([$tenant])])
+@include('platform.leads.partials.partner-workflow-modal', [
+    'trialPlans' => $shell['trial_plans'] ?? [],
+    'askEmailCredentials' => $shell['ask_email_credentials'] ?? false,
+    'alwaysEmailCredentials' => $shell['always_email_credentials'] ?? false,
+])

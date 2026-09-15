@@ -4,8 +4,12 @@ namespace App\Support\Platform;
 
 use App\Contracts\ChannelPartnerProfileData;
 use App\Contracts\PlatformPlanCatalog;
+use App\Enums\SubscriptionStatus;
 use App\Models\BillingInvoice;
 use App\Models\PartnerSubscription;
+use App\Models\Plan;
+use App\Models\PlatformLead;
+use App\Models\PlatformMailSetting;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
@@ -48,7 +52,14 @@ class EloquentChannelPartnerProfileData implements ChannelPartnerProfileData
     public function shell(Tenant $tenant, string $activeTab): array
     {
         $plan = $this->plans->find($this->stringAttribute($tenant, 'plan_key'));
-        $status = $tenant->status?->value ?? 'active';
+        $subscription = PartnerSubscription::query()
+            ->where('tenant_id', $tenant->getTenantKey())
+            ->latest('id')
+            ->first();
+        $account = app(ResolvePartnerAccountStatus::class)->forTenant($tenant);
+        $status = $account['status']?->value;
+        $showDue = $account['show_due'];
+        $lead = PlatformLead::query()->where('tenant_id', $tenant->getTenantKey())->first();
         $canDelete = ! $tenant->hasActiveSubscription();
 
         $tabs = [
@@ -60,10 +71,17 @@ class EloquentChannelPartnerProfileData implements ChannelPartnerProfileData
             ['key' => 'activity', 'label' => __('Activity'), 'route' => 'tenants.activity'],
         ];
 
+        $createdAt = $tenant->created_at ?? now();
+        $tenantDbId = 'tenant-'.$tenant->getTenantKey().'-'.$createdAt->format('ymd');
+
         return [
             'name' => $tenant->name,
+            'tenant_db_id' => $tenantDbId,
             'status' => $status,
-            'status_label' => ucfirst(str_replace('_', ' ', $status)),
+            'status_label' => $account['status']?->label() ?? '—',
+            'show_due' => $showDue,
+            'lead' => $lead,
+            'subscription' => $subscription,
             'plan_key' => $plan['key'] ?? null,
             'plan_label' => $plan['label'] ?? '—',
             'owner_name' => $this->stringAttribute($tenant, 'owner_name') ?: $this->primaryAdminName($tenant),
@@ -78,6 +96,21 @@ class EloquentChannelPartnerProfileData implements ChannelPartnerProfileData
                     'active' => $activeTab === $tab['key'],
                 ])
                 ->all(),
+            'header_actions' => $this->headerActions($tenant, $lead, $subscription),
+            'trial_plans' => Plan::query()
+                ->active()
+                ->where('trial_enabled', true)
+                ->orderBy('price_monthly')
+                ->get(['id', 'name'])
+                ->map(fn (Plan $item): array => [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                ])
+                ->all(),
+            'ask_email_credentials' => PlatformMailSetting::current()?->isConfigured()
+                && PlatformMailSetting::current()->asksBeforeSending(),
+            'always_email_credentials' => PlatformMailSetting::current()?->isConfigured()
+                && PlatformMailSetting::current()->alwaysSends(),
             'more_actions' => [
                 [
                     'label' => __('Delete Channel Partner'),
@@ -88,6 +121,93 @@ class EloquentChannelPartnerProfileData implements ChannelPartnerProfileData
                 ],
             ],
         ];
+    }
+
+    /**
+     * @return list<array{label: string, href: string|null, method: string|null, variant: string, confirm: string|null, disabled: bool, modal_event: string|null}>
+     */
+    private function headerActions(Tenant $tenant, ?PlatformLead $lead, ?PartnerSubscription $subscription): array
+    {
+        $actions = [];
+
+        if ($lead !== null && $lead->canEndTrial()) {
+            $actions[] = [
+                'label' => __('End Trial'),
+                'href' => route('platform.leads.end-trial', $lead),
+                'method' => 'POST',
+                'variant' => 'outline',
+                'confirm' => __('End this trial? The channel partner record will be kept.'),
+                'disabled' => false,
+                'modal_event' => null,
+            ];
+        }
+
+        if ($lead !== null && $lead->canActivateSubscription()) {
+            $actions[] = [
+                'label' => __('Activate Subscription'),
+                'href' => null,
+                'method' => null,
+                'variant' => 'default',
+                'confirm' => null,
+                'disabled' => false,
+                'modal_event' => 'activate',
+            ];
+        }
+
+        if ($lead !== null && $lead->canOnboard()) {
+            $actions[] = [
+                'label' => __('Onboard'),
+                'href' => null,
+                'method' => null,
+                'variant' => 'default',
+                'confirm' => null,
+                'disabled' => false,
+                'modal_event' => 'onboard',
+            ];
+        }
+
+        if ($subscription !== null && $subscription->status === SubscriptionStatus::Active) {
+            $actions[] = [
+                'label' => __('Pause'),
+                'href' => route('platform.revenue.subscriptions.pause', $subscription),
+                'method' => 'POST',
+                'variant' => 'outline',
+                'confirm' => __('Pause this subscription?'),
+                'disabled' => false,
+                'modal_event' => null,
+            ];
+        }
+
+        if ($subscription !== null && $subscription->status === SubscriptionStatus::Paused) {
+            $actions[] = [
+                'label' => __('Resume'),
+                'href' => route('platform.revenue.subscriptions.resume', $subscription),
+                'method' => 'POST',
+                'variant' => 'default',
+                'confirm' => null,
+                'disabled' => false,
+                'modal_event' => null,
+            ];
+        }
+
+        if ($subscription !== null && in_array($subscription->status, [
+            SubscriptionStatus::Active,
+            SubscriptionStatus::Trial,
+            SubscriptionStatus::PastDue,
+            SubscriptionStatus::Paused,
+        ], true)) {
+            $actions[] = [
+                'label' => __('Cancel'),
+                'href' => route('platform.revenue.subscriptions.cancel', $subscription),
+                'method' => 'POST',
+                'variant' => 'destructive',
+                'confirm' => __('Cancel this subscription?'),
+                'disabled' => false,
+                'modal_event' => null,
+            ];
+        }
+
+        return $actions;
     }
 
     public function overview(Tenant $tenant): array

@@ -25,21 +25,14 @@ class StoreQuotationModalRequest extends FormRequest
             'owner_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
+            'rera_number' => ['nullable', 'string', 'max:100'],
+            'gst_number' => ['nullable', 'string', 'max:30'],
             'plan_id' => ['required', 'integer', Rule::exists('plans', 'id')],
             'billing_cycle' => ['required', Rule::enum(BillingCycle::class)],
-            'trial_enabled' => ['sometimes', 'boolean'],
-            'trial_days' => ['nullable', 'integer', 'min:1', 'max:90', 'required_if:trial_enabled,1'],
             'plan_price' => ['required', 'integer', 'min:0'],
             'discount_amount' => ['required', 'integer', 'min:0'],
             'tax_amount' => ['required', 'integer', 'min:0'],
             'valid_until' => ['required', 'date', 'after_or_equal:today'],
         ];
-    }
-
-    protected function prepareForValidation(): void
-    {
-        $this->merge([
-            'trial_enabled' => $this->boolean('trial_enabled'),
-        ]);
     }
 }

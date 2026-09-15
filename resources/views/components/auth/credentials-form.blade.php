@@ -1,6 +1,7 @@
 @props([
     'action',
     'forgotPassword' => false,
+    'forgotPasswordRoute' => 'password.request',
 ])
 
 <form method="POST" action="{{ $action }}" {{ $attributes->merge(['class' => 'space-y-4']) }}>
@@ -68,13 +69,20 @@
         <span class="text-sm text-slate-500">{{ __('Remember Device') }}</span>
     </label>
 
+    @if (config('services.recaptcha.enabled'))
+        <div class="flex justify-center">
+            <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}" data-theme="light"></div>
+        </div>
+        <x-input-error :messages="$errors->get('g-recaptcha-response')" class="mt-2" />
+    @endif
+
     <x-ui.button type="submit" variant="default" class="w-full">
         {{ __('Sign In') }}
     </x-ui.button>
 
     @if ($forgotPassword)
         <div class="text-center">
-            <x-ui.button variant="link" :href="route('password.request')">
+            <x-ui.button variant="link" :href="route($forgotPasswordRoute)">
                 {{ __('Forgot your password?') }}
             </x-ui.button>
         </div>

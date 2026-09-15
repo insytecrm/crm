@@ -14,6 +14,7 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
 #[Fillable([
     'number',
+    'quotation_id',
     'tenant_id',
     'partner_subscription_id',
     'plan_id',
@@ -72,6 +73,14 @@ class BillingInvoice extends Model
     public function getRouteKeyName(): string
     {
         return 'number';
+    }
+
+    /**
+     * @return BelongsTo<Quotation, $this>
+     */
+    public function quotation(): BelongsTo
+    {
+        return $this->belongsTo(Quotation::class);
     }
 
     /**

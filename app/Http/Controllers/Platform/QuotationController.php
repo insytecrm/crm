@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Actions\AcceptQuotation;
-use App\Actions\CreateSubscriptionFromQuotation;
 use App\Actions\DuplicateQuotation;
 use App\Actions\ExpireQuotations;
-use App\Actions\OnboardQuotationPartner;
 use App\Actions\RejectQuotation;
 use App\Actions\SendQuotation;
 use App\Actions\UpdateQuotation;
@@ -14,7 +12,7 @@ use App\Enums\BillingCycle;
 use App\Enums\QuotationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\AcceptQuotationRequest;
-use App\Http\Requests\Platform\OnboardQuotationRequest;
+use App\Http\Requests\Platform\SendQuotationRequest;
 use App\Http\Requests\Platform\UpdateQuotationRequest;
 use App\Models\Plan;
 use App\Models\PlatformLead;
@@ -135,13 +133,21 @@ class QuotationController extends Controller
             ->with('status', __('Quotation updated.'));
     }
 
-    public function send(Quotation $quotation, SendQuotation $action): RedirectResponse
-    {
-        $action->handle($quotation);
+    public function send(
+        SendQuotationRequest $request,
+        Quotation $quotation,
+        SendQuotation $action,
+    ): RedirectResponse {
+        $email = $request->validated('email');
+        $result = $action->handle($quotation, $email);
+
+        $status = $result['mail_sent']
+            ? __('Quotation sent to :email.', ['email' => $email])
+            : __('Quotation marked as sent, but the email could not be delivered. Check Utilities SMTP settings.');
 
         return redirect()
             ->back()
-            ->with('status', __('Quotation sent.'));
+            ->with('status', $status);
     }
 
     public function accept(
@@ -199,54 +205,6 @@ class QuotationController extends Controller
             'Content-Type' => 'text/plain; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="'.$quotation->number.'.txt"',
         ]);
-    }
-
-    public function onboardForm(Quotation $quotation): RedirectResponse|View
-    {
-        if (! $quotation->canStartOnboarding()) {
-            return redirect()
-                ->route('platform.quotations.show', $quotation)
-                ->withErrors(['quotation' => __('Onboarding is only available for accepted quotations that are not yet onboarded.')]);
-        }
-
-        $quotation->load('plan');
-
-        return view('platform.quotations.onboard', [
-            'quotation' => $quotation,
-            'partner' => $this->prospectDetails($quotation),
-        ]);
-    }
-
-    public function onboard(
-        OnboardQuotationRequest $request,
-        Quotation $quotation,
-        OnboardQuotationPartner $action,
-    ): RedirectResponse {
-        $result = $action->handle($quotation, $request->validated());
-
-        return redirect()
-            ->route('platform.quotations.show', $result['quotation'])
-            ->with('status', __('Client onboarded. Hand over the login details below.'))
-            ->with('quotation_handover', [
-                'company_name' => $result['tenant']->name,
-                'admin_name' => $result['admin_name'],
-                'admin_email' => $result['admin_email'],
-                'admin_password' => $result['admin_password'],
-                'login_url' => $result['login_url'],
-                'subscription_url' => route('platform.revenue.subscriptions.show', $result['subscription']),
-                'partner_url' => route('tenants.show', $result['tenant']),
-            ]);
-    }
-
-    public function createSubscription(
-        Quotation $quotation,
-        CreateSubscriptionFromQuotation $action,
-    ): RedirectResponse {
-        $subscription = $action->handle($quotation);
-
-        return redirect()
-            ->route('platform.revenue.subscriptions.show', $subscription)
-            ->with('status', __('Subscription and first invoice created from quotation.'));
     }
 
     /**

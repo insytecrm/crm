@@ -5,7 +5,7 @@
             noteActionUrl: '',
             setNoteLead(leadId) {
                 this.noteLeadId = leadId;
-                this.noteActionUrl = @js(url('/platform/leads')).replace(/\/$/, '') + '/' + leadId + '/notes';
+                this.noteActionUrl = @js(str_replace('999999', '__ID__', route('platform.leads.notes.store', ['lead' => 999999]))).replace('__ID__', leadId);
             },
         }"
         x-on:open-lead-note.window="setNoteLead($event.detail.leadId); $dispatch('open-modal', 'add-lead-note-index')"
@@ -27,4 +27,6 @@
             </form>
         </x-modal>
     </div>
+
+    @include('platform.leads.partials.send-whatsapp-modal')
 @endpush

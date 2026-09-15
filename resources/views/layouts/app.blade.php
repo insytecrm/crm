@@ -73,7 +73,7 @@
     </x-slot:navigation>
 
     <x-slot:footer>
-        <x-sidebar.link :href="route('platform.settings')" :active="request()->routeIs('platform.settings', 'profile.*')">
+        <x-sidebar.link :href="route('platform.settings')" :active="request()->routeIs('platform.settings', 'platform.settings.*')">
             <x-slot:icon>
                 <x-sidebar.nav-icon name="settings" />
             </x-slot:icon>

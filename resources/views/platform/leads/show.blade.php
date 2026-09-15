@@ -20,23 +20,26 @@
             <template x-if="! editing">
                 <div class="flex flex-wrap items-center gap-2">
                     <x-ui.button type="button" variant="outline" x-on:click="editing = true">{{ __('Edit') }}</x-ui.button>
-                    <x-ui.button type="button" variant="default" x-on:click="$dispatch('open-modal', 'create-quotation')">{{ __('Create Quotation') }}</x-ui.button>
+                    @include('platform.leads.partials.action-buttons', ['lead' => $lead, 'showView' => false])
                 </div>
             </template>
-
-            <x-ui.popover side="bottom" align="end" width="52" content-class="p-1" close-on-content-click>
-                <x-slot:trigger>
-                    <button type="button" class="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50" aria-label="{{ __('More actions') }}">⋯</button>
-                </x-slot:trigger>
-                <x-ui.popover.item as="button" type="button" x-on:click="editing = true">{{ __('Edit') }}</x-ui.popover.item>
-                <x-ui.popover.item as="button" type="button" x-on:click="$dispatch('open-modal', 'add-lead-note')">{{ __('Add Note') }}</x-ui.popover.item>
-                <x-ui.popover.item as="button" type="button" x-on:click="$dispatch('open-modal', 'create-quotation')">{{ __('Create Quotation') }}</x-ui.popover.item>
-                <x-ui.popover.item as="button" type="button" x-on:click="document.getElementById('pipeline')?.scrollIntoView({ behavior: 'smooth' })">{{ __('Change Stage') }}</x-ui.popover.item>
-            </x-ui.popover>
         </div>
     </div>
 
     <x-auth-session-status class="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700" :status="session('status')" />
+
+    @if ($handover = session('lead_handover'))
+        <x-platform.panel class="mb-4 border-emerald-100" :title="__('Handover login details')" compact>
+            <dl class="grid gap-2 text-sm sm:grid-cols-2">
+                <div><dt class="text-slate-500">{{ __('Company') }}</dt><dd class="font-medium text-black">{{ $handover['company_name'] }}</dd></div>
+                <div><dt class="text-slate-500">{{ __('Admin Email') }}</dt><dd class="font-medium text-black">{{ $handover['admin_email'] }}</dd></div>
+                @if (! empty($handover['admin_password']))
+                    <div><dt class="text-slate-500">{{ __('Temporary Password') }}</dt><dd class="font-medium text-black">{{ $handover['admin_password'] }}</dd></div>
+                @endif
+                <div><dt class="text-slate-500">{{ __('Login URL') }}</dt><dd class="font-medium text-black"><a href="{{ $handover['login_url'] }}" class="text-navy hover:underline">{{ $handover['login_url'] }}</a></dd></div>
+            </dl>
+        </x-platform.panel>
+    @endif
 
     <x-platform.panel class="mb-4" id="pipeline" :title="__('Pipeline')" compact>
         @include('platform.leads.partials.stage-pipeline', ['lead' => $lead, 'stages' => $stages])
@@ -294,6 +297,7 @@
     </div>
 
     @push('modals')
+        <div x-on:open-lead-note.window="$dispatch('open-modal', 'add-lead-note')">
         <x-modal name="add-lead-note" maxWidth="md" :show="$openNoteModal" focusable>
             <form method="POST" action="{{ route('platform.leads.notes.store', $lead) }}">
                 @csrf
@@ -310,20 +314,20 @@
                 </x-ui.modal.footer>
             </form>
         </x-modal>
+        </div>
+
+        @include('platform.leads.partials.send-whatsapp-modal')
     @endpush
 
+    @include('platform.leads.partials.partner-workflow-modal', [
+        'trialPlans' => $trialPlans ?? [],
+        'askEmailCredentials' => $askEmailCredentials ?? false,
+        'alwaysEmailCredentials' => $alwaysEmailCredentials ?? false,
+    ])
     @include('platform.quotations.partials.create-wizard-modal', [
         'openQuotationModal' => $openQuotationModal,
-        'selectedLeadId' => $lead->id,
-        'selectedLead' => [
-            'id' => $lead->id,
-            'company_name' => $lead->company_name,
-            'contact_person' => $lead->contact_person,
-            'email' => $lead->email,
-            'phone' => $lead->phone,
-            'stage' => $lead->stage->label(),
-        ],
-        'leadSearchOptions' => $leadSearchOptions ?? [],
+        'leadSelectOptions' => $leadSelectOptions ?? ($leadSearchOptions ?? []),
+        'quotationPlans' => $quotationPlans ?? [],
     ])
     </div>
 </x-app-layout>

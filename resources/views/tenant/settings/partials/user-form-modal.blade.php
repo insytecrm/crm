@@ -84,6 +84,16 @@
                 />
             </div>
 
+            @if (! $settingsUser && ($askEmailCredentials ?? false))
+                <label class="inline-flex items-start gap-2 rounded-lg border border-slate-100 p-3 text-sm text-slate-700">
+                    <input type="checkbox" name="email_credentials" value="1" class="mt-0.5 rounded border-slate-300 text-navy focus:ring-navy" @checked(old('email_credentials', true))>
+                    <span>
+                        <span class="font-medium text-black">{{ __('Email login details') }}</span>
+                        <span class="mt-0.5 block text-xs text-slate-500">{{ __('Send credentials using Utilities SMTP.') }}</span>
+                    </span>
+                </label>
+            @endif
+
             <div class="flex justify-end gap-2">
                 <x-ui.button type="button" variant="outline" @click="$dispatch('close-modal', '{{ $modalName }}')">{{ __('Cancel') }}</x-ui.button>
                 <x-ui.button type="submit" variant="default">{{ $settingsUser ? __('Save User') : __('Create User') }}</x-ui.button>

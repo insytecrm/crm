@@ -2,16 +2,23 @@
 
 namespace App\Actions;
 
+use App\Enums\BillingCycle;
 use App\Enums\BillingInvoiceStatus;
 use App\Enums\BillingPaymentStatus;
 use App\Enums\BillingPaymentType;
+use App\Enums\SubscriptionStatus;
 use App\Models\BillingInvoice;
 use App\Models\BillingPayment;
+use App\Models\PartnerSubscription;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class MarkBillingInvoicePaid
 {
+    public function __construct(
+        private SyncPlatformLeadFromQuotation $syncLead,
+    ) {}
+
     public function handle(BillingInvoice $invoice): BillingInvoice
     {
         return DB::transaction(function () use ($invoice): BillingInvoice {
@@ -51,7 +58,46 @@ class MarkBillingInvoicePaid
                 ]);
             }
 
+            $this->advanceSubscriptionAfterPayment($invoice);
+            $this->syncLeadAfterPayment($invoice->refresh());
+
             return $invoice->refresh();
         });
+    }
+
+    private function advanceSubscriptionAfterPayment(BillingInvoice $invoice): void
+    {
+        if ($invoice->partner_subscription_id === null || $invoice->period_end === null) {
+            return;
+        }
+
+        /** @var PartnerSubscription|null $subscription */
+        $subscription = PartnerSubscription::query()->find($invoice->partner_subscription_id);
+
+        if ($subscription === null) {
+            return;
+        }
+
+        $nextBillingAt = $invoice->billing_cycle === BillingCycle::Annual
+            ? $invoice->period_end->copy()->addYearNoOverflow()
+            : $invoice->period_end->copy()->addMonthNoOverflow();
+
+        $subscription->update([
+            'next_billing_at' => $nextBillingAt,
+            'status' => $subscription->status === SubscriptionStatus::PastDue
+                ? SubscriptionStatus::Active
+                : $subscription->status,
+        ]);
+    }
+
+    private function syncLeadAfterPayment(BillingInvoice $invoice): void
+    {
+        $invoice->loadMissing('quotation.platformLead');
+
+        $lead = $invoice->quotation?->platformLead;
+
+        if ($lead !== null) {
+            $this->syncLead->afterInvoicePaid($lead);
+        }
     }
 }

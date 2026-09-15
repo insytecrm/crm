@@ -3,6 +3,9 @@
         null => ['label' => __('Total'), 'count' => $statistics['total'], 'accent' => 'navy'],
         'active' => ['label' => __('Active'), 'count' => $statistics['active'], 'accent' => 'emerald'],
         'trial' => ['label' => __('Trial'), 'count' => $statistics['trial'], 'accent' => 'amber'],
+        'inactive' => ['label' => __('Inactive'), 'count' => $statistics['inactive'], 'accent' => 'slate'],
+        'cancelled' => ['label' => __('Cancelled'), 'count' => $statistics['cancelled'], 'accent' => 'rose'],
+        'trial_ended' => ['label' => __('Trial Ended'), 'count' => $statistics['trial_ended'], 'accent' => 'slate'],
         'past_due' => ['label' => __('Overdue'), 'count' => $statistics['past_due'], 'accent' => 'rose'],
         'suspended' => ['label' => __('Suspended'), 'count' => $statistics['suspended'], 'accent' => 'rose'],
     ];
@@ -27,7 +30,7 @@
     <x-auth-session-status class="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700" :status="session('status')" />
     <x-input-error class="mb-4" :messages="$errors->get('tenant')" />
 
-    <div class="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+    <div class="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
         @foreach ($statusFilters as $statusKey => $stat)
             <a
                 href="{{ route('tenants.index', array_filter(['search' => $filters['search'] ?: null, 'status' => $statusKey])) }}"
@@ -43,6 +46,7 @@
                     'text-emerald-600' => $stat['accent'] === 'emerald',
                     'text-amber-600' => $stat['accent'] === 'amber',
                     'text-rose-600' => $stat['accent'] === 'rose',
+                    'text-slate-600' => $stat['accent'] === 'slate',
                     'text-black' => $stat['accent'] === 'navy',
                 ])>{{ number_format($stat['count']) }}</p>
             </a>
@@ -149,7 +153,16 @@
                                     {{ number_format($tenant->users_count) }}{{ $tenant->users_limit ? '/'.number_format($tenant->users_limit) : '' }}
                                 </td>
                                 <td class="px-3 py-4 whitespace-nowrap">
-                                    <x-platform.status-badge :status="$tenant->status" />
+                                    @if ($tenant->account_status)
+                                        <div class="inline-flex items-center gap-1.5">
+                                            <x-platform.status-badge :status="$tenant->account_status" />
+                                            @if ($tenant->account_status_shows_due)
+                                                <span class="text-xs font-semibold text-orange-600">({{ __('Due') }})</span>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="text-sm text-slate-400">—</span>
+                                    @endif
                                 </td>
                                 <td class="px-3 py-4 whitespace-nowrap text-sm text-slate-600">{{ $tenant->last_active_label }}</td>
                                 <td class="px-3 py-4 whitespace-nowrap text-end" onclick="event.stopPropagation()">

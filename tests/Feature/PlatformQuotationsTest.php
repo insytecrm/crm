@@ -3,16 +3,17 @@
 use App\Enums\BillingCycle;
 use App\Enums\BillingInvoiceStatus;
 use App\Enums\QuotationStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\UtilityCredentialsDeliveryMode;
+use App\Enums\UtilityMailEncryption;
+use App\Mail\UtilityTemplatedMail;
 use App\Models\BillingInvoice;
-use App\Models\PartnerSubscription;
 use App\Models\Plan;
 use App\Models\PlatformLead;
+use App\Models\PlatformMailSetting;
 use App\Models\Quotation;
-use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Platform\QuotationPricing;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 test('quotation create entry opens the modal on the quotations list', function () {
     $admin = User::factory()->superAdmin()->create();
@@ -26,7 +27,7 @@ test('quotation create entry opens the modal on the quotations list', function (
         ->assertOk()
         ->assertSee('Create Quotation')
         ->assertSee('create-quotation')
-        ->assertSee('quotationCreateWizard');
+        ->assertSee('create-quotation');
 });
 
 test('super admins can view quotations index without mock data', function () {
@@ -74,8 +75,6 @@ test('super admins can create a draft quotation from the popup modal', function 
             'phone' => '9888888888',
             'plan_id' => $plan->id,
             'billing_cycle' => BillingCycle::Monthly->value,
-            'trial_enabled' => 1,
-            'trial_days' => 7,
             'plan_price' => $pricing['plan_price'],
             'discount_amount' => $pricing['discount_amount'],
             'tax_amount' => $pricing['tax_amount'],
@@ -160,80 +159,22 @@ test('super admins can create a draft quotation for a prospect through the wizar
     $response->assertRedirect(route('platform.quotations.show', $quotation));
 });
 
-test('accepted quotation onboarding creates partner subscription invoice and handover login', function () {
-    $admin = User::factory()->superAdmin()->create();
-    $plan = Plan::query()->where('key', 'growth')->firstOrFail();
-    $plan->update(['price_monthly' => 4999]);
-
-    $quotation = Quotation::factory()->accepted()->create([
-        'company_name' => 'ABC Realty',
-        'owner_name' => 'Rahul Sharma',
-        'email' => 'rahul@abcrealty.test',
-        'phone' => '9999999999',
-        'plan_id' => $plan->id,
-        'billing_cycle' => BillingCycle::Monthly,
-        'plan_price' => 4999,
-        'discount_amount' => 0,
-        'tax_amount' => 900,
-        'total' => 5899,
-        'trial_enabled' => true,
-        'trial_days' => 7,
-        'tenant_id' => null,
-    ]);
-
-    $this->actingAs($admin)
-        ->get(route('platform.quotations.onboard', $quotation))
-        ->assertOk()
-        ->assertSee('Start Onboarding')
-        ->assertSee('ABC Realty');
-
-    $response = $this->actingAs($admin)
-        ->post(route('platform.quotations.onboard.store', $quotation), [
-            'admin_name' => 'Rahul Sharma',
-            'admin_email' => 'admin@abcrealty.test',
-            'slug' => 'abcrealty',
-        ])
-        ->assertRedirect(route('platform.quotations.show', $quotation));
-
-    $quotation->refresh();
-    $tenant = Tenant::query()->find('abcrealty');
-    $subscription = PartnerSubscription::query()->whereKey($quotation->partner_subscription_id)->first();
-    $invoice = BillingInvoice::query()->where('partner_subscription_id', $subscription?->id)->first();
-
-    expect($tenant)->not->toBeNull()
-        ->and($tenant->name)->toBe('ABC Realty')
-        ->and($tenant->plan_key)->toBe('growth')
-        ->and($quotation->tenant_id)->toBe('abcrealty')
-        ->and($quotation->onboarded_at)->not->toBeNull()
-        ->and($subscription)->not->toBeNull()
-        ->and($subscription->status)->toBe(SubscriptionStatus::Trial)
-        ->and($subscription->amount)->toBe(4999)
-        ->and($invoice)->not->toBeNull()
-        ->and($invoice->status)->toBe(BillingInvoiceStatus::Pending)
-        ->and($invoice->total)->toBe(5899);
-
-    $tenant->run(function () {
-        expect(DB::table('users')->where('email', 'admin@abcrealty.test')->exists())->toBeTrue();
-    });
-
-    $response->assertSessionHas('quotation_handover');
-    $handover = session('quotation_handover');
-
-    expect($handover['admin_email'])->toBe('admin@abcrealty.test')
-        ->and($handover['admin_password'])->not->toBeEmpty()
-        ->and($handover['login_url'])->not->toBeEmpty();
-
-    $this->actingAs($admin)
-        ->get(route('platform.quotations.show', $quotation))
-        ->assertOk()
-        ->assertSee('Handover login details')
-        ->assertSee('admin@abcrealty.test')
-        ->assertSee($handover['admin_password']);
-});
-
 test('super admins can send and accept prospect quotations before onboarding', function () {
+    Mail::fake();
+
     $admin = User::factory()->superAdmin()->create();
     $plan = Plan::query()->where('key', 'growth')->firstOrFail();
+
+    PlatformMailSetting::query()->create([
+        'host' => 'smtp.mail.test',
+        'port' => 587,
+        'username' => 'noreply@insyte.test',
+        'password' => 'secret-pass',
+        'from_email' => 'noreply@insyte.test',
+        'from_name' => 'InSyte CRM',
+        'encryption' => UtilityMailEncryption::Tls,
+        'credentials_delivery_mode' => UtilityCredentialsDeliveryMode::Ask,
+    ]);
 
     $quotation = Quotation::factory()->create([
         'plan_id' => $plan->id,
@@ -245,18 +186,50 @@ test('super admins can send and accept prospect quotations before onboarding', f
     ]);
 
     $this->actingAs($admin)
-        ->post(route('platform.quotations.send', $quotation))
-        ->assertRedirect(route('platform.quotations.show', $quotation));
+        ->from(route('platform.quotations.show', $quotation))
+        ->post(route('platform.quotations.send', $quotation), [
+            'email' => 'owner@prime.test',
+        ])
+        ->assertRedirect(route('platform.quotations.show', $quotation))
+        ->assertSessionHas('status', __('Quotation sent to :email.', ['email' => 'owner@prime.test']));
 
     expect($quotation->refresh()->status)->toBe(QuotationStatus::Sent);
+
+    Mail::assertSent(UtilityTemplatedMail::class, function (UtilityTemplatedMail $mail): bool {
+        return $mail->hasTo('owner@prime.test');
+    });
 
     $this->actingAs($admin)
         ->post(route('platform.quotations.accept', $quotation))
         ->assertRedirect(route('platform.quotations.show', $quotation));
 
+    $invoice = BillingInvoice::query()->where('quotation_id', $quotation->id)->first();
+
     expect($quotation->refresh()->status)->toBe(QuotationStatus::Accepted)
-        ->and($quotation->canStartOnboarding())->toBeTrue()
-        ->and($quotation->canCreateSubscription())->toBeFalse();
+        ->and($invoice)->not->toBeNull()
+        ->and($invoice->status)->toBe(BillingInvoiceStatus::Pending)
+        ->and($quotation->canStartOnboarding())->toBeFalse();
+});
+
+test('sending a quotation without smtp configured still marks it sent with a warning', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $plan = Plan::query()->where('key', 'growth')->firstOrFail();
+
+    $quotation = Quotation::factory()->create([
+        'plan_id' => $plan->id,
+        'email' => 'owner@prime.test',
+        'status' => QuotationStatus::Draft,
+    ]);
+
+    $this->actingAs($admin)
+        ->from(route('platform.quotations.show', $quotation))
+        ->post(route('platform.quotations.send', $quotation), [
+            'email' => 'owner@prime.test',
+        ])
+        ->assertRedirect(route('platform.quotations.show', $quotation))
+        ->assertSessionHas('status', __('Quotation marked as sent, but the email could not be delivered. Check Utilities SMTP settings.'));
+
+    expect($quotation->refresh()->status)->toBe(QuotationStatus::Sent);
 });
 
 test('only draft quotations can be edited and duplicates stay prospect-only', function () {

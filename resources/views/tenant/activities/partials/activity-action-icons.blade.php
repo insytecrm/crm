@@ -18,6 +18,7 @@
             method="POST"
             action="{{ route('tenant.leads.activities.store', $lead) }}"
             class="inline"
+            @click.stop
         >
             @csrf
             <input type="hidden" name="type" value="call_made">
@@ -30,7 +31,7 @@
             icon="whatsapp"
             type="button"
             :title="__('WhatsApp')"
-            @click="$dispatch('open-modal', 'send-whatsapp'); $dispatch('prepare-whatsapp', {{ $lead->id }})"
+            @click.stop="$dispatch('prepare-whatsapp', {{ $lead->id }})"
         />
     @endif
     @unless ($activity['is_completed'] ?? false)
@@ -38,13 +39,13 @@
             type="button"
             icon="reminder"
             :title="__('Reschedule')"
-            @click="$dispatch('open-modal', '{{ $rescheduleModalName }}')"
+            @click.stop="$dispatch('open-modal', '{{ $rescheduleModalName }}')"
         />
         <x-ui.action-icon
             type="button"
             icon="complete"
             :title="__('Complete')"
-            @click="$dispatch('open-modal', '{{ $completeModalName }}')"
+            @click.stop="$dispatch('open-modal', '{{ $completeModalName }}')"
         />
     @endunless
 </x-ui.action-icon-group>

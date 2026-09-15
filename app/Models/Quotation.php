@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
@@ -21,6 +22,8 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
     'owner_name',
     'email',
     'phone',
+    'rera_number',
+    'gst_number',
     'tenant_id',
     'plan_id',
     'billing_cycle',
@@ -195,19 +198,22 @@ class Quotation extends Model
         return $this->isDraft() || $this->isSent();
     }
 
+    /**
+     * @return HasMany<BillingInvoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(BillingInvoice::class);
+    }
+
     public function canStartOnboarding(): bool
     {
-        return $this->isAccepted()
-            && $this->partner_subscription_id === null
-            && ($this->tenant_id === null || $this->tenant_id === '');
+        return false;
     }
 
     public function canCreateSubscription(): bool
     {
-        return $this->isAccepted()
-            && $this->partner_subscription_id === null
-            && $this->tenant_id !== null
-            && $this->tenant_id !== '';
+        return false;
     }
 
     public function canDuplicate(): bool

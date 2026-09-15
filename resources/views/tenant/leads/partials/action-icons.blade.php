@@ -20,6 +20,7 @@
                 method="POST"
                 action="{{ route('tenant.leads.activities.store', $lead) }}"
                 class="inline"
+                @click.stop
             >
                 @csrf
                 <input type="hidden" name="type" value="call_made">
@@ -40,7 +41,7 @@
                 type="button"
                 :size="$iconSize"
                 :title="__('WhatsApp')"
-                @click="$dispatch('open-modal', 'send-whatsapp'); $dispatch('prepare-whatsapp', {{ $lead->id }})"
+                @click.stop="$dispatch('prepare-whatsapp', {{ $lead->id }})"
             />
         </span>
     @endif
@@ -50,7 +51,7 @@
             type="button"
             :size="$iconSize"
             :title="__('Schedule follow-up')"
-            @click="$dispatch('open-modal', 'follow-up-{{ $lead->id }}')"
+            @click.stop="$dispatch('open-modal', 'follow-up-{{ $lead->id }}')"
         />
     </span>
     <span @if ($alpine) x-show="actions.site_visit" x-cloak @endif class="inline">
@@ -59,7 +60,7 @@
             type="button"
             :size="$iconSize"
             :title="__('Schedule site visit')"
-            @click="$dispatch('open-modal', 'site-visit-{{ $lead->id }}')"
+            @click.stop="$dispatch('open-modal', 'site-visit-{{ $lead->id }}')"
         />
     </span>
     @unless ($hideCreateBooking || $lead->hasBooking())
@@ -90,7 +91,7 @@
                 type="button"
                 :size="$iconSize"
                 :title="__('Edit')"
-                @click="editing = true"
+                @click.stop="editing = true"
             />
         @else
             <x-ui.action-icon
@@ -98,7 +99,7 @@
                 type="button"
                 :size="$iconSize"
                 :title="__('Edit')"
-                @click="$dispatch('open-lead', {{ $lead->id }})"
+                @click.stop="$dispatch('open-lead', {{ $lead->id }})"
             />
         @endif
     @endif

@@ -63,7 +63,7 @@
             </a>
             <div>
                 <h1 class="text-lg font-semibold text-black">{{ $title }}</h1>
-                <p class="text-sm text-slate-500">{{ __('Insert lead, user, company, property, and booking details as variables.') }}</p>
+                <p class="text-sm text-slate-500">{{ __('Insert lead, activity, user, company, property, and booking details as variables.') }}</p>
             </div>
         </div>
 
@@ -178,9 +178,9 @@
             <aside class="flex flex-col gap-3 lg:sticky lg:top-4">
                 <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                     <h2 class="text-sm font-semibold text-black">{{ __('Variables') }}</h2>
-                    <p class="mt-1 text-xs text-slate-500">{{ __('Click a field to insert it at the cursor.') }}</p>
+                    <p class="mt-1 text-xs text-slate-500">{{ __('Click a field to insert it at the cursor. Variables are grouped by system section.') }}</p>
 
-                    <div class="mt-3 flex flex-col gap-3">
+                    <div class="mt-3 max-h-[calc(100vh-12rem)] overflow-y-auto pr-1 flex flex-col gap-3">
                         @foreach ($variableGroups as $group)
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ $group['label'] }}</p>

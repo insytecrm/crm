@@ -4,6 +4,7 @@ use App\Actions\IssueTenantLeadApiToken;
 use App\Enums\BillingInvoiceStatus;
 use App\Enums\PropertyPortal;
 use App\Enums\SubscriptionStatus;
+use App\Enums\TenantStatus;
 use App\Models\Automation;
 use App\Models\BillingDiscount;
 use App\Models\BillingInvoice;
@@ -46,6 +47,27 @@ test('super admins can open partner overview shell and tabs', function () {
         ->assertSee('Growth')
         ->assertDontSee('InSyte AI OS')
         ->assertDontSee('Priority Leads');
+});
+
+test('partner shell shows suspended when an active subscription workspace is suspended', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $tenant = createTestTenant([
+        'slug' => 'suspendedpartner',
+        'name' => 'Suspended Partner',
+        'plan_key' => 'growth',
+    ]);
+    $tenant->update(['status' => TenantStatus::Suspended]);
+    $plan = Plan::query()->where('key', 'growth')->firstOrFail();
+    PartnerSubscription::factory()->create([
+        'tenant_id' => $tenant->id,
+        'plan_id' => $plan->id,
+        'status' => SubscriptionStatus::Active,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('tenants.show', $tenant))
+        ->assertOk()
+        ->assertSee('Suspended');
 });
 
 test('partner users tab lists tenant users', function () {

@@ -22,13 +22,13 @@ class CreateQuotation
      *     owner_name: string,
      *     email: string,
      *     phone?: string|null,
+     *     rera_number?: string|null,
+     *     gst_number?: string|null,
      *     plan_id: int,
      *     billing_cycle: string,
      *     plan_price?: int,
      *     discount_amount?: int,
      *     tax_amount?: int,
-     *     trial_enabled?: bool,
-     *     trial_days?: int|null,
      *     valid_until?: string|\DateTimeInterface|null
      * }  $data
      */
@@ -45,9 +45,6 @@ class CreateQuotation
         $taxProvided = array_key_exists('tax_amount', $data) ? (int) $data['tax_amount'] : null;
         $pricing = QuotationPricing::calculate($planPrice, $discount, $taxProvided);
 
-        $trialEnabled = (bool) ($data['trial_enabled'] ?? false);
-        $trialDays = $trialEnabled ? (int) ($data['trial_days'] ?? $plan->trial_days ?? 7) : null;
-
         $validUntil = isset($data['valid_until']) && $data['valid_until'] !== null && $data['valid_until'] !== ''
             ? Carbon::parse($data['valid_until'])->toDateString()
             : now()->addDays(7)->toDateString();
@@ -59,6 +56,8 @@ class CreateQuotation
             'owner_name' => $data['owner_name'],
             'email' => $data['email'],
             'phone' => $data['phone'] ?? null,
+            'rera_number' => $data['rera_number'] ?? null,
+            'gst_number' => $data['gst_number'] ?? null,
             'tenant_id' => null,
             'plan_id' => $plan->id,
             'billing_cycle' => $cycle,
@@ -66,8 +65,8 @@ class CreateQuotation
             'discount_amount' => $pricing['discount_amount'],
             'tax_amount' => $pricing['tax_amount'],
             'total' => $pricing['total'],
-            'trial_enabled' => $trialEnabled,
-            'trial_days' => $trialDays,
+            'trial_enabled' => false,
+            'trial_days' => null,
             'valid_until' => $validUntil,
             'status' => QuotationStatus::Draft,
         ]);

@@ -39,15 +39,8 @@
                 </button>
             </x-slot:trigger>
             <x-ui.popover.item :href="route('platform.plans.duplicate', $plan)">{{ __('Duplicate') }}</x-ui.popover.item>
-            @if (! $plan->isArchived())
-                <button
-                    type="button"
-                    class="flex w-full items-center rounded-md px-2 py-1.5 text-sm font-medium text-rose-600 hover:bg-rose-50"
-                    @click="$dispatch('open-archive-plan')"
-                >
-                    {{ __('Archive') }}
-                </button>
-            @endif
+            @include('platform.plans.partials.archive-action', ['plan' => $plan, 'variant' => 'dialog'])
+            @include('platform.plans.partials.delete-action', ['plan' => $plan, 'variant' => 'dialog'])
         </x-ui.popover>
     </div>
 </div>
@@ -72,3 +65,4 @@
 {{ $slot }}
 
 @include('platform.plans.partials.archive-dialog', ['plan' => $plan])
+@include('platform.plans.partials.delete-dialog', ['plan' => $plan])

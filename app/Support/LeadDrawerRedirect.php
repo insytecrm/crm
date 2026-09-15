@@ -23,7 +23,7 @@ class LeadDrawerRedirect
         $previous = url()->previous();
         $path = parse_url($previous, PHP_URL_PATH) ?? '';
 
-        if (! self::shouldReopenDrawer($path, $previous)) {
+        if (! self::drawerIsAlreadyOpen($previous)) {
             return $previous;
         }
 
@@ -34,12 +34,8 @@ class LeadDrawerRedirect
         return self::appendLeadQuery($previous, $lead->id);
     }
 
-    private static function shouldReopenDrawer(string $path, string $url): bool
+    private static function drawerIsAlreadyOpen(string $url): bool
     {
-        if (preg_match('#/leads/?$#', $path) === 1) {
-            return true;
-        }
-
         parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $query);
 
         return isset($query['lead']);

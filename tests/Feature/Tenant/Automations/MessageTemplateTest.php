@@ -117,9 +117,16 @@ test('create template page shows variable groups', function () {
         ->assertSee('Current user')
         ->assertSee('Company')
         ->assertSee('Property')
+        ->assertSee('Follow-up · Upcoming')
+        ->assertSee('Follow-up · Completed')
+        ->assertSee('Site visit · Upcoming')
+        ->assertSee('Site visit · Previous')
+        ->assertSee('Site visit · Completed')
         ->assertSee('Booking')
         ->assertSee('{{lead.name}}', false)
-        ->assertSee('{{property.project_name}}', false);
+        ->assertSee('{{property.project_name}}', false)
+        ->assertSee('{{site_visit.upcoming.date}}', false)
+        ->assertSee('{{follow_up.completed.time}}', false);
 });
 
 test('tenant users can create a whatsapp template with variables', function () {

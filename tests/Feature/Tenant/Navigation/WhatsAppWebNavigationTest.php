@@ -1,13 +1,15 @@
 <?php
 
-test('tenant sidebar shows whatsapp web menu below tasks', function () {
+test('tenant sidebar shows whatsapp menu with triggers submenu', function () {
     createTestTenant();
     actingAsTenantUser();
 
     $this->get('/acme/dashboard')
         ->assertOk()
-        ->assertSee('WhatsApp Web')
-        ->assertSee(route('tenant.whatsapp-web.index', ['tenant' => 'acme'], false));
+        ->assertSee('WhatsApp')
+        ->assertSee('https://web.whatsapp.com/')
+        ->assertSee('Triggers')
+        ->assertSee(route('tenant.whatsapp-triggers.index', ['tenant' => 'acme'], false));
 });
 
 test('tenant whatsapp web menu redirects to official whatsapp web', function () {

@@ -2,16 +2,25 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\Actions\ActivatePlatformLeadSubscription;
 use App\Actions\AddPlatformLeadNote;
 use App\Actions\CreatePlatformLead;
+use App\Actions\EndPlatformLeadTrial;
+use App\Actions\OnboardPlatformLead;
+use App\Actions\SendPlatformPartnerCredentialsMail;
+use App\Actions\SendPlatformTrialStartedMail;
+use App\Actions\StartPlatformLeadTrial;
 use App\Actions\UpdatePlatformLead;
 use App\Actions\UpdatePlatformLeadStage;
 use App\Contracts\ChannelPartnerProfileData;
+use App\Enums\AccountStatus;
 use App\Enums\PlatformLeadSource;
 use App\Enums\PlatformLeadStage;
 use App\Enums\SubscriptionStatus;
-use App\Enums\TenantStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Platform\ActivatePlatformLeadSubscriptionRequest;
+use App\Http\Requests\Platform\OnboardPlatformLeadRequest;
+use App\Http\Requests\Platform\StartPlatformLeadTrialRequest;
 use App\Http\Requests\Platform\StorePlatformLeadNoteRequest;
 use App\Http\Requests\Platform\StorePlatformLeadRequest;
 use App\Http\Requests\Platform\UpdatePlatformLeadNextActionRequest;
@@ -21,6 +30,7 @@ use App\Models\PartnerSubscription;
 use App\Models\Plan;
 use App\Models\PlatformLead;
 use App\Models\PlatformLeadActivity;
+use App\Models\PlatformMailSetting;
 use App\Models\User;
 use App\Queries\PlatformLeadStatistics;
 use App\Support\Platform\QuotationPricing;
@@ -42,7 +52,7 @@ class PlatformLeadController extends Controller
         $accountStatus = $request->string('account_status')->toString() ?: 'all';
 
         $query = PlatformLead::query()
-            ->with(['owner', 'tenant.partnerSubscriptions'])
+            ->with(['owner', 'tenant.partnerSubscriptions', 'quotations'])
             ->latest('id');
 
         if ($search !== '') {
@@ -118,7 +128,7 @@ class PlatformLeadController extends Controller
         if ($lead->hasLinkedAccount() && $lead->tenant !== null) {
             $accountOverview = $profile->overview($lead->tenant);
 
-            if (in_array($lead->stage, [PlatformLeadStage::ClientLive, PlatformLeadStage::Retention], true)) {
+            if (in_array($lead->stage, [PlatformLeadStage::Live, PlatformLeadStage::Retention], true)) {
                 $subscription = $profile->subscription($lead->tenant);
                 $nextBilling = collect($subscription['details'])
                     ->firstWhere('label', __('Next Billing'))['value'] ?? '—';
@@ -194,6 +204,111 @@ class PlatformLeadController extends Controller
         return redirect()
             ->back()
             ->with('status', __('Note added.'));
+    }
+
+    public function startTrial(
+        StartPlatformLeadTrialRequest $request,
+        PlatformLead $lead,
+        StartPlatformLeadTrial $action,
+        SendPlatformTrialStartedMail $sendTrialStartedMail,
+    ): RedirectResponse {
+        $result = $action->handle($lead, $request->validated(), $request->user());
+
+        $mailSent = $sendTrialStartedMail->handle([
+            'admin_name' => $result['admin_name'],
+            'admin_email' => $result['admin_email'],
+            'admin_password' => $result['admin_password'],
+            'login_url' => $result['login_url'],
+            'company_name' => $result['tenant']->name,
+            'plan_name' => $result['plan_name'],
+            'trial_days' => $result['trial_days'],
+            'trial_ends_at' => $result['trial_ends_at'],
+        ], $request->boolean('email_credentials'));
+
+        $status = $mailSent
+            ? __('Trial started and login details emailed.')
+            : __('Trial started. Share the login details with the client.');
+
+        return redirect()
+            ->back()
+            ->with('status', $status)
+            ->with('lead_handover', [
+                'company_name' => $result['tenant']->name,
+                'admin_name' => $result['admin_name'],
+                'admin_email' => $result['admin_email'],
+                'admin_password' => $result['admin_password'],
+                'login_url' => $result['login_url'],
+                'partner_url' => route('tenants.show', $result['tenant']),
+            ]);
+    }
+
+    public function endTrial(
+        PlatformLead $lead,
+        EndPlatformLeadTrial $action,
+    ): RedirectResponse {
+        $action->handle($lead, auth()->user());
+
+        return redirect()
+            ->back()
+            ->with('status', __('Trial ended. Channel partner record kept.'));
+    }
+
+    public function activateSubscription(
+        ActivatePlatformLeadSubscriptionRequest $request,
+        PlatformLead $lead,
+        ActivatePlatformLeadSubscription $action,
+    ): RedirectResponse {
+        $result = $action->handle($lead, $request->validated(), $request->user());
+
+        return redirect()
+            ->route('platform.leads.show', $lead)
+            ->with('status', __('Paid subscription activated on the existing trial workspace.'))
+            ->with('lead_handover', [
+                'company_name' => $result['tenant']->name,
+                'login_url' => $result['login_url'],
+                'partner_url' => route('tenants.show', $result['tenant']),
+                'subscription_url' => route('platform.revenue.subscriptions.show', $result['subscription']),
+            ]);
+    }
+
+    public function onboard(
+        OnboardPlatformLeadRequest $request,
+        PlatformLead $lead,
+        OnboardPlatformLead $action,
+        SendPlatformPartnerCredentialsMail $sendCredentialsMail,
+    ): RedirectResponse {
+        $data = $request->validated();
+
+        $result = $action->handle($lead, $data, $request->user());
+
+        $mailSent = false;
+
+        if ($result['admin_password'] !== null) {
+            $mailSent = $sendCredentialsMail->handle([
+                'admin_name' => $result['admin_name'],
+                'admin_email' => $result['admin_email'],
+                'admin_password' => $result['admin_password'],
+                'login_url' => $result['login_url'],
+                'company_name' => $result['tenant']->name,
+            ], $request->boolean('email_credentials'));
+        }
+
+        $status = $mailSent
+            ? __('Client onboarded and login details emailed.')
+            : __('Client onboarded. They now appear in Channel Partners.');
+
+        return redirect()
+            ->route('platform.leads.show', $lead)
+            ->with('status', $status)
+            ->with('lead_handover', array_filter([
+                'company_name' => $result['tenant']->name,
+                'admin_name' => $result['admin_name'],
+                'admin_email' => $result['admin_email'],
+                'admin_password' => $result['admin_password'],
+                'login_url' => $result['login_url'],
+                'partner_url' => route('tenants.show', $result['tenant']),
+                'subscription_url' => route('platform.revenue.subscriptions.show', $result['subscription']),
+            ]));
     }
 
     public function updateNextAction(
@@ -273,10 +388,12 @@ class PlatformLeadController extends Controller
         return [
             ['value' => 'all', 'label' => __('All account statuses')],
             ['value' => 'none', 'label' => __('No account')],
-            ['value' => TenantStatus::Active->value, 'label' => __('Active')],
-            ['value' => SubscriptionStatus::Trial->value, 'label' => __('Trial')],
-            ['value' => SubscriptionStatus::PastDue->value, 'label' => __('Past Due')],
-            ['value' => TenantStatus::Suspended->value, 'label' => __('Suspended')],
+            ...collect(AccountStatus::cases())
+                ->map(fn (AccountStatus $status): array => [
+                    'value' => $status->value,
+                    'label' => $status->label(),
+                ])
+                ->all(),
         ];
     }
 
@@ -306,29 +423,25 @@ class PlatformLeadController extends Controller
 
         $query->whereNotNull('tenant_id');
 
-        if ($accountStatus === TenantStatus::Active->value) {
-            $query->whereHas('tenant', fn ($builder) => $builder->where('status', TenantStatus::Active));
+        $status = AccountStatus::tryFrom($accountStatus);
 
+        if ($status === null) {
             return;
         }
 
-        if ($accountStatus === TenantStatus::Suspended->value) {
-            $query->whereHas('tenant', fn ($builder) => $builder->where('status', TenantStatus::Suspended));
+        $subscriptionStatuses = match ($status) {
+            AccountStatus::Trial => [SubscriptionStatus::Trial],
+            AccountStatus::Active => [SubscriptionStatus::Active, SubscriptionStatus::PastDue],
+            AccountStatus::Inactive => [SubscriptionStatus::Paused],
+            AccountStatus::Cancelled => [SubscriptionStatus::Cancelled],
+            AccountStatus::TrialEnded => [SubscriptionStatus::TrialEnded],
+        };
 
-            return;
-        }
+        $tenantIds = PartnerSubscription::query()
+            ->whereIn('status', $subscriptionStatuses)
+            ->pluck('tenant_id');
 
-        if (in_array($accountStatus, [SubscriptionStatus::Trial->value, SubscriptionStatus::PastDue->value], true)) {
-            $subscriptionStatus = $accountStatus === SubscriptionStatus::Trial->value
-                ? SubscriptionStatus::Trial
-                : SubscriptionStatus::PastDue;
-
-            $tenantIds = PartnerSubscription::query()
-                ->where('status', $subscriptionStatus)
-                ->pluck('tenant_id');
-
-            $query->whereIn('tenant_id', $tenantIds);
-        }
+        $query->whereIn('tenant_id', $tenantIds);
     }
 
     /**
@@ -366,21 +479,50 @@ class PlatformLeadController extends Controller
     private function quotationModalContext(Request $request): array
     {
         return [
-            'quotationPlans' => Plan::query()
-                ->active()
-                ->orderBy('price_monthly')
-                ->get()
-                ->map(fn (Plan $plan): array => [
-                    'id' => $plan->id,
-                    'name' => $plan->name,
-                    'price_monthly' => (int) $plan->price_monthly,
-                    'price_annual' => (int) $plan->price_annual,
-                    'trial_enabled' => (bool) $plan->trial_enabled,
-                    'trial_days' => $plan->trial_enabled ? (int) $plan->trial_days : null,
-                ])
-                ->all(),
+            'quotationPlans' => $this->planOptions(),
+            'trialPlans' => $this->trialPlanOptions(),
             'defaultTaxRate' => QuotationPricing::DefaultTaxRate,
+            'leadSelectOptions' => PlatformLead::quotationSelectOptions(),
             'leadSearchOptions' => PlatformLead::quotationSelectOptions(),
+            'askEmailCredentials' => PlatformMailSetting::current()?->isConfigured()
+                && PlatformMailSetting::current()->asksBeforeSending(),
+            'alwaysEmailCredentials' => PlatformMailSetting::current()?->isConfigured()
+                && PlatformMailSetting::current()->alwaysSends(),
         ];
+    }
+
+    /**
+     * @return list<array{id: int, name: string, price_monthly: int, price_annual: int}>
+     */
+    private function planOptions(): array
+    {
+        return Plan::query()
+            ->active()
+            ->orderBy('price_monthly')
+            ->get()
+            ->map(fn (Plan $plan): array => [
+                'id' => $plan->id,
+                'name' => $plan->name,
+                'price_monthly' => (int) $plan->price_monthly,
+                'price_annual' => (int) $plan->price_annual,
+            ])
+            ->all();
+    }
+
+    /**
+     * @return list<array{id: int, name: string}>
+     */
+    private function trialPlanOptions(): array
+    {
+        return Plan::query()
+            ->active()
+            ->where('trial_enabled', true)
+            ->orderBy('price_monthly')
+            ->get(['id', 'name'])
+            ->map(fn (Plan $plan): array => [
+                'id' => $plan->id,
+                'name' => $plan->name,
+            ])
+            ->all();
     }
 }

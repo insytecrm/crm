@@ -15,3 +15,7 @@ Schedule::command('google-sheets:sync')
 Schedule::command('quotations:expire')
     ->daily()
     ->withoutOverlapping();
+
+Schedule::command('billing:generate-renewal-invoices')
+    ->daily()
+    ->withoutOverlapping();

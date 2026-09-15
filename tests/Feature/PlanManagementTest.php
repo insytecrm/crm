@@ -5,8 +5,10 @@ use App\Enums\PlanCapability;
 use App\Enums\PlanFeature;
 use App\Enums\PlanPack;
 use App\Enums\PlanStatus;
+use App\Models\PartnerSubscription;
 use App\Models\Plan;
 use App\Models\PlanPackPreset;
+use App\Models\Quotation;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Platform\PlanDefinitionCatalog;
@@ -50,7 +52,6 @@ test('super admins can create a plan through the wizard', function () {
             'price_monthly' => 9999,
             'price_annual' => 99990,
             'trial_enabled' => '1',
-            'trial_days' => 14,
         ])
         ->assertRedirect(route('platform.plans.wizard.features'));
 
@@ -85,7 +86,7 @@ test('super admins can create a plan through the wizard', function () {
 
     expect($plan)->not->toBeNull()
         ->and($plan->price_monthly)->toBe(9999)
-        ->and($plan->trial_days)->toBe(14)
+        ->and($plan->trial_enabled)->toBeTrue()
         ->and($plan->hasFeature(PlanFeature::Crm))->toBeTrue()
         ->and($plan->hasFeature(PlanFeature::InsyteAi))->toBeTrue()
         ->and($plan->limitFor('users'))->toBe(8);
@@ -164,7 +165,6 @@ test('super admins can update a plan', function () {
             'price_monthly' => 5999,
             'price_annual' => 59990,
             'trial_enabled' => '1',
-            'trial_days' => 7,
             'features' => $plan->features,
             'packs' => $plan->packs,
             'capabilities' => $plan->capabilities,
@@ -207,6 +207,103 @@ test('super admins can duplicate a plan and then archive it', function () {
         ->assertRedirect(route('platform.plans'));
 
     expect($copy->fresh()->status)->toBe(PlanStatus::Archived);
+});
+
+test('plans with ongoing subscriptions cannot be archived', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $plan = Plan::query()->where('key', 'starter')->firstOrFail();
+    $tenant = Tenant::factory()->create(['id' => 'starter-subscriber']);
+
+    PartnerSubscription::factory()->create([
+        'tenant_id' => $tenant->id,
+        'plan_id' => $plan->id,
+    ]);
+
+    expect($plan->canArchive())->toBeFalse();
+
+    $this->actingAs($admin)
+        ->from(route('platform.plans'))
+        ->post(route('platform.plans.archive', $plan))
+        ->assertRedirect(route('platform.plans'))
+        ->assertSessionHasErrors(['plan']);
+
+    expect($plan->fresh()->status)->toBe(PlanStatus::Active);
+});
+
+test('plans can be archived after all subscriptions are cancelled', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $plan = Plan::query()->where('key', 'starter')->firstOrFail();
+    $tenant = Tenant::factory()->create(['id' => 'former-subscriber']);
+
+    PartnerSubscription::factory()->cancelled()->create([
+        'tenant_id' => $tenant->id,
+        'plan_id' => $plan->id,
+    ]);
+
+    expect($plan->canArchive())->toBeTrue();
+
+    $this->actingAs($admin)
+        ->post(route('platform.plans.archive', $plan))
+        ->assertRedirect(route('platform.plans'));
+
+    expect($plan->fresh()->status)->toBe(PlanStatus::Archived);
+});
+
+test('active plans cannot be deleted', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $plan = Plan::query()->where('key', 'growth')->firstOrFail();
+
+    $this->actingAs($admin)
+        ->from(route('platform.plans'))
+        ->delete(route('platform.plans.destroy', $plan))
+        ->assertRedirect(route('platform.plans'))
+        ->assertSessionHasErrors(['plan']);
+
+    expect(Plan::query()->whereKey($plan->id)->exists())->toBeTrue();
+});
+
+test('archived plans with quotations cannot be deleted', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $plan = Plan::query()->where('key', 'starter')->firstOrFail();
+    $plan->update(['status' => PlanStatus::Archived]);
+
+    Quotation::factory()->create([
+        'tenant_id' => 'demo-partner',
+        'plan_id' => $plan->id,
+    ]);
+
+    expect($plan->canDelete())->toBeFalse();
+
+    $this->actingAs($admin)
+        ->from(route('platform.plans'))
+        ->delete(route('platform.plans.destroy', $plan))
+        ->assertRedirect(route('platform.plans'))
+        ->assertSessionHasErrors(['plan']);
+
+    expect(Plan::query()->whereKey($plan->id)->exists())->toBeTrue();
+});
+
+test('super admins can delete archived plans without ongoing subscriptions or quotations', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $plan = Plan::query()->where('key', 'starter')->firstOrFail();
+    $tenant = Tenant::factory()->create(['id' => 'former-starter']);
+
+    PartnerSubscription::factory()->cancelled()->create([
+        'tenant_id' => $tenant->id,
+        'plan_id' => $plan->id,
+    ]);
+
+    $plan->update(['status' => PlanStatus::Archived]);
+
+    expect($plan->canDelete())->toBeTrue();
+
+    $this->actingAs($admin)
+        ->delete(route('platform.plans.destroy', $plan))
+        ->assertRedirect(route('platform.plans'))
+        ->assertSessionHas('status', 'Plan deleted.');
+
+    expect(Plan::query()->whereKey($plan->id)->exists())->toBeFalse()
+        ->and(PartnerSubscription::query()->where('plan_id', $plan->id)->exists())->toBeFalse();
 });
 
 test('archived plans are hidden from the channel partner catalog', function () {

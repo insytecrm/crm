@@ -1,9 +1,12 @@
 <?php
 
+use App\Enums\AccountStatus;
+use App\Enums\SubscriptionStatus;
 use App\Enums\TenantStatus;
 use App\Models\PartnerSubscription;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Platform\ResolvePartnerAccountStatus;
 use Illuminate\Support\Facades\DB;
 
 function tenantPayload(array $overrides = []): array
@@ -69,6 +72,57 @@ test('super admins can filter channel partners by status', function () {
         ->assertOk()
         ->assertSee('Paused Partner')
         ->assertDontSee('Active Partner');
+});
+
+test('channel partners display subscription account status with suspended workspace precedence', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $trialTenant = Tenant::factory()->create(['name' => 'Trial Account Partner']);
+    $activeTenant = Tenant::factory()->create(['name' => 'Active Account Partner']);
+    $inactiveTenant = Tenant::factory()->create(['name' => 'Inactive Account Partner']);
+    $cancelledTenant = Tenant::factory()->create(['name' => 'Cancelled Account Partner']);
+    $endedTenant = Tenant::factory()->create(['name' => 'Ended Trial Partner']);
+    $suspendedTenant = Tenant::factory()->suspended()->create(['name' => 'Suspended Trial Partner']);
+
+    PartnerSubscription::factory()->trial()->create(['tenant_id' => $trialTenant->id]);
+    PartnerSubscription::factory()->create(['tenant_id' => $activeTenant->id]);
+    PartnerSubscription::factory()->paused()->create(['tenant_id' => $inactiveTenant->id]);
+    PartnerSubscription::factory()->cancelled()->create(['tenant_id' => $cancelledTenant->id]);
+    PartnerSubscription::factory()->create([
+        'tenant_id' => $endedTenant->id,
+        'status' => SubscriptionStatus::TrialEnded,
+    ]);
+    PartnerSubscription::factory()->trial()->create(['tenant_id' => $suspendedTenant->id]);
+
+    $response = $this->actingAs($admin)->get(route('tenants.index'));
+    $resolver = app(ResolvePartnerAccountStatus::class);
+
+    expect($resolver->forTenant($trialTenant)['status'])->toBe(AccountStatus::Trial)
+        ->and($resolver->forTenant($activeTenant)['status'])->toBe(AccountStatus::Active)
+        ->and($resolver->forTenant($inactiveTenant)['status'])->toBe(AccountStatus::Inactive)
+        ->and($resolver->forTenant($cancelledTenant)['status'])->toBe(AccountStatus::Cancelled)
+        ->and($resolver->forTenant($endedTenant)['status'])->toBe(AccountStatus::TrialEnded)
+        ->and($resolver->forTenant($suspendedTenant)['status'])->toBe(AccountStatus::Suspended);
+
+    expect($response->getContent())
+        ->toMatch('/Trial Account Partner[\s\S]*?Trial[\s\S]*?<\/tr>/')
+        ->toMatch('/Inactive Account Partner[\s\S]*?Inactive[\s\S]*?<\/tr>/')
+        ->toMatch('/Cancelled Account Partner[\s\S]*?Cancelled[\s\S]*?<\/tr>/')
+        ->toMatch('/Ended Trial Partner[\s\S]*?Trial Ended[\s\S]*?<\/tr>/')
+        ->toMatch('/Suspended Trial Partner[\s\S]*?Suspended[\s\S]*?<\/tr>/');
+});
+
+test('super admins can filter channel partners by subscription account status', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $trialTenant = Tenant::factory()->create(['name' => 'Filtered Trial Partner']);
+    $activeTenant = Tenant::factory()->create(['name' => 'Filtered Active Partner']);
+    PartnerSubscription::factory()->trial()->create(['tenant_id' => $trialTenant->id]);
+    PartnerSubscription::factory()->create(['tenant_id' => $activeTenant->id]);
+
+    $this->actingAs($admin)
+        ->get(route('tenants.index', ['status' => 'trial']))
+        ->assertOk()
+        ->assertSee('Filtered Trial Partner')
+        ->assertDontSee('Filtered Active Partner');
 });
 
 test('super admins can create a company with its own database', function () {

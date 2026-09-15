@@ -51,10 +51,17 @@
         @if ($quotations->isEmpty())
             <p class="text-sm text-slate-500">{{ __('No quotations match these filters.') }}</p>
         @else
-            <div class="overflow-x-auto">
+            <x-platform.manageable-table.wrapper :item-ids="$quotations->pluck('id')->all()">
+                <x-platform.manageable-table.bulk-bar
+                    :delete-url="route('platform.quotations.bulk-destroy')"
+                    :confirm-message="__('Delete the selected draft quotations?')"
+                />
+
+                <div class="overflow-x-auto">
                 <table class="min-w-full text-left">
                     <thead>
                         <tr class="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            <x-platform.manageable-table.checkbox-header />
                             <th class="px-3 py-3">{{ __('Quotation #') }}</th>
                             <th class="px-3 py-3">{{ __('Company') }}</th>
                             <th class="px-3 py-3">{{ __('Plan') }}</th>
@@ -68,6 +75,7 @@
                     <tbody>
                         @foreach ($quotations as $quotation)
                             <tr class="border-b border-slate-50">
+                                <x-platform.manageable-table.checkbox-cell :id="$quotation->id" />
                                 <td class="px-3 py-3 text-sm font-medium text-black">
                                     <a href="{{ route('platform.quotations.show', $quotation) }}" class="hover:text-navy">#{{ $quotation->number }}</a>
                                 </td>
@@ -87,7 +95,8 @@
                         @endforeach
                     </tbody>
                 </table>
-            </div>
+                </div>
+            </x-platform.manageable-table.wrapper>
             <div class="mt-4">{{ $quotations->links() }}</div>
         @endif
     </x-platform.panel>

@@ -10,9 +10,13 @@ class SendQuotation
 {
     public function __construct(
         private SyncPlatformLeadFromQuotation $syncLead,
+        private SendPlatformQuotationMail $sendPlatformQuotationMail,
     ) {}
 
-    public function handle(Quotation $quotation): Quotation
+    /**
+     * @return array{quotation: Quotation, mail_sent: bool}
+     */
+    public function handle(Quotation $quotation, string $email): array
     {
         if (! $quotation->canSend()) {
             throw ValidationException::withMessages([
@@ -22,12 +26,17 @@ class SendQuotation
 
         $quotation->update([
             'status' => QuotationStatus::Sent,
-            'sent_at' => $quotation->sent_at ?? now(),
+            'sent_at' => now(),
         ]);
 
         $quotation = $quotation->refresh();
         $this->syncLead->afterSent($quotation);
 
-        return $quotation;
+        $mailSent = $this->sendPlatformQuotationMail->handle($quotation, $email);
+
+        return [
+            'quotation' => $quotation,
+            'mail_sent' => $mailSent,
+        ];
     }
 }

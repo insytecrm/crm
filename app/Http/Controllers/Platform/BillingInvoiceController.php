@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Actions\MarkBillingInvoicePaid;
+use App\Actions\SendBillingInvoice;
 use App\Enums\BillingInvoiceStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Platform\SendBillingInvoiceRequest;
 use App\Models\BillingInvoice;
 use App\Support\Platform\BillingMoney;
 use Illuminate\Http\RedirectResponse;
@@ -93,13 +95,19 @@ class BillingInvoiceController extends Controller
         ]);
     }
 
-    public function send(BillingInvoice $invoice): RedirectResponse
-    {
-        $invoice->update([
-            'sent_at' => $invoice->sent_at ?? now(),
-        ]);
+    public function send(
+        SendBillingInvoiceRequest $request,
+        BillingInvoice $invoice,
+        SendBillingInvoice $action,
+    ): RedirectResponse {
+        $email = $request->validated('email');
+        $result = $action->handle($invoice, $email);
 
-        return back()->with('status', __('Invoice marked as sent.'));
+        $status = $result['mail_sent']
+            ? __('Invoice sent to :email.', ['email' => $email])
+            : __('Invoice marked as sent, but the email could not be delivered. Check Utilities SMTP settings.');
+
+        return back()->with('status', $status);
     }
 
     public function markPaid(BillingInvoice $invoice, MarkBillingInvoicePaid $action): RedirectResponse

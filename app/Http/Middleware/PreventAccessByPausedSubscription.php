@@ -26,8 +26,12 @@ class PreventAccessByPausedSubscription
             ->latest('id')
             ->first();
 
-        if ($subscription?->status === SubscriptionStatus::Paused) {
-            abort(403, 'This company subscription is paused.');
+        if (in_array($subscription?->status, [
+            SubscriptionStatus::Paused,
+            SubscriptionStatus::TrialEnded,
+            SubscriptionStatus::Cancelled,
+        ], true)) {
+            abort(403, 'This company subscription is not active.');
         }
 
         return $next($request);

@@ -19,6 +19,8 @@
             'sent' => __('Sent'),
             default => __('Trial'),
         }],
+        'trial_ended' => ['bg-slate-100 text-slate-700 ring-slate-500/10', __('Trial Ended')],
+        'inactive' => ['bg-slate-100 text-slate-700 ring-slate-500/10', __('Inactive')],
         'past_due', 'overdue' => ['bg-orange-50 text-orange-700 ring-orange-600/10', $value === 'overdue' ? __('Overdue') : __('Past Due')],
         'failed', 'suspended', 'cancelled', 'rejected' => ['bg-rose-50 text-rose-700 ring-rose-600/10', match ($value) {
             'failed' => __('Failed'),

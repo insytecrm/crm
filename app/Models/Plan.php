@@ -5,12 +5,14 @@ namespace App\Models;
 use App\Enums\PlanFeature;
 use App\Enums\PlanPack;
 use App\Enums\PlanStatus;
+use App\Enums\SubscriptionStatus;
 use App\Support\Platform\PlanDefinitionCatalog;
 use Database\Factories\PlanFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
@@ -78,6 +80,41 @@ class Plan extends Model
         return $this->status === PlanStatus::Archived;
     }
 
+    public function canArchive(): bool
+    {
+        return ! $this->isArchived() && $this->ongoingSubscriptionsCount() === 0;
+    }
+
+    public function canDelete(): bool
+    {
+        return $this->isArchived()
+            && $this->ongoingSubscriptionsCount() === 0
+            && ! $this->quotations()->exists();
+    }
+
+    /**
+     * @return HasMany<PartnerSubscription, $this>
+     */
+    public function partnerSubscriptions(): HasMany
+    {
+        return $this->hasMany(PartnerSubscription::class);
+    }
+
+    /**
+     * @return HasMany<Quotation, $this>
+     */
+    public function quotations(): HasMany
+    {
+        return $this->hasMany(Quotation::class);
+    }
+
+    public function ongoingSubscriptionsCount(): int
+    {
+        return $this->partnerSubscriptions()
+            ->where('status', '!=', SubscriptionStatus::Cancelled)
+            ->count();
+    }
+
     public function monthlyPriceLabel(): string
     {
         return $this->moneyLabel($this->price_monthly);
@@ -90,13 +127,9 @@ class Plan extends Model
 
     public function trialLabel(): string
     {
-        if (! $this->trial_enabled) {
-            return __('No trial');
-        }
-
-        return trans_choice(':count day|:count days', $this->trial_days, [
-            'count' => $this->trial_days,
-        ]);
+        return $this->trial_enabled
+            ? __('Trial enabled')
+            : __('No trial');
     }
 
     public function hasFeature(PlanFeature|string $feature): bool

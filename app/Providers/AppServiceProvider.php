@@ -58,7 +58,11 @@ class AppServiceProvider extends ServiceProvider
         InitializeTenancyByPath::$onFail = fn () => abort(404);
 
         DatabaseConfig::generateDatabaseNamesUsing(function ($tenant): string {
-            $name = config('tenancy.database.prefix').$tenant->getTenantKey().config('tenancy.database.suffix');
+            $id = $tenant->getTenantKey();
+            $createdAt = $tenant->created_at ?? now();
+            $dateSuffix = $createdAt->format('ymd');
+            $name = "tenant-{$id}-{$dateSuffix}";
+
             $connection = config('tenancy.database.template_tenant_connection') ?: config('database.default');
             $driver = config("database.connections.{$connection}.driver");
 

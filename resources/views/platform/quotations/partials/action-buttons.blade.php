@@ -4,8 +4,17 @@
 ])
 
 @php
+    use Illuminate\Support\Js;
+
     $isList = $context === 'list';
     $size = $isList ? 'sm' : 'default';
+    $sendListClick = "\$dispatch('open-send-quotation-list', ".Js::from([
+        'sendUrl' => route('platform.quotations.send', $quotation),
+        'company' => $quotation->companyDisplayName(),
+        'email' => $quotation->email ?: '',
+        'number' => $quotation->number,
+        'amount' => $quotation->amountLabel(),
+    ]).")";
 @endphp
 
 @if ($isList)
@@ -29,13 +38,7 @@
                 icon="play"
                 type="button"
                 :title="__('Send')"
-                @click="$dispatch('open-send-quotation-list', {
-                    sendUrl: @js(route('platform.quotations.send', $quotation)),
-                    company: @js($quotation->companyDisplayName()),
-                    email: @js($quotation->email ?: '—'),
-                    number: @js($quotation->number),
-                    amount: @js($quotation->amountLabel()),
-                })"
+                x-on:click="{!! $sendListClick !!}"
             />
         @endif
 
@@ -53,7 +56,7 @@
         @endif
 
         @if ($quotation->canMarkAccepted())
-            <form method="POST" action="{{ route('platform.quotations.accept', $quotation) }}" class="inline">
+            <form method="POST" action="{{ route('platform.quotations.accept', $quotation) }}" class="inline" @submit.prevent="if (confirm(@js(__('Mark this quotation as accepted?')))) { $el.submit(); }">
                 @csrf
                 <x-ui.action-icon icon="complete" type="submit" :title="__('Mark Accepted')" />
             </form>
@@ -66,20 +69,6 @@
             </form>
         @endif
 
-        @if ($quotation->canStartOnboarding())
-            <x-ui.action-icon
-                icon="booking"
-                :href="route('platform.quotations.onboard', $quotation)"
-                :title="__('Start Onboarding')"
-            />
-        @endif
-
-        @if ($quotation->canCreateSubscription())
-            <form method="POST" action="{{ route('platform.quotations.create-subscription', $quotation) }}" class="inline">
-                @csrf
-                <x-ui.action-icon icon="invoice" type="submit" :title="__('Create Subscription')" />
-            </form>
-        @endif
     </x-ui.action-icon-group>
 @else
     <div {{ $attributes->class(['inline-flex flex-wrap items-center justify-end gap-1.5']) }}>
@@ -121,7 +110,7 @@
         @endif
 
         @if ($quotation->canMarkAccepted())
-            <form method="POST" action="{{ route('platform.quotations.accept', $quotation) }}">
+            <form method="POST" action="{{ route('platform.quotations.accept', $quotation) }}" @submit.prevent="if (confirm(@js(__('Mark this quotation as accepted?')))) { $el.submit(); }">
                 @csrf
                 <x-ui.button type="submit" variant="success" :size="$size" :title="__('Mark Accepted')">
                     <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
@@ -144,25 +133,5 @@
             </form>
         @endif
 
-        @if ($quotation->canStartOnboarding())
-            <x-ui.button variant="default" :size="$size" :href="route('platform.quotations.onboard', $quotation)" :title="__('Start Onboarding')">
-                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
-                </svg>
-                {{ __('Onboard') }}
-            </x-ui.button>
-        @endif
-
-        @if ($quotation->canCreateSubscription())
-            <form method="POST" action="{{ route('platform.quotations.create-subscription', $quotation) }}">
-                @csrf
-                <x-ui.button type="submit" variant="default" :size="$size" :title="__('Create Subscription')">
-                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
-                    </svg>
-                    {{ __('Subscribe') }}
-                </x-ui.button>
-            </form>
-        @endif
     </div>
 @endif

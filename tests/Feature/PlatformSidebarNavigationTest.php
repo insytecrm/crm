@@ -32,9 +32,18 @@ test('super admins can open each platform sidebar stub page', function (string $
 })->with([
     ['platform.integrations', 'Integrations'],
     ['platform.analytics', 'Analytics'],
-    ['platform.utilities', 'Utilities'],
-    ['platform.settings', 'Settings'],
 ]);
+
+test('super admins can open utilities instead of a stub', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)
+        ->get(route('platform.utilities'))
+        ->assertOk()
+        ->assertSee('Utilities')
+        ->assertSee('SMTP configuration')
+        ->assertDontSee('Coming soon');
+});
 
 test('super admins can open revenue and billing instead of a stub', function () {
     $admin = User::factory()->superAdmin()->create();

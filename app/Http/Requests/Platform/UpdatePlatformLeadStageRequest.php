@@ -21,8 +21,8 @@ class UpdatePlatformLeadStageRequest extends FormRequest
     {
         return [
             'stage' => ['required', Rule::enum(PlatformLeadStage::class)],
-            'demo_date' => ['nullable', 'date', 'required_if:stage,demo_scheduled'],
-            'demo_time' => ['nullable', 'date_format:H:i', 'required_if:stage,demo_scheduled'],
+            'demo_date' => ['nullable', 'date', 'required_if:stage,demo'],
+            'demo_time' => ['nullable', 'date_format:H:i', 'required_if:stage,demo'],
         ];
     }
 }

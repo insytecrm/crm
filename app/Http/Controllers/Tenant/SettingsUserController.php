@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Actions\AssertPlanLimit;
+use App\Actions\SendTenantTeamUserWelcomeMail;
 use App\Enums\PlanLimitKey;
 use App\Enums\SettingsTab;
 use App\Enums\TenantPermission;
@@ -15,19 +16,29 @@ use Illuminate\Http\RedirectResponse;
 
 class SettingsUserController extends Controller
 {
-    public function store(StoreSettingsUserRequest $request): RedirectResponse
-    {
+    public function store(
+        StoreSettingsUserRequest $request,
+        SendTenantTeamUserWelcomeMail $sendTenantTeamUserWelcomeMail,
+    ): RedirectResponse {
         app(AssertPlanLimit::class)->handle(PlanLimitKey::Users);
 
-        User::query()->create([
+        $plainPassword = (string) $request->validated('password');
+
+        $user = User::query()->create([
             'name' => $request->validated('name'),
             'email' => $request->validated('email'),
             'phone' => $request->validated('phone'),
-            'password' => $request->validated('password'),
+            'password' => $plainPassword,
             'role_id' => $request->validated('role_id'),
             'email_verified_at' => now(),
             'is_active' => true,
         ]);
+
+        $sendTenantTeamUserWelcomeMail->handle(
+            $user,
+            $plainPassword,
+            $request->boolean('email_credentials'),
+        );
 
         return redirect()
             ->route('tenant.settings.index', ['tab' => SettingsTab::Users->value])

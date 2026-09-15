@@ -10,6 +10,7 @@ class AcceptQuotation
 {
     public function __construct(
         private SyncPlatformLeadFromQuotation $syncLead,
+        private CreateInvoiceFromAcceptedQuotation $createInvoice,
     ) {}
 
     public function handle(Quotation $quotation, ?string $acceptedByName = null): Quotation
@@ -37,6 +38,7 @@ class AcceptQuotation
 
         $quotation = $quotation->refresh();
         $this->syncLead->afterAccepted($quotation);
+        $this->createInvoice->handle($quotation);
 
         return $quotation;
     }

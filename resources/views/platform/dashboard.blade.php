@@ -79,40 +79,10 @@
         </div>
 
         <div class="min-w-0 lg:col-span-4">
-            <x-platform.panel class="h-full" :title="__('Needs Attention')" compact>
-            @if ($dashboard['attention'] === [])
-                <p class="text-sm text-slate-500">{{ __('All clear across InSyte.') }}</p>
-            @else
-                <ul class="space-y-3">
-                    @foreach ($dashboard['attention'] as $item)
-                        @php
-                            $severityClass = match ($item['severity']) {
-                                'critical' => 'bg-rose-500',
-                                'warning' => 'bg-amber-500',
-                                default => 'bg-sky-500',
-                            };
-                        @endphp
-                        <li>
-                            <a href="{{ $item['href'] }}" class="group block rounded-xl border border-slate-100 px-3 py-2.5 transition-colors hover:border-slate-200 hover:bg-slate-50/70">
-                                <div class="flex items-start gap-2.5">
-                                    <span class="mt-1.5 size-2 shrink-0 rounded-full {{ $severityClass }}" aria-hidden="true"></span>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="text-sm font-semibold text-black">{{ $item['title'] }}</p>
-                                        <p class="mt-0.5 text-sm text-slate-600">{{ $item['summary'] }}</p>
-                                        @if ($item['meta'])
-                                            <p class="mt-0.5 text-xs font-medium text-slate-500">{{ $item['meta'] }}</p>
-                                        @endif
-                                        <p class="mt-1.5 text-xs font-semibold text-navy group-hover:underline">
-                                            {{ $item['action_label'] }} →
-                                        </p>
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-            </x-platform.panel>
+            @include('platform.dashboard.partials.my-day-card', [
+                'items' => $myDayItems,
+                'counts' => $myDayCounts,
+            ])
         </div>
     </div>
 

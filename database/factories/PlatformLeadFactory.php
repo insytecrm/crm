@@ -41,7 +41,7 @@ class PlatformLeadFactory extends Factory
     public function demoScheduled(): static
     {
         return $this->state(fn (): array => [
-            'stage' => PlatformLeadStage::DemoScheduled,
+            'stage' => PlatformLeadStage::Demo,
             'demo_date' => now()->addDays(3)->toDateString(),
             'demo_time' => '11:00:00',
             'next_action_label' => __('Demo scheduled'),

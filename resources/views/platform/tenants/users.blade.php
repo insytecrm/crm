@@ -85,11 +85,14 @@
                                         <x-ui.action-icon-group>
                                             @foreach ($user['actions'] as $action)
                                                 @if (! empty($action['modal']) && ! ($action['disabled'] ?? false))
+                                                    @php
+                                                        $modalClick = "\$dispatch('open-modal', ".Illuminate\Support\Js::from($action['modal']).")";
+                                                    @endphp
                                                     <x-ui.action-icon
                                                         :icon="str_contains($action['modal'], 'view-') ? 'view' : 'edit'"
                                                         type="button"
                                                         :title="$action['label']"
-                                                        x-on:click="$dispatch('open-modal', @js($action['modal']))"
+                                                        x-on:click="{!! $modalClick !!}"
                                                     />
                                                 @elseif (! empty($action['href']) && ($action['method'] ?? null) === 'PATCH' && ! ($action['disabled'] ?? false))
                                                     <form

@@ -40,7 +40,7 @@
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-slate-500">{{ __('Trial') }}</dt>
-                        <dd class="font-medium text-black">{{ $plan->trial_enabled ? __(':days-day free trial', ['days' => $plan->trial_days]) : __('No trial') }}</dd>
+                        <dd class="font-medium text-black">{{ $plan->trial_enabled ? __('Trial enabled') : __('No trial') }}</dd>
                     </div>
                 </dl>
             </x-platform.panel>

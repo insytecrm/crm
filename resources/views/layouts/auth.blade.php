@@ -12,6 +12,10 @@
         <x-fonts />
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        @if (config('services.recaptcha.enabled'))
+            <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+        @endif
     </head>
     <body class="font-sans antialiased text-black">
         <div class="auth-page relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8 sm:px-6">

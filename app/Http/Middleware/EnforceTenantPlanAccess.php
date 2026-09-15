@@ -54,6 +54,7 @@ class EnforceTenantPlanAccess
         'tenant.settings.integrations.api' => 'integration.api',
         'tenant.settings.integrations.google-sheets' => 'integration.google_sheets',
         'tenant.settings.integrations.facebook' => 'integration.facebook',
+        'tenant.settings.integrations.utilities' => 'utilities.email',
     ];
 
     public function __construct(private TenantPlanAccess $access) {}

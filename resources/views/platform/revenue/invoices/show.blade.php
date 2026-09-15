@@ -8,11 +8,10 @@
             <x-slot:actions>
                 <div class="flex flex-wrap items-center gap-2">
                     <x-platform.status-badge :status="$invoice->status" />
-                    <x-ui.button variant="outline" :href="route('platform.revenue.invoices.download', $invoice)">{{ __('Download PDF') }}</x-ui.button>
-                    <form method="POST" action="{{ route('platform.revenue.invoices.send', $invoice) }}">
-                        @csrf
-                        <x-ui.button type="submit" variant="outline">{{ __('Send Invoice') }}</x-ui.button>
-                    </form>
+                    @include('platform.revenue.invoices.partials.action-buttons', [
+                        'invoice' => $invoice,
+                        'context' => 'detail',
+                    ])
                 </div>
             </x-slot:actions>
         </x-platform.page-header>
@@ -140,5 +139,7 @@
                 @endif
             </x-platform.panel>
         </div>
+
+        @include('platform.revenue.invoices.partials.send-dialog', ['invoice' => $invoice])
     </x-platform.billing-shell>
 </x-app-layout>

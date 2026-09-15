@@ -28,7 +28,7 @@
                 <div class="flex justify-between gap-3">
                     <dt class="text-slate-500">{{ __('Trial') }}</dt>
                     <dd class="font-medium text-black">
-                        {{ ! empty($draft['trial_enabled']) ? trans_choice(':count day|:count days', (int) ($draft['trial_days'] ?? 7), ['count' => (int) ($draft['trial_days'] ?? 7)]) : __('No trial') }}
+                        {{ ! empty($draft['trial_enabled']) ? __('Trial enabled') : __('No trial') }}
                     </dd>
                 </div>
             </dl>
