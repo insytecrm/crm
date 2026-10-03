@@ -1,0 +1,20 @@
+{
+  "folders": [
+    {
+      "name": "web (Laravel)",
+      "path": "web"
+    },
+    {
+      "name": "mobile (Flutter)",
+      "path": "mobile"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/web/vendor": true,
+      "**/web/node_modules": true,
+      "**/mobile/.dart_tool": true,
+      "**/mobile/build": true
+    }
+  }
+}
